@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class FavoriteProduct extends Model
 {
+    protected $primaryKey = 'favoriteproductid';
     protected $fillable = [
         'userid',
         'productid',
