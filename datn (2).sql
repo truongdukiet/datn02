@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th6 12, 2025 lúc 05:26 PM
+-- Thời gian đã tạo: Th6 12, 2025 lúc 05:37 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -94,7 +94,7 @@ CREATE TABLE `favorite_products` (
 --
 
 CREATE TABLE `messages` (
-  `Id_message` int(11) NOT NULL,
+  `MessageID` int(11) NOT NULL,
   `UserID` int(11) NOT NULL,
   `Message` text NOT NULL,
   `Create_at` date NOT NULL DEFAULT current_timestamp(),
@@ -129,7 +129,7 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 --
 
 CREATE TABLE `notifications` (
-  `IdNotification` int(11) NOT NULL,
+  `NotificationID` int(11) NOT NULL,
   `UserID` int(11) NOT NULL,
   `Message` text NOT NULL,
   `IsRead` tinyint(4) NOT NULL DEFAULT 0,
@@ -362,7 +362,7 @@ ALTER TABLE `favorite_products`
 -- Chỉ mục cho bảng `messages`
 --
 ALTER TABLE `messages`
-  ADD PRIMARY KEY (`Id_message`),
+  ADD PRIMARY KEY (`MessageID`),
   ADD KEY `UserID` (`UserID`);
 
 --
@@ -375,7 +375,7 @@ ALTER TABLE `migrations`
 -- Chỉ mục cho bảng `notifications`
 --
 ALTER TABLE `notifications`
-  ADD PRIMARY KEY (`IdNotification`),
+  ADD PRIMARY KEY (`NotificationID`),
   ADD KEY `UserID` (`UserID`);
 
 --
@@ -478,7 +478,7 @@ ALTER TABLE `favorite_products`
 -- AUTO_INCREMENT cho bảng `messages`
 --
 ALTER TABLE `messages`
-  MODIFY `Id_message` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `MessageID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `migrations`
@@ -490,7 +490,7 @@ ALTER TABLE `migrations`
 -- AUTO_INCREMENT cho bảng `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `IdNotification` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `NotificationID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `orderdetail`
