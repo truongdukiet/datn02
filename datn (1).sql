@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th6 08, 2025 lúc 06:34 AM
+-- Thời gian đã tạo: Th6 12, 2025 lúc 05:26 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -90,6 +90,20 @@ CREATE TABLE `favorite_products` (
 -- --------------------------------------------------------
 
 --
+-- Cấu trúc bảng cho bảng `messages`
+--
+
+CREATE TABLE `messages` (
+  `Id_message` int(11) NOT NULL,
+  `UserID` int(11) NOT NULL,
+  `Message` text NOT NULL,
+  `Create_at` date NOT NULL DEFAULT current_timestamp(),
+  `Is_user` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Cấu trúc bảng cho bảng `migrations`
 --
 
@@ -107,6 +121,20 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (1, '0001_01_01_000000_create_users_table', 1),
 (2, '0001_01_01_000001_create_cache_table', 1),
 (4, '2025_05_29_154550_create_personal_access_tokens_table', 1);
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `notifications`
+--
+
+CREATE TABLE `notifications` (
+  `IdNotification` int(11) NOT NULL,
+  `UserID` int(11) NOT NULL,
+  `Message` text NOT NULL,
+  `IsRead` tinyint(4) NOT NULL DEFAULT 0,
+  `Create_at` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -331,10 +359,24 @@ ALTER TABLE `favorite_products`
   ADD KEY `ProductID` (`ProductID`);
 
 --
+-- Chỉ mục cho bảng `messages`
+--
+ALTER TABLE `messages`
+  ADD PRIMARY KEY (`Id_message`),
+  ADD KEY `UserID` (`UserID`);
+
+--
 -- Chỉ mục cho bảng `migrations`
 --
 ALTER TABLE `migrations`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Chỉ mục cho bảng `notifications`
+--
+ALTER TABLE `notifications`
+  ADD PRIMARY KEY (`IdNotification`),
+  ADD KEY `UserID` (`UserID`);
 
 --
 -- Chỉ mục cho bảng `orderdetail`
@@ -433,10 +475,22 @@ ALTER TABLE `favorite_products`
   MODIFY `FavoriteProductID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT cho bảng `messages`
+--
+ALTER TABLE `messages`
+  MODIFY `Id_message` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT cho bảng `migrations`
 --
 ALTER TABLE `migrations`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT cho bảng `notifications`
+--
+ALTER TABLE `notifications`
+  MODIFY `IdNotification` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `orderdetail`
@@ -503,6 +557,18 @@ ALTER TABLE `cart`
 ALTER TABLE `favorite_products`
   ADD CONSTRAINT `favorite_products_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `users` (`UserID`),
   ADD CONSTRAINT `favorite_products_ibfk_2` FOREIGN KEY (`ProductID`) REFERENCES `products` (`ProductID`);
+
+--
+-- Các ràng buộc cho bảng `messages`
+--
+ALTER TABLE `messages`
+  ADD CONSTRAINT `messages_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `users` (`UserID`);
+
+--
+-- Các ràng buộc cho bảng `notifications`
+--
+ALTER TABLE `notifications`
+  ADD CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `users` (`UserID`);
 
 --
 -- Các ràng buộc cho bảng `orderdetail`
