@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th6 12, 2025 lúc 05:37 PM
+-- Thời gian đã tạo: Th6 19, 2025 lúc 06:57 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -77,6 +77,18 @@ CREATE TABLE `categories` (
 -- --------------------------------------------------------
 
 --
+-- Cấu trúc bảng cho bảng `color`
+--
+
+CREATE TABLE `color` (
+  `ColorID` int(11) NOT NULL,
+  `Name` varchar(50) NOT NULL,
+  `ProductID` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Cấu trúc bảng cho bảng `favorite_products`
 --
 
@@ -97,8 +109,9 @@ CREATE TABLE `messages` (
   `MessageID` int(11) NOT NULL,
   `UserID` int(11) NOT NULL,
   `Message` text NOT NULL,
+  `Image` varchar(255) NOT NULL,
   `Create_at` date NOT NULL DEFAULT current_timestamp(),
-  `Is_user` tinyint(1) NOT NULL
+  `FromUser` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -248,6 +261,7 @@ CREATE TABLE `review` (
   `UserID` int(11) DEFAULT NULL,
   `Star_rating` int(11) DEFAULT NULL,
   `Comment` text DEFAULT NULL,
+  `Image` varchar(255) NOT NULL,
   `Create_at` datetime DEFAULT NULL,
   `Status` tinyint(1) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -274,6 +288,18 @@ CREATE TABLE `sessions` (
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`) VALUES
 ('lTT6hFjNWSzNTWGEc1l3yqrUiLKWEAF547rmWRcW', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 Edg/137.0.0.0', 'YTo0OntzOjY6Il90b2tlbiI7czo0MDoiVVVmN1BuODNXaDVmRFp1UkJjeGliUnZXZVhMNjFVbTU1Yjd0YlNQOCI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjE6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjE7fQ==', 1749222341),
 ('tgkCu3kgh9tBH3B3QCbKKlhkoiHZRGMlSF9eJehG', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoidUlZbWpxbklUSEFGR2p2U1prcnltSmo5eTVZSVlQcTJWam5PWjZGVyI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjE6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1748534615);
+
+-- --------------------------------------------------------
+
+--
+-- Cấu trúc bảng cho bảng `size`
+--
+
+CREATE TABLE `size` (
+  `SizeID` int(11) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `ProductID` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -349,6 +375,13 @@ ALTER TABLE `cart`
 --
 ALTER TABLE `categories`
   ADD PRIMARY KEY (`CategoryID`);
+
+--
+-- Chỉ mục cho bảng `color`
+--
+ALTER TABLE `color`
+  ADD PRIMARY KEY (`ColorID`),
+  ADD KEY `ProductID` (`ProductID`);
 
 --
 -- Chỉ mục cho bảng `favorite_products`
@@ -441,6 +474,13 @@ ALTER TABLE `sessions`
   ADD KEY `sessions_last_activity_index` (`last_activity`);
 
 --
+-- Chỉ mục cho bảng `size`
+--
+ALTER TABLE `size`
+  ADD PRIMARY KEY (`SizeID`),
+  ADD KEY `ProductID` (`ProductID`);
+
+--
 -- Chỉ mục cho bảng `users`
 --
 ALTER TABLE `users`
@@ -467,6 +507,12 @@ ALTER TABLE `cart`
 --
 ALTER TABLE `categories`
   MODIFY `CategoryID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT cho bảng `color`
+--
+ALTER TABLE `color`
+  MODIFY `ColorID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `favorite_products`
@@ -529,6 +575,12 @@ ALTER TABLE `review`
   MODIFY `ReviewID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT cho bảng `size`
+--
+ALTER TABLE `size`
+  MODIFY `SizeID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT cho bảng `users`
 --
 ALTER TABLE `users`
@@ -550,6 +602,12 @@ ALTER TABLE `voucher`
 ALTER TABLE `cart`
   ADD CONSTRAINT `cart_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `users` (`UserID`),
   ADD CONSTRAINT `cart_ibfk_2` FOREIGN KEY (`ProductID`) REFERENCES `products` (`ProductID`);
+
+--
+-- Các ràng buộc cho bảng `color`
+--
+ALTER TABLE `color`
+  ADD CONSTRAINT `color_ibfk_1` FOREIGN KEY (`ProductID`) REFERENCES `products` (`ProductID`);
 
 --
 -- Các ràng buộc cho bảng `favorite_products`
@@ -598,6 +656,12 @@ ALTER TABLE `review`
   ADD CONSTRAINT `review_ibfk_1` FOREIGN KEY (`OrderDetailID`) REFERENCES `orderdetail` (`OrderDetailID`),
   ADD CONSTRAINT `review_ibfk_2` FOREIGN KEY (`ProductID`) REFERENCES `products` (`ProductID`),
   ADD CONSTRAINT `review_ibfk_3` FOREIGN KEY (`UserID`) REFERENCES `users` (`UserID`);
+
+--
+-- Các ràng buộc cho bảng `size`
+--
+ALTER TABLE `size`
+  ADD CONSTRAINT `size_ibfk_1` FOREIGN KEY (`ProductID`) REFERENCES `products` (`ProductID`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
