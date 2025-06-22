@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th6 22, 2025 lúc 09:11 AM
+-- Thời gian đã tạo: Th6 22, 2025 lúc 05:23 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -177,7 +177,6 @@ CREATE TABLE `orders` (
   `UserID` int(11) DEFAULT NULL,
   `VoucherID` int(11) DEFAULT NULL,
   `PaymentID` int(11) DEFAULT NULL,
-  `Order_date` datetime DEFAULT NULL,
   `Status` varchar(255) DEFAULT NULL,
   `Total_amount` decimal(10,0) DEFAULT NULL,
   `Receiver_name` varchar(255) DEFAULT NULL,
