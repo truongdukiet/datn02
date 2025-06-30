@@ -6,6 +6,7 @@ use App\Http\Controllers\ProductVariantController;
 use App\Http\Controllers\VariantAttributeController;
 use App\Http\Controllers\AttributeController;
 use App\Http\Controllers\Cart; // Đảm bảo import đúng Controller của giỏ hàng
+use App\Http\Controllers\FavoriteProductController; // Thêm dòng này để import FavoriteProductController
 
 Route::apiResource('product_variants', ProductVariantController::class);
 Route::apiResource('variant_attributes', VariantAttributeController::class);
@@ -20,8 +21,31 @@ Route::prefix('cart')->group(function () {
     Route::post('clear', [Cart::class, 'clearCart']); // Xóa sạch giỏ hàng
 });
 
+// Thêm các API routes cho Favorite Products vào đây
+Route::prefix('favorite-products')->group(function () {
+    // Lấy tất cả sản phẩm yêu thích của một người dùng theo UserID
+    // Phương thức: GET
+    // URL ví dụ: /api/favorite-products/1
+    Route::get('/{userId}', [FavoriteProductController::class, 'index']);
+
+    // Thêm một sản phẩm vào danh sách yêu thích
+    // Phương thức: POST
+    // URL ví dụ: /api/favorite-products
+    // Body (JSON): {"UserID": 1, "ProductVariantID": 101}
+    Route::post('/', [FavoriteProductController::class, 'store']);
+
+    // Xóa một sản phẩm khỏi danh sách yêu thích
+    // Phương thức: DELETE
+    // URL ví dụ: /api/favorite-products
+    // Body (JSON): {"UserID": 1, "ProductVariantID": 101}
+    Route::delete('/', [FavoriteProductController::class, 'destroy']);
+
+    // (Tùy chọn) Nếu bạn muốn xóa bằng FavoriteProductID trực tiếp qua URL,
+    // hãy uncomment dòng dưới đây và nhớ uncomment destroyById trong controller:
+    // Route::delete('/{favoriteProductId}', [FavoriteProductController::class, 'destroyById']);
+});
+
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
 });
-
