@@ -9,6 +9,15 @@ use App\Http\Controllers\Cart; // Đảm bảo import đúng Controller của gi
 use App\Http\Controllers\FavoriteProductController; // Thêm dòng này để import FavoriteProductController
 use App\Http\Controllers\ReviewController; // Thêm dòng này để import ReviewController
 
+use App\Http\Controllers\ProfileController; // Import cho các route mặc định của Breeze
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\UserController; // Đảm bảo dòng này đã có
+use App\Http\Controllers\Admin\CategoryController; // Đảm bảo dòng này đã có
+use App\Http\Controllers\Admin\ProductController; // Thêm dòng này
+use App\Http\Controllers\Admin\OrderController; // Thêm dòng này
+use App\Http\Controllers\Admin\VoucherController; // Thêm dòng này
+
+
 Route::apiResource('product_variants', ProductVariantController::class);
 Route::apiResource('variant_attributes', VariantAttributeController::class);
 Route::apiResource('attributes', AttributeController::class);
@@ -56,6 +65,50 @@ Route::prefix('favorite-products')->group(function () {
 Route::apiResource('reviews', ReviewController::class);
 
 
-Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
-    return $request->user();
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "web" middleware group. Make something great!
+|
+*/
+
+// Các route mặc định của Laravel/Breeze
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+require __DIR__.'/auth.php';
+
+// --- Route Group cho Admin Panel ---
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Các route cho quản lý Người dùng
+    Route::resource('users', UserController::class); // Đã bỏ comment
+
+    // Các route cho quản lý Danh mục
+    Route::resource('categories', CategoryController::class);
+
+    // Các route cho quản lý Sản phẩm
+    Route::resource('products', ProductController::class); // Thêm dòng này
+
+    // Các route cho quản lý Đơn hàng
+    Route::resource('orders', OrderController::class); // Thêm dòng này
+
+    // Các route cho quản lý Voucher
+    Route::resource('vouchers', VoucherController::class); // Thêm dòng này
 });
