@@ -7,6 +7,7 @@ use App\Http\Controllers\VariantAttributeController;
 use App\Http\Controllers\AttributeController;
 use App\Http\Controllers\Cart; // Đảm bảo import đúng Controller của giỏ hàng
 use App\Http\Controllers\FavoriteProductController; // Thêm dòng này để import FavoriteProductController
+use App\Http\Controllers\ReviewController; // Thêm dòng này để import ReviewController
 
 Route::apiResource('product_variants', ProductVariantController::class);
 Route::apiResource('variant_attributes', VariantAttributeController::class);
@@ -44,6 +45,15 @@ Route::prefix('favorite-products')->group(function () {
     // hãy uncomment dòng dưới đây và nhớ uncomment destroyById trong controller:
     // Route::delete('/{favoriteProductId}', [FavoriteProductController::class, 'destroyById']);
 });
+
+// Thêm các API routes cho Reviews vào đây
+// apiResource sẽ tự động tạo các route sau:
+// GET    /api/reviews             -> index (Lấy tất cả hoặc lọc)
+// POST   /api/reviews             -> store (Thêm mới)
+// GET    /api/reviews/{review}    -> show (Lấy chi tiết 1 review)
+// PUT/PATCH /api/reviews/{review} -> update (Cập nhật)
+// DELETE /api/reviews/{review}    -> destroy (Xóa)
+Route::apiResource('reviews', ReviewController::class);
 
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
