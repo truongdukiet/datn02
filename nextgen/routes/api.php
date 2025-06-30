@@ -48,9 +48,9 @@ Route::prefix('favorite-products')->group(function () {
 
 // Thêm các API routes cho Reviews vào đây
 // apiResource sẽ tự động tạo các route sau:
-// GET    /api/reviews             -> index (Lấy tất cả hoặc lọc)
-// POST   /api/reviews             -> store (Thêm mới)
-// GET    /api/reviews/{review}    -> show (Lấy chi tiết 1 review)
+// GET     /api/reviews             -> index (Lấy tất cả hoặc lọc)
+// POST    /api/reviews             -> store (Thêm mới)
+// GET     /api/reviews/{review}    -> show (Lấy chi tiết 1 review)
 // PUT/PATCH /api/reviews/{review} -> update (Cập nhật)
 // DELETE /api/reviews/{review}    -> destroy (Xóa)
 Route::apiResource('reviews', ReviewController::class);
