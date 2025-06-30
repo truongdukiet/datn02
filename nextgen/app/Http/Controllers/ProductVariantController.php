@@ -9,36 +9,36 @@ class ProductVariantController extends Controller
 {
     public function index()
     {
-        return ProductVariant::all();
+        return response()->json(ProductVariant::with('product', 'attributes.attribute')->get());
     }
 
     public function show($id)
     {
-        return ProductVariant::findOrFail($id);
+        $variant = ProductVariant::with('product', 'attributes.attribute')->find($id);
+        if (!$variant) return response()->json(['message' => 'Not found'], 404);
+        return response()->json($variant);
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'ProductID' => 'required|exists:products,id',
-            'Sku' => 'required|string|unique:product_variants,Sku',
-            'Price' => 'required|numeric',
-            'Stock' => 'required|integer',
-        ]);
-
-        return ProductVariant::create($request->all());
+        $request->validate(['Sku' => 'required', 'Price' => 'required']);
+        $variant = ProductVariant::create($request->all());
+        return response()->json($variant, 201);
     }
 
     public function update(Request $request, $id)
     {
-        $variant = ProductVariant::findOrFail($id);
+        $variant = ProductVariant::find($id);
+        if (!$variant) return response()->json(['message' => 'Not found'], 404);
         $variant->update($request->all());
-        return $variant;
+        return response()->json($variant);
     }
 
     public function destroy($id)
     {
-        ProductVariant::destroy($id);
-        return response()->json(['success' => 'Product variant deleted successfully']);
+        $variant = ProductVariant::find($id);
+        if (!$variant) return response()->json(['message' => 'Not found'], 404);
+        $variant->delete();
+        return response()->json(['message' => 'Deleted']);
     }
 }
