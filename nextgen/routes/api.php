@@ -8,6 +8,7 @@ use App\Http\Controllers\AttributeController;
 use App\Http\Controllers\Cart; // Đảm bảo import đúng Controller của giỏ hàng
 use App\Http\Controllers\FavoriteProductController; // Thêm dòng này để import FavoriteProductController
 use App\Http\Controllers\ReviewController; // Thêm dòng này để import ReviewController
+use App\Http\Controllers\ProductController; // THÊM DÒNG NÀY ĐỂ IMPORT PRODUCTCONTROLLER
 
 /*
 |--------------------------------------------------------------------------
@@ -27,6 +28,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::apiResource('product_variants', ProductVariantController::class);
 Route::apiResource('variant_attributes', VariantAttributeController::class);
 Route::apiResource('attributes', AttributeController::class);
+
 // Nhóm các route liên quan đến giỏ hàng dưới tiền tố 'cart'
 Route::prefix('cart')->group(function () {
     Route::post('add', [Cart::class, 'addToCart']); // Thêm sản phẩm vào giỏ hàng
@@ -68,3 +70,8 @@ Route::prefix('favorite-products')->group(function () {
 // PUT/PATCH /api/reviews/{review} -> update (Cập nhật)
 // DELETE /api/reviews/{review}   -> destroy (Xóa)
 Route::apiResource('reviews', ReviewController::class);
+
+// THÊM ROUTE API CHO SẢN PHẨM TẠI ĐÂY
+// Component ProductList trong React sẽ gọi API này để lấy dữ liệu sản phẩm.
+// Đảm bảo ProductController của bạn có phương thức 'indexApi' (hoặc 'index' nếu nó trả về JSON).
+Route::get('/products', [ProductController::class, 'indexApi']); // Hoặc ProductController::class, 'index' nếu phương thức index trả về JSON

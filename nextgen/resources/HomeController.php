@@ -3,42 +3,33 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Product; // Đảm bảo bạn đã có model Product để lấy dữ liệu
+// Không cần import Product model ở đây nữa vì React sẽ fetch dữ liệu qua API
+// use App\Models\Product;
 
 /**
  * HomeController
  *
  * Controller này quản lý logic cho trang chủ của ứng dụng.
- * Nó sẽ lấy dữ liệu cần thiết từ cơ sở dữ liệu và truyền đến view.
+ * Khi tích hợp React, nó sẽ trả về một Blade view đóng vai trò là container cho ứng dụng React.
  */
 class HomeController extends Controller
 {
     /**
-     * Hiển thị trang chủ.
+     * Hiển thị trang chủ của ứng dụng.
      *
-     * Phương thức này được gọi khi người dùng truy cập vào đường dẫn gốc (/).
-     * Nó lấy một số sản phẩm mới nhất từ cơ sở dữ liệu và truyền chúng đến view 'index'.
+     * Phương thức này sẽ được gọi khi người dùng truy cập vào đường dẫn gốc (/).
+     * Nó trả về một Blade view đơn giản chứa một div để ứng dụng React mount vào.
      *
      * @return \Illuminate\Contracts\View\View Trả về một Blade view.
      */
     public function index()
     {
-        // Lấy 5 sản phẩm mới nhất để hiển thị trên trang chủ.
-        // Đảm bảo rằng bạn đã có bảng 'products' và model 'Product' tương ứng.
-        $products = Product::orderBy('created_at', 'desc')->take(5)->get();
-
-        // Bạn có thể lấy thêm các dữ liệu khác nếu trang chủ của bạn phức tạp hơn,
-        // ví dụ như danh mục, bài viết blog mới nhất, banner, v.v.
-        // $categories = Category::all();
-        // $latestNews = BlogPost::latest()->take(3)->get();
-
-        // Trả về view 'index.blade.php' và truyền biến 'products' vào view.
-        // Trong view, bạn có thể truy cập dữ liệu này thông qua biến $products.
-        return view('index', [
-            'products' => $products,
-            // 'categories' => $categories,
-            // 'latestNews' => $latestNews,
-        ]);
+        // Khi sử dụng React ở frontend, controller này chỉ cần trả về một view
+        // mà sẽ là "điểm vào" (entry point) cho ứng dụng React của bạn.
+        // Dữ liệu sẽ được React fetch thông qua các API endpoints của Laravel.
+        return view('react_app_container'); // Trả về một view mới, ví dụ: react_app_container.blade.php
     }
+
+    // Các phương thức khác của controller (nếu có)
 }
 
