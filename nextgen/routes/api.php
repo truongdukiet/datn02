@@ -98,17 +98,17 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Các route cho quản lý Người dùng
-    Route::resource('users', UserController::class); // Đã bỏ comment
+    Route::resource('users', UserController::class);
 
     // Các route cho quản lý Danh mục
     Route::resource('categories', CategoryController::class);
 
     // Các route cho quản lý Sản phẩm
-    Route::resource('products', ProductController::class); // Thêm dòng này
+    Route::resource('products', ProductController::class);
 
     // Các route cho quản lý Đơn hàng
-    Route::resource('orders', OrderController::class); // Thêm dòng này
+    Route::resource('orders', OrderController::class);
 
     // Các route cho quản lý Voucher
-    Route::resource('vouchers', VoucherController::class); // Thêm dòng này
+    Route::resource('vouchers', VoucherController::class);
 });
