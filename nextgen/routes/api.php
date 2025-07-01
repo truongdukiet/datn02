@@ -8,15 +8,22 @@ use App\Http\Controllers\AttributeController;
 use App\Http\Controllers\Cart; // Đảm bảo import đúng Controller của giỏ hàng
 use App\Http\Controllers\FavoriteProductController; // Thêm dòng này để import FavoriteProductController
 use App\Http\Controllers\ReviewController; // Thêm dòng này để import ReviewController
+use App\Http\Controllers\ProductController; // THÊM DÒNG NÀY ĐỂ IMPORT PRODUCTCONTROLLER
 
-use App\Http\Controllers\ProfileController; // Import cho các route mặc định của Breeze
-use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\UserController; // Đảm bảo dòng này đã có
-use App\Http\Controllers\Admin\CategoryController; // Đảm bảo dòng này đã có
-use App\Http\Controllers\Admin\ProductController; // Thêm dòng này
-use App\Http\Controllers\Admin\OrderController; // Thêm dòng này
-use App\Http\Controllers\Admin\VoucherController; // Thêm dòng này
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
+|
+*/
 
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});
 
 Route::apiResource('product_variants', ProductVariantController::class);
 Route::apiResource('variant_attributes', VariantAttributeController::class);
@@ -57,14 +64,13 @@ Route::prefix('favorite-products')->group(function () {
 
 // Thêm các API routes cho Reviews vào đây
 // apiResource sẽ tự động tạo các route sau:
-// GET     /api/reviews             -> index (Lấy tất cả hoặc lọc)
-// POST    /api/reviews             -> store (Thêm mới)
-// GET     /api/reviews/{review}    -> show (Lấy chi tiết 1 review)
+// GET     /api/reviews           -> index (Lấy tất cả hoặc lọc)
+// POST    /api/reviews           -> store (Thêm mới)
+// GET     /api/reviews/{review}  -> show (Lấy chi tiết 1 review)
 // PUT/PATCH /api/reviews/{review} -> update (Cập nhật)
-// DELETE /api/reviews/{review}    -> destroy (Xóa)
+// DELETE /api/reviews/{review}   -> destroy (Xóa)
 Route::apiResource('reviews', ReviewController::class);
 
-Route::get('/products', [ProductController::class, 'index']);
 
 /*
 |--------------------------------------------------------------------------
@@ -82,20 +88,20 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
+Route.get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+Route.middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route.patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route.delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 require __DIR__.'/auth.php';
 
 // --- Route Group cho Admin Panel ---
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+Route.middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Các route cho quản lý Người dùng
@@ -113,5 +119,3 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Các route cho quản lý Voucher
     Route::resource('vouchers', VoucherController::class);
 });
-
-Route::post('/orders', [OrderController::class, 'store']);
