@@ -34,4 +34,9 @@ class ProductVariant extends Model
     {
         return $this->belongsTo(Product::class, 'ProductID', 'ProductID');
     }
+
+    public function variantAttributes()
+    {
+        return $this->hasMany(\App\Models\VariantAttribute::class, 'ProductVariantID', 'ProductVariantID');
+    }
 }

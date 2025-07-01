@@ -18,4 +18,14 @@ class Product extends Model
         'created_at',
         'updated_at',
     ];
+
+    public function category()
+    {
+        return $this->belongsTo(\App\Models\Category::class, 'CategoryID', 'CategoryID');
+    }
+
+    public function variants()
+    {
+        return $this->hasMany(\App\Models\ProductVariant::class, 'ProductID', 'ProductID');
+    }
 }
