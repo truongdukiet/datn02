@@ -27,15 +27,15 @@ use App\Http\Controllers\Admin\VoucherController;
 // Route cho trang chủ, sử dụng HomeController@index
 Route::get('/', [HomeController::class, 'index']); // Đã cập nhật để sử dụng HomeController
 
-// Các route mặc định của Laravel/Breeze (đã sửa lỗi cú pháp Route. thành Route::)
+// Các route mặc định của Laravel/Breeze
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update'); // Đã sửa lỗi cú pháp
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy'); // Đã sửa lỗi cú pháp
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 require __DIR__.'/auth.php';
