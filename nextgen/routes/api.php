@@ -9,6 +9,12 @@ use App\Http\Controllers\Cart; // Đảm bảo import đúng Controller của gi
 use App\Http\Controllers\FavoriteProductController; // Thêm dòng này để import FavoriteProductController
 use App\Http\Controllers\ReviewController; // Thêm dòng này để import ReviewController
 use App\Http\Controllers\ProductController; // THÊM DÒNG NÀY ĐỂ IMPORT PRODUCTCONTROLLER
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\OrderDetailController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\AuthController;
 
 /*
 |--------------------------------------------------------------------------
