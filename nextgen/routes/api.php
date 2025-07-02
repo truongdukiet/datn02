@@ -2,13 +2,17 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ProductVariantController;
-use App\Http\Controllers\VariantAttributeController;
-use App\Http\Controllers\AttributeController;
-use App\Http\Controllers\Cart;
-use App\Http\Controllers\FavoriteProductController;
-use App\Http\Controllers\ReviewController;
-use App\Http\Controllers\ProductController;
+
+// Import các Controller của bạn.
+// CHỈ GIỮ LẠI DÒNG NÀO ĐÚNG VỚI VỊ TRÍ THỰC TẾ CỦA CONTROLLER CỦA BẠN.
+// Tôi giả định các Controller API của bạn nằm trong thư mục 'Api'.
+use App\Http\Controllers\Api\ProductVariantController;
+use App\Http\Controllers\Api\VariantAttributeController;
+use App\Http\Controllers\Api\AttributeController;
+use App\Http\Controllers\Api\CartController; // <-- Đã đổi tên Cart thành CartController ở đây!
+use App\Http\Controllers\Api\FavoriteProductController;
+use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\ProductController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,22 +25,43 @@ use App\Http\Controllers\ProductController;
 |
 */
 
+// Route cho người dùng đã xác thực (thường dùng với Laravel Sanctum)
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-// Các API Resource tự động tạo các route CRUD
+// Các API Resource tự động tạo các route CRUD (GET, POST, PUT, DELETE)
+// cho các tài nguyên tương ứng.
 Route::apiResource('product_variants', ProductVariantController::class);
 Route::apiResource('variant_attributes', VariantAttributeController::class);
-Route::apiResource('attributes', AttributeController::class); // <-- Dòng này đã được sửa!
+Route::apiResource('attributes', AttributeController::class);
+
+// Route Resource cho Product. Điều này sẽ tạo ra các route:
+// GET /api/products (index)
+// POST /api/products (store)
+// GET /api/products/{id} (show)
+// PUT/PATCH /api/products/{id} (update)
+// DELETE /api/products/{id} (destroy)
+Route::apiResource('products', ProductController::class);
+
+// Gợi ý: Nếu bạn dùng Route::apiResource('products', ProductController::class);
+// thì phương thức 'index' trong ProductController sẽ được gọi khi truy cập GET /api/products.
+// Dòng dưới đây (Route::get('/products', [ProductController::class, 'indexApi']);)
+// sẽ trở nên dư thừa hoặc gây xung đột nếu bạn muốn dùng 'index' mặc định.
+// Tôi sẽ comment nó lại. Nếu bạn thực sự cần một phương thức 'indexApi' riêng biệt,
+// hãy đảm bảo nó có đường dẫn khác hoặc bạn không dùng apiResource cho 'products'.
+// Route API cụ thể để ReactJS lấy danh sách sản phẩm
+// Route::get('/products', [ProductController::class, 'indexApi']);
+
 
 // Nhóm các route liên quan đến giỏ hàng
+// Đã sửa tất cả các lần gọi Cart::class thành CartController::class
 Route::prefix('cart')->group(function () {
-    Route::post('add', [Cart::class, 'addToCart']);
-    Route::get('view', [Cart::class, 'viewCart']);
-    Route::put('update', [Cart::class, 'updateCartItem']);
-    Route::delete('remove', [Cart::class, 'removeFromCart']);
-    Route::post('clear', [Cart::class, 'clearCart']);
+    Route::post('add', [CartController::class, 'addToCart']);
+    Route::get('view', [CartController::class, 'viewCart']);
+    Route::put('update', [CartController::class, 'updateCartItem']);
+    Route::delete('remove', [CartController::class, 'removeFromCart']);
+    Route::post('clear', [CartController::class, 'clearCart']);
 });
 
 // Nhóm các API routes cho Sản phẩm yêu thích
@@ -51,6 +76,3 @@ Route::prefix('favorite-products')->group(function () {
 
 // API Resource cho Đánh giá (Reviews)
 Route::apiResource('reviews', ReviewController::class);
-
-// Route API cụ thể để ReactJS lấy danh sách sản phẩm
-Route::get('/products', [ProductController::class, 'indexApi']);
