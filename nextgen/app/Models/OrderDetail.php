@@ -6,28 +6,28 @@ use Illuminate\Database\Eloquent\Model;
 
 class OrderDetail extends Model
 {
-    protected $primaryKey = 'orderdetailid';
+    // Khai báo đúng tên bảng trong database
+    protected $table = 'orderdetail';
+    protected $primaryKey = 'OrderDetailID';
+    public $timestamps = false; // Vì bảng không có created_at, updated_at
+
     protected $fillable = [
-        'orderid',
-        'productid',
-        'quantity',
-        'unit_price',
-        'subtotal',
+        'OrderID',
+        'ProductVariantID',
+        'Quantity',
+        'Unit_price',
+        'Subtotal',
     ];
 
-    /**
-     * Get the order that owns the order detail.
-     */
+    // Mỗi chi tiết đơn hàng thuộc về một đơn hàng
     public function order()
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Order::class, 'OrderID', 'OrderID');
     }
 
-    /**
-     * Get the product associated with the order detail.
-     */
-    public function product()
+    // Mỗi chi tiết đơn hàng thuộc về một biến thể sản phẩm
+    public function productVariant()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(ProductVariant::class, 'ProductVariantID', 'ProductVariantID');
     }
 }

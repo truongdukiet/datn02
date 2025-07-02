@@ -37,7 +37,7 @@ class OrderController extends Controller
             'updated_at' => now(),
         ]);
 
-        // Thêm chi tiết đơn hàng
+        $orderDetails = [];
         foreach ($validated['products'] as $item) {
             $variant = \App\Models\ProductVariant::find($item['productvariantid']);
             if (!$variant) continue;
@@ -46,19 +46,38 @@ class OrderController extends Controller
             $subtotal = $unitPrice * $item['quantity'];
             $totalAmount += $subtotal;
 
-            \App\Models\OrderDetail::create([
+            $orderDetail = \App\Models\OrderDetail::create([
                 'orderid' => $order->orderid,
                 'productid' => $variant->ProductID,
                 'quantity' => $item['quantity'],
                 'unit_price' => $unitPrice,
                 'subtotal' => $subtotal,
             ]);
+            $orderDetails[] = $orderDetail;
         }
 
         // Cập nhật tổng tiền cho đơn hàng
         $order->total_amount = $totalAmount;
         $order->save();
 
-        return response()->json(['status' => 'success', 'order_id' => $order->orderid]);
+        // Load lại order cùng chi tiết đơn hàng
+        $order->load(['user', 'orderDetails.product']);
+
+        return response()->json([
+            'status' => 'success',
+            'order' => $order,
+            'order_details' => $orderDetails
+        ]);
     }
+
+    public function index()
+    {
+        return \App\Models\Order::all();
+    }
+
+    public function show($id) { /* ... */ }
+
+    public function update(Request $request, $id) { /* ... */ }
+
+    public function destroy($id) { /* ... */ }
 }

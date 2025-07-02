@@ -9,6 +9,13 @@ use App\Http\Controllers\Cart; // Đảm bảo import đúng Controller của gi
 use App\Http\Controllers\FavoriteProductController; // Thêm dòng này để import FavoriteProductController
 use App\Http\Controllers\ReviewController; // Thêm dòng này để import ReviewController
 use App\Http\Controllers\ProductController; // THÊM DÒNG NÀY ĐỂ IMPORT PRODUCTCONTROLLER
+use App\Http\Controllers\Admin\DashboardController; // THÊM DÒNG NÀY ĐỂ IMPORT DASHBOARDCONTROLLER
+use App\Http\Controllers\UserController; // THÊM DÒNG NÀY ĐỂ IMPORT USERCONTROLLER
+use App\Http\Controllers\CategoryController; // THÊM DÒNG NÀY ĐỂ IMPORT CATEGORYCONTROLLER
+use App\Http\Controllers\OrderController; // THÊM DÒNG NÀY ĐỂ IMPORT ORDERCONTROLLER
+use App\Http\Controllers\VoucherController; // THÊM DÒNG NÀY ĐỂ IMPORT VOUCHERCONTROLLER
+use App\Http\Controllers\ProfileController; // THÊM DÒNG NÀY ĐỂ IMPORT PROFILECONTROLLER
+use App\Http\Controllers\OrderDetailController; // Thêm dòng này để import OrderDetailController
 
 /*
 |--------------------------------------------------------------------------
@@ -71,6 +78,10 @@ Route::prefix('favorite-products')->group(function () {
 // DELETE /api/reviews/{review}   -> destroy (Xóa)
 Route::apiResource('reviews', ReviewController::class);
 
+Route::post('/orders', [OrderController::class, 'store']);
+Route::get('/orders', [OrderController::class, 'index']);
+
+Route::apiResource('orderdetails', OrderDetailController::class);
 
 /*
 |--------------------------------------------------------------------------
@@ -88,20 +99,20 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route.get('/dashboard', function () {
+Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route.middleware('auth')->group(function () {
+Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route.patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route.delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 require __DIR__.'/auth.php';
 
 // --- Route Group cho Admin Panel ---
-Route.middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Các route cho quản lý Người dùng
