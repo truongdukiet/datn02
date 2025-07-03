@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th7 01, 2025 lúc 07:27 PM
+-- Thời gian đã tạo: Th7 03, 2025 lúc 06:53 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -191,6 +191,14 @@ CREATE TABLE `orderdetail` (
   `Subtotal` decimal(10,0) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Đang đổ dữ liệu cho bảng `orderdetail`
+--
+
+INSERT INTO `orderdetail` (`OrderDetailID`, `OrderID`, `ProductVariantID`, `Quantity`, `Unit_price`, `Subtotal`) VALUES
+(1, NULL, NULL, NULL, NULL, NULL),
+(2, NULL, NULL, NULL, NULL, NULL);
+
 -- --------------------------------------------------------
 
 --
@@ -211,6 +219,16 @@ CREATE TABLE `orders` (
   `Create_at` datetime DEFAULT NULL,
   `Update_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `orders`
+--
+
+INSERT INTO `orders` (`OrderID`, `InvoiceCode`, `UserID`, `VoucherID`, `PaymentID`, `Status`, `Total_amount`, `Receiver_name`, `Receiver_phone`, `Shipping_address`, `Create_at`, `Update_at`) VALUES
+(1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-01 18:34:13', '2025-07-01 18:34:13'),
+(2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-01 18:35:53', '2025-07-01 18:35:53'),
+(3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-01 18:40:05', '2025-07-01 18:40:05'),
+(4, NULL, NULL, NULL, NULL, NULL, 11500000, NULL, NULL, NULL, '2025-07-01 18:41:39', '2025-07-01 18:41:39');
 
 -- --------------------------------------------------------
 
@@ -234,6 +252,16 @@ CREATE TABLE `payment_gateway` (
   `PaymentID` int(11) NOT NULL,
   `Name` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `payment_gateway`
+--
+
+INSERT INTO `payment_gateway` (`PaymentID`, `Name`) VALUES
+(2, 'Chuyển khoản ngân hàng'),
+(3, 'Ví điện tử Momo'),
+(4, 'Thẻ tín dụng/ghi nợ'),
+(5, 'Thanh toán khi nhận hàng');
 
 -- --------------------------------------------------------
 
@@ -353,10 +381,8 @@ CREATE TABLE `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`) VALUES
-('DeRRorD41k792wupwsnDMKXhvFG9X57LBIP2s7JK', NULL, '127.0.0.1', 'PostmanRuntime/7.39.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiUTN1a0g1UGNmcjRvc3M3MkIxazJMYnZKa1RQOWIyd25xNldMekphOSI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjE6Imh0dHA6Ly9sb2NhbGhvc3Q6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1751390540),
-('lTT6hFjNWSzNTWGEc1l3yqrUiLKWEAF547rmWRcW', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 Edg/137.0.0.0', 'YTo0OntzOjY6Il90b2tlbiI7czo0MDoiVVVmN1BuODNXaDVmRFp1UkJjeGliUnZXZVhMNjFVbTU1Yjd0YlNQOCI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjE6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjE7fQ==', 1749222341),
-('tgkCu3kgh9tBH3B3QCbKKlhkoiHZRGMlSF9eJehG', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoidUlZbWpxbklUSEFGR2p2U1prcnltSmo5eTVZSVlQcTJWam5PWjZGVyI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjE6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1748534615),
-('Yt5nNnmEgXmmKYVaKH1tWaFXXWmGcJSJrDzQAuF6', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0', 'YTo0OntzOjY6Il90b2tlbiI7czo0MDoiRGlWYUpqZDVEZEJVS0lZMVdNREtTdG1sd0xCbmlRUWFGMG5wQktZNSI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czo0NzoiaHR0cDovL2xvY2FsaG9zdDo4MDAwL2FwaS9hZG1pbi9wcm9kdWN0cy9jcmVhdGUiO31zOjk6Il9wcmV2aW91cyI7YToxOntzOjM6InVybCI7czoyNzoiaHR0cDovL2xvY2FsaG9zdDo4MDAwL2xvZ2luIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==', 1751386712);
+('CaOBolc9HesXAVVRyoXg7IwAMSfy5DDB0ruypqJp', NULL, '127.0.0.1', 'PostmanRuntime/7.39.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiU0pteElUcHo1dGVXQ2p0eDR0QXZ2TEhHN0hYdUFxSElzeU5JUkM4NCI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjE6Imh0dHA6Ly9sb2NhbGhvc3Q6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1751561336),
+('DeRRorD41k792wupwsnDMKXhvFG9X57LBIP2s7JK', NULL, '127.0.0.1', 'PostmanRuntime/7.39.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiUTN1a0g1UGNmcjRvc3M3MkIxazJMYnZKa1RQOWIyd25xNldMekphOSI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjE6Imh0dHA6Ly9sb2NhbGhvc3Q6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1751394431);
 
 -- --------------------------------------------------------
 
@@ -437,6 +463,15 @@ CREATE TABLE `voucher` (
   `Description` text DEFAULT NULL,
   `Expiry_date` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Đang đổ dữ liệu cho bảng `voucher`
+--
+
+INSERT INTO `voucher` (`VoucherID`, `Code`, `Value`, `Quantity`, `Update_at`, `Create_at`, `Status`, `Description`, `Expiry_date`) VALUES
+(1, 'SALE20', 200000, 20, '2025-07-03 22:59:41', '2025-07-03 22:59:41', 1, 'Giảm 200k cho đơn từ 2 triệu', '2025-12-31'),
+(2, 'FREESHIP', 0, 100, '2025-07-03 22:59:41', '2025-07-03 22:59:41', 1, 'Miễn phí vận chuyển toàn quốc', '2025-12-31'),
+(3, 'SUMMER20', 200000, 30, '2025-07-03 22:59:41', '2025-07-03 22:59:41', 1, 'Giảm 200k cho đơn từ 2 triệu', '2025-08-31');
 
 --
 -- Chỉ mục cho các bảng đã đổ
@@ -640,19 +675,19 @@ ALTER TABLE `notifications`
 -- AUTO_INCREMENT cho bảng `orderdetail`
 --
 ALTER TABLE `orderdetail`
-  MODIFY `OrderDetailID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `OrderDetailID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT cho bảng `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `OrderID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `OrderID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT cho bảng `payment_gateway`
 --
 ALTER TABLE `payment_gateway`
-  MODIFY `PaymentID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `PaymentID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT cho bảng `personal_access_tokens`
@@ -694,7 +729,7 @@ ALTER TABLE `variant_attributes`
 -- AUTO_INCREMENT cho bảng `voucher`
 --
 ALTER TABLE `voucher`
-  MODIFY `VoucherID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `VoucherID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Các ràng buộc cho các bảng đã đổ

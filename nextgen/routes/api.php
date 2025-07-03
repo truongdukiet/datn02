@@ -15,6 +15,8 @@ use App\Http\Controllers\OrderDetailController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\VoucherController;
+use App\Http\Controllers\PaymentGatewayController;
 
 /*
 |--------------------------------------------------------------------------
@@ -83,3 +85,8 @@ Route::apiResource('reviews', ReviewController::class);
 // Component ProductList trong React sẽ gọi API này để lấy dữ liệu sản phẩm.
 // Đảm bảo ProductController của bạn có phương thức 'indexApi' (hoặc 'index' nếu nó trả về JSON).
 Route::get('/products', [ProductController::class, 'indexApi']); // Hoặc ProductController::class, 'index' nếu phương thức index trả về JSON
+
+Route::apiResource('vouchers', VoucherController::class);
+
+Route::apiResource('payment_gateways', PaymentGatewayController::class);
+
