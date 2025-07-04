@@ -5,11 +5,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductVariantController;
 use App\Http\Controllers\VariantAttributeController;
 use App\Http\Controllers\AttributeController;
-use App\Http\Controllers\Cart; // Đảm bảo import đúng Controller của giỏ hàng
+use App\Http\Controllers\CartController; // Đảm bảo import đúng Controller của giỏ hàng
 use App\Http\Controllers\FavoriteProductController; // Thêm dòng này để import FavoriteProductController
 use App\Http\Controllers\ReviewController; // Thêm dòng này để import ReviewController
 use App\Http\Controllers\ProductController; // THÊM DÒNG NÀY ĐỂ IMPORT PRODUCTCONTROLLER
-use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderDetailController;
 use App\Http\Controllers\HomeController;
@@ -17,6 +16,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\PaymentGatewayController;
+use App\Http\Controllers\Api\NewsApiController; // Import NewsApiController cho các API route tin tức
 
 /*
 |--------------------------------------------------------------------------
@@ -51,7 +51,8 @@ Route::apiResource('products', ProductController::class);
 // Gợi ý: Nếu bạn dùng Route::apiResource('products', ProductController::class);
 // thì phương thức 'index' trong ProductController sẽ được gọi khi truy cập GET /api/products.
 // Dòng dưới đây (Route::get('/products', [ProductController::class, 'indexApi']);)
-// sẽ trở nên dư thừa hoặc gây xung đột nếu bạn muốn dùng 'index' mặc định.
+// sẽ trở nên dư thừa hoặc gây xung đột nếu bạn muốn dùng 'indexApi' riêng biệt,
+// hãy đảm bảo nó có đường dẫn khác hoặc bạn không dùng apiResource cho 'products'.
 // Tôi sẽ comment nó lại. Nếu bạn thực sự cần một phương thức 'indexApi' riêng biệt,
 // hãy đảm bảo nó có đường dẫn khác hoặc bạn không dùng apiResource cho 'products'.
 // Route API cụ thể để ReactJS lấy danh sách sản phẩm
@@ -90,3 +91,6 @@ Route::apiResource('vouchers', VoucherController::class);
 
 Route::apiResource('payment_gateways', PaymentGatewayController::class);
 
+// Các API route cho News (được thêm vào đây)
+Route::get('/news', [NewsApiController::class, 'index']); // Lấy danh sách tin tức
+Route::get('/news/{slug}', [NewsApiController::class, 'show']); // Lấy chi tiết tin tức theo slug
