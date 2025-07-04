@@ -16,7 +16,7 @@ use App\Http\Controllers\Admin\CategoryController;  // Controller quản lý dan
 use App\Http\Controllers\Admin\ProductController;   // Controller quản lý sản phẩm Admin (Giữ nguyên tên này cho Admin ProductController)
 use App\Http\Controllers\Admin\OrderController;     // Controller quản lý đơn hàng Admin
 use App\Http\Controllers\Admin\VoucherController;   // Controller quản lý voucher Admin
-
+use App\Http\Controllers\Admin\NewsController;      // Import NewsController cho Admin
 
 /*
 |--------------------------------------------------------------------------
@@ -87,4 +87,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Các route Resource cho quản lý Voucher (CRUD)
     Route::resource('vouchers', VoucherController::class);
+
+    // Các route Resource cho quản lý Tin tức (CRUD)
+    Route::resource('news', NewsController::class);
 });
+
