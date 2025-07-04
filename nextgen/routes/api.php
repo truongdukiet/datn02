@@ -2,17 +2,21 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
-// Import các Controller của bạn.
-// CHỈ GIỮ LẠI DÒNG NÀO ĐÚNG VỚI VỊ TRÍ THỰC TẾ CỦA CONTROLLER CỦA BẠN.
-// Tôi giả định các Controller API của bạn nằm trong thư mục 'Api'.
-use App\Http\Controllers\Api\ProductVariantController;
-use App\Http\Controllers\Api\VariantAttributeController;
-use App\Http\Controllers\Api\AttributeController;
-use App\Http\Controllers\Api\CartController; // <-- Đã đổi tên Cart thành CartController ở đây!
-use App\Http\Controllers\Api\FavoriteProductController;
-use App\Http\Controllers\Api\ReviewController;
-use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\ProductVariantController;
+use App\Http\Controllers\VariantAttributeController;
+use App\Http\Controllers\AttributeController;
+use App\Http\Controllers\Cart; // Đảm bảo import đúng Controller của giỏ hàng
+use App\Http\Controllers\FavoriteProductController; // Thêm dòng này để import FavoriteProductController
+use App\Http\Controllers\ReviewController; // Thêm dòng này để import ReviewController
+use App\Http\Controllers\ProductController; // THÊM DÒNG NÀY ĐỂ IMPORT PRODUCTCONTROLLER
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\OrderDetailController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\VoucherController;
+use App\Http\Controllers\PaymentGatewayController;
 
 /*
 |--------------------------------------------------------------------------
@@ -76,3 +80,13 @@ Route::prefix('favorite-products')->group(function () {
 
 // API Resource cho Đánh giá (Reviews)
 Route::apiResource('reviews', ReviewController::class);
+
+// THÊM ROUTE API CHO SẢN PHẨM TẠI ĐÂY
+// Component ProductList trong React sẽ gọi API này để lấy dữ liệu sản phẩm.
+// Đảm bảo ProductController của bạn có phương thức 'indexApi' (hoặc 'index' nếu nó trả về JSON).
+Route::get('/products', [ProductController::class, 'indexApi']); // Hoặc ProductController::class, 'index' nếu phương thức index trả về JSON
+
+Route::apiResource('vouchers', VoucherController::class);
+
+Route::apiResource('payment_gateways', PaymentGatewayController::class);
+
