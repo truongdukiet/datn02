@@ -18,6 +18,10 @@ use App\Http\Controllers\Admin\OrderController;     // Controller quản lý đ�
 use App\Http\Controllers\Admin\VoucherController;   // Controller quản lý voucher Admin
 use App\Http\Controllers\Admin\NewsController;      // Import NewsController cho Admin
 
+// Import NewsApiController cho các API route
+use App\Http\Controllers\Api\NewsApiController;
+
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -67,6 +71,13 @@ Route::prefix('checkout')->name('checkout.')->middleware('auth')->group(function
     Route::get('/success/{orderId}', [CheckoutController::class, 'success'])->name('success'); // Trang thông báo đặt hàng thành công
 });
 
+// --- Các API Route cho Frontend React.js (News) ---
+// Các route này sẽ trả về dữ liệu JSON cho ứng dụng React.js của bạn
+Route::prefix('api')->group(function () {
+    Route::get('/news', [NewsApiController::class, 'index']); // Lấy danh sách tin tức
+    Route::get('/news/{slug}', [NewsApiController::class, 'show']); // Lấy chi tiết tin tức theo slug
+});
+
 
 // --- Route Group cho Admin Panel ---
 // Các route trong nhóm này yêu cầu người dùng đã xác thực và có vai trò 'admin'
@@ -91,4 +102,3 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Các route Resource cho quản lý Tin tức (CRUD)
     Route::resource('news', NewsController::class);
 });
-
