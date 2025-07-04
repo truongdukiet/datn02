@@ -88,7 +88,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('users', UserController::class);
 
     // Các route Resource cho quản lý Danh mục (CRUD)
-    Route::resource('categories', CategoryController::class);
+    Route::resource('categories', CategoryController::class); // Đã có sẵn và đúng
 
     // Các route Resource cho quản lý Sản phẩm (CRUD)
     Route::resource('products', ProductController::class);

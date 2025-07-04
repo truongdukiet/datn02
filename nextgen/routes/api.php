@@ -17,7 +17,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\PaymentGatewayController;
 use App\Http\Controllers\Api\NewsApiController; // Import NewsApiController cho các API route tin tức
-use App\Http\Controllers\CategoryController; // THÊM DÒNG NÀY ĐỂ IMPORT CATEGORYCONTROLLER
+use App\Http\Controllers\Api\CategoryController; // ĐÃ THAY ĐỔI DÒNG NÀY ĐỂ IMPORT CATEGORYCONTROLLER TỪ THƯ MỤC API
 
 /*
 |--------------------------------------------------------------------------
@@ -39,8 +39,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 // cho các tài nguyên tương ứng.
 Route::apiResource('product_variants', ProductVariantController::class);
 Route::apiResource('variant_attributes', VariantAttributeController::class);
-Route::apiResource('attributes', AttributeController::class);
-Route::apiResource('categories', CategoryController::class); // THÊM DÒNG NÀY CHO CATEGORY API RESOURCE
+Route::apiResource('attributes',AttributeController::class);
+Route::apiResource('categories', CategoryController::class); // ĐÃ THÊM DÒNG NÀY CHO CATEGORY API RESOURCE
 
 // Route Resource cho Product. Điều này sẽ tạo ra các route:
 // GET /api/products (index)
