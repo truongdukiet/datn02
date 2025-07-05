@@ -2,56 +2,49 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens; // Đảm bảo đã import Trait này
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable; // Thêm HasApiTokens vào đây
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $primaryKey = 'userid';
+    protected $table = 'users'; // Chỉ định tên bảng rõ ràng
+    protected $primaryKey = 'UserID'; // Đảm bảo khớp với tên cột trong DB
+    public $timestamps = false; // Tắt timestamps tự động vì tên cột khác (Created_at, Updated_at)
 
-     protected $fillable = [
-        'username',
-        'password',
-        'email',
-        'role',
-        'full_name',
-        'phone',
-        'address',
-        'status',
-        'created_at',
-        'updated_at',
+    protected $fillable = [
+        'Username', // Đảm bảo khớp với tên cột trong DB
+        'Password', // Đảm bảo khớp với tên cột trong DB
+        'Email',    // Đảm bảo khớp với tên cột trong DB
+        'Role',     // Đảm bảo khớp với tên cột trong DB
+        'Fullname', // Đảm bảo khớp với tên cột trong DB (Fullname thay vì full_name)
+        'Phone',    // Đảm bảo khớp với tên cột trong DB
+        'Address',  // Đảm bảo khớp với tên cột trong DB
+        'Status',   // Đảm bảo khớp với tên cột trong DB
+        'Created_at', // Đảm bảo khớp với tên cột trong DB
+        'Updated_at', // Đảm bảo khớp với tên cột trong DB
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
-        'password',
+        'Password', // Đảm bảo khớp với tên cột trong DB
         'remember_token',
     ];
 
+    protected $casts = [ // Sử dụng thuộc tính $casts thay vì phương thức casts() để nhất quán
+        'email_verified_at' => 'datetime',
+        'Password' => 'hashed', // Đảm bảo khớp với tên cột trong DB
+    ];
+
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Định nghĩa mối quan hệ với Cart.
+     * Một User có nhiều Cart items.
      */
-    protected function casts(): array
+    public function cartItems()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->hasMany(Cart::class, 'UserID', 'UserID');
     }
 }

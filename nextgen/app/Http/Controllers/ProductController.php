@@ -116,5 +116,13 @@ class ProductController extends Controller
         $product->save();
 
         return response()->json(['message' => 'Sản phẩm đã được công khai lại.']);
+
+        // Lấy tất cả sản phẩm, kèm biến thể và category (nếu muốn)
+        $products = \App\Models\Product::with(['category', 'variants.variantAttributes'])->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $products
+        ]);
     }
 }
