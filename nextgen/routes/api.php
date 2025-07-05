@@ -34,8 +34,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-// Product, Category, Variant, Attribute, Order, User, Voucher, PaymentGateway, Review, VariantAttribute
+// Product routes - chỉ dùng apiResource, không dùng prefix group
+Route::get('products/search', [ProductController::class, 'search']);
 Route::apiResource('products', ProductController::class);
+
+// Category, Variant, Attribute, Order, User, Voucher, PaymentGateway, Review, VariantAttribute
 Route::apiResource('categories', CategoryController::class);
 Route::apiResource('product-variants', ProductVariantController::class);
 Route::apiResource('attributes', AttributeController::class);

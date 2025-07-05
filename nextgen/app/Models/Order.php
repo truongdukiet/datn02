@@ -29,7 +29,7 @@ class Order extends Model
      */
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(\App\Models\User::class, 'UserID', 'UserID');
     }
 
     /**
@@ -43,6 +43,16 @@ class Order extends Model
     public function orderDetails()
     {
         return $this->hasMany(OrderDetail::class, 'orderid', 'orderid');
+    }
+
+    public function voucher()
+    {
+        return $this->belongsTo(\App\Models\Voucher::class, 'VoucherID', 'VoucherID');
+    }
+
+    public function paymentGateway()
+    {
+        return $this->belongsTo(\App\Models\PaymentGateway::class, 'PaymentID', 'PaymentID');
     }
 
 }
