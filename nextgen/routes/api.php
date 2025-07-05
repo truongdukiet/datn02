@@ -19,6 +19,7 @@ use App\Http\Controllers\PaymentGatewayController;
 use App\Http\Controllers\Api\NewsApiController; // Import NewsApiController cho các API route tin tức
 use App\Http\Controllers\Api\CategoryController; // ĐÃ THAY ĐỔI DÒNG NÀY ĐỂ IMPORT CATEGORYCONTROLLER TỪ THƯ MỤC API
 
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -96,3 +97,16 @@ Route::apiResource('payment_gateways', PaymentGatewayController::class);
 // Các API route cho News (được thêm vào đây)
 Route::get('/news', [NewsApiController::class, 'index']); // Lấy danh sách tin tức
 Route::get('/news/{slug}', [NewsApiController::class, 'show']); // Lấy chi tiết tin tức theo slug
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});
+
+// Định nghĩa các route cho AttributeController
+// Giả sử bạn muốn lấy danh sách thuộc tính và tạo thuộc tính mới
+Route::get('/attributes', [AttributeController::class, 'index']); // Lấy tất cả
+Route::post('/attributes', [AttributeController::class, 'store']); // Tạo mới
+
+// Bạn có thể thêm các route khác như show, update, destroy nếu cần
+// Route::get('/attributes/{id}', [AttributeController::class, 'show']);
+// Route::put('/attributes/{id}', [AttributeController::class, 'update']);
+// Route::delete('/attributes/{id}', [AttributeController::class, 'destroy']);
