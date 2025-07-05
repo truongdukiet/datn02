@@ -7,6 +7,7 @@ use App\Http\Controllers\VariantAttributeController;
 use App\Http\Controllers\AttributeController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\UserController;
 
 // Route::apiResource('product_variants', ProductVariantController::class);
 // Route::apiResource('variant_attributes', VariantAttributeController::class);
@@ -15,9 +16,7 @@ use App\Http\Controllers\ProductController;
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
 });
-Route::get('/products', function () {
-    return response()->json(['message' => 'API hoạt động']);
-});
+
 // Category routes
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
@@ -39,3 +38,12 @@ Route::get('/variants/{id}', [ProductVariantController::class, 'show']);
 Route::post('/variants', [ProductVariantController::class, 'store']);
 Route::put('/variants/{id}', [ProductVariantController::class, 'update']);
 Route::delete('/variants/{id}', [ProductVariantController::class, 'destroy']);
+
+
+Route::get('/users', [UserController::class, 'index']);
+Route::get('/users/{id}', [UserController::class, 'show']);
+Route::post('/users/register', [UserController::class, 'register']);
+Route::post('/users/login', [UserController::class, 'login']);
+Route::put('/users/{id}', [UserController::class, 'update']);
+Route::delete('/users/{id}', [UserController::class, 'destroy']);
+

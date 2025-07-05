@@ -21,6 +21,7 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
+
         $validatedData = $request->validate([
             'CategoryID' => 'nullable|integer|exists:categories,CategoryID',
             'Name' => 'required|string|max:255',
@@ -95,26 +96,27 @@ class ProductController extends Controller
 
         return response()->json($query->get());
     }
-
     public function destroy($id)
     {
         $product = Product::find($id);
-        if (!$product) return response()->json(['message' => 'Không tìm thấy sản phẩm'], 404);
 
-        $product->Status = 0; 
-        $product->save();
+        if (!$product)
+            return response()->json(['message' => 'Không tìm thấy sản phẩm'], 404);
 
-        return response()->json(['message' => 'Sản phẩm đã được ẩn (chưa đăng bán).']);
+        $product->delete(); 
+
+        return response()->json(['message' => 'Sản phẩm đã được xóa (ẩn mềm).']);
     }
 
     public function restore($id)
     {
-        $product = Product::find($id);
-        if (!$product) return response()->json(['message' => 'Không tìm thấy sản phẩm'], 404);
+        $product = Product::withTrashed()->find($id);
 
-        $product->Status = 1;
-        $product->save();
+        if (!$product)
+            return response()->json(['message' => 'Không tìm thấy sản phẩm'], 404);
 
-        return response()->json(['message' => 'Sản phẩm đã được công khai lại.']);
+        $product->restore();
+
+        return response()->json(['message' => 'Sản phẩm đã được phục hồi!']);
     }
 }
