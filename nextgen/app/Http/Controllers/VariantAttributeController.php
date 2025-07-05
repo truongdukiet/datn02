@@ -9,35 +9,36 @@ class VariantAttributeController extends Controller
 {
     public function index()
     {
-        return VariantAttribute::all();
+        return response()->json(VariantAttribute::with('attribute')->get());
     }
 
     public function show($id)
     {
-        return VariantAttribute::findOrFail($id);
+        $attr = VariantAttribute::with('attribute')->find($id);
+        if (!$attr) return response()->json(['message' => 'Not found'], 404);
+        return response()->json($attr);
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'ProductVariantID' => 'required|exists:product_variants,ProductVariantID',
-            'AttributeID' => 'required|exists:attributes,AttributeID',
-            'value' => 'required|string',
-        ]);
-
-        return VariantAttribute::create($request->all());
+        $request->validate(['ProductVariantID' => 'required', 'AttributeID' => 'required', 'value' => 'required']);
+        $attr = VariantAttribute::create($request->all());
+        return response()->json($attr, 201);
     }
 
     public function update(Request $request, $id)
     {
-        $attribute = VariantAttribute::findOrFail($id);
-        $attribute->update($request->all());
-        return $attribute;
+        $attr = VariantAttribute::find($id);
+        if (!$attr) return response()->json(['message' => 'Not found'], 404);
+        $attr->update($request->all());
+        return response()->json($attr);
     }
 
     public function destroy($id)
     {
-        VariantAttribute::destroy($id);
-        return response()->json(['success' => 'Variant attribute deleted successfully']);
+        $attr = VariantAttribute::find($id);
+        if (!$attr) return response()->json(['message' => 'Not found'], 404);
+        $attr->delete();
+        return response()->json(['message' => 'Deleted']);
     }
 }

@@ -8,7 +8,6 @@ class ProductVariant extends Model
 {
     // Tên bảng trong cơ sở dữ liệu
     protected $table = 'productvariants'; // Theo cấu trúc SQL dump của bạn
-
     // Khóa chính của bảng
     protected $primaryKey = 'ProductVariantID';
 
@@ -35,7 +34,7 @@ class ProductVariant extends Model
         return $this->belongsTo(Product::class, 'ProductID', 'ProductID');
     }
 
-    public function variantAttributes()
+    public function attributes()
     {
         return $this->hasMany(\App\Models\VariantAttribute::class, 'ProductVariantID', 'ProductVariantID');
     }

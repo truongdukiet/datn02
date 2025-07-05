@@ -13,13 +13,19 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  */
 class Product extends Model
 {
+protected $table = 'products';
+    protected $primaryKey = 'ProductID';
+    public $timestamps = false;
+
+    protected $fillable = ['CategoryID', 'Name', 'Description', 'Image', 'base_price', 'Status', 'Create_at', 'Update_at'];
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'CategoryID', 'CategoryID');
     use HasFactory;
 
     // Tên bảng nếu khác với tên số nhiều của model (mặc định là 'products')
     // protected $table = 'products';
-
-    // Định nghĩa khóa chính nếu nó không phải là 'id'
-    protected $primaryKey = 'productid';
 
     // Cho phép gán hàng loạt (mass assignment) cho các cột này.
     // Điều này có nghĩa là bạn có thể tạo hoặc cập nhật một bản ghi
@@ -45,8 +51,9 @@ class Product extends Model
 
     public function variants()
     {
-        return $this->hasMany(ProductVariant::class, 'productid', 'productid');
+        return $this->hasMany(ProductVariant::class, 'ProductID', 'ProductID');
     }
+
 
     // Nếu bạn không muốn Laravel tự động quản lý created_at và updated_at,
     // bạn có thể đặt protected $timestamps = false;
