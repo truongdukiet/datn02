@@ -4,43 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use Illuminate\Http\Request;
-use App\Models\Category; // Đảm bảo bạn đã tạo Category Model
 
 class CategoryController extends Controller
 {
-    public function index()
-    {
-        return response()->json(Category::with('products')->get());
-    }
-
-    public function show($id)
-    {
-        $category = Category::with('products')->find($id);
-        if (!$category) return response()->json(['message' => 'Not found'], 404);
-        return response()->json($category);
-    }
-
-    public function store(Request $request)
-    {
-        $request->validate(['Name' => 'required|string|max:255']);
-        $category = Category::create($request->all());
-        return response()->json($category, 201);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $category = Category::find($id);
-        if (!$category) return response()->json(['message' => 'Not found'], 404);
-        $category->update($request->all());
-        return response()->json($category);
-    }
-
-    public function destroy($id)
-    {
-        $category = Category::find($id);
-        if (!$category) return response()->json(['message' => 'Not found'], 404);
-        $category->delete();
-        return response()->json(['message' => 'Deleted']);
     /**
      * Display a listing of the resource.
      * Lấy danh sách tất cả các category.
@@ -50,7 +16,7 @@ class CategoryController extends Controller
     public function index()
     {
         // Lấy tất cả các category từ database
-        $categories = Category::all();
+        $categories = Category::with('products')->get();
         // Trả về danh sách dưới dạng JSON
         return response()->json($categories);
     }
@@ -66,8 +32,8 @@ class CategoryController extends Controller
     {
         // Validate dữ liệu đầu vào
         $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name',
-            'description' => 'nullable|string',
+            'Name' => 'required|string|max:255|unique:categories,Name',
+            'Description' => 'nullable|string',
         ]);
 
         // Tạo category mới
@@ -87,7 +53,10 @@ class CategoryController extends Controller
     public function show($id)
     {
         // Tìm category theo ID, nếu không tìm thấy sẽ tự động trả về 404
-        $category = Category::findOrFail($id);
+        $category = Category::with('products')->find($id);
+        if (!$category) {
+            return response()->json(['message' => 'Category not found'], 404);
+        }
         // Trả về category dưới dạng JSON
         return response()->json($category);
     }
@@ -103,12 +72,15 @@ class CategoryController extends Controller
     public function update(Request $request, $id)
     {
         // Tìm category theo ID
-        $category = Category::findOrFail($id);
+        $category = Category::find($id);
+        if (!$category) {
+            return response()->json(['message' => 'Category not found'], 404);
+        }
 
         // Validate dữ liệu đầu vào, bỏ qua tên hiện tại khi kiểm tra unique
         $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name,' . $id,
-            'description' => 'nullable|string',
+            'Name' => 'required|string|max:255|unique:categories,Name,' . $id . ',CategoryID',
+            'Description' => 'nullable|string',
         ]);
 
         // Cập nhật thông tin category
@@ -128,10 +100,14 @@ class CategoryController extends Controller
     public function destroy($id)
     {
         // Tìm category theo ID và xóa
-        $category = Category::findOrFail($id);
+        $category = Category::find($id);
+        if (!$category) {
+            return response()->json(['message' => 'Category not found'], 404);
+        }
+        
         $category->delete();
 
-        // Trả về phản hồi rỗng với mã 204 (No Content)
-        return response()->json(null, 204);
+        // Trả về phản hồi với mã 200 và thông báo
+        return response()->json(['message' => 'Category deleted successfully']);
     }
 }

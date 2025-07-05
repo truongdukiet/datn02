@@ -16,10 +16,8 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        // Lấy tất cả các category từ database
-        $categories = Category::all();
-        // Trả về danh sách dưới dạng JSON
-        return response()->json($categories);
+        $categories = Category::with('products')->get();
+        return response()->json(['success' => true, 'data' => $categories]);
     }
 
     /**
@@ -31,17 +29,12 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
-        // Validate dữ liệu đầu vào
-        $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name',
-            'description' => 'nullable|string',
+        $validated = $request->validate([
+            'Name' => 'required|string|max:255|unique:categories,Name',
+            'Description' => 'nullable|string',
         ]);
-
-        // Tạo category mới
-        $category = Category::create($request->all());
-
-        // Trả về category vừa tạo dưới dạng JSON với mã 201 (Created)
-        return response()->json($category, 201);
+        $category = Category::create($validated);
+        return response()->json(['success' => true, 'data' => $category], 201);
     }
 
     /**
@@ -53,10 +46,11 @@ class CategoryController extends Controller
      */
     public function show($id)
     {
-        // Tìm category theo ID, nếu không tìm thấy sẽ tự động trả về 404
-        $category = Category::findOrFail($id);
-        // Trả về category dưới dạng JSON
-        return response()->json($category);
+        $category = Category::with('products')->find($id);
+        if (!$category) {
+            return response()->json(['success' => false, 'message' => 'Category not found'], 404);
+        }
+        return response()->json(['success' => true, 'data' => $category]);
     }
 
     /**
@@ -69,20 +63,16 @@ class CategoryController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // Tìm category theo ID
-        $category = Category::findOrFail($id);
-
-        // Validate dữ liệu đầu vào, bỏ qua tên hiện tại khi kiểm tra unique
-        $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name,' . $id,
-            'description' => 'nullable|string',
+        $category = Category::find($id);
+        if (!$category) {
+            return response()->json(['success' => false, 'message' => 'Category not found'], 404);
+        }
+        $validated = $request->validate([
+            'Name' => 'sometimes|string|max:255|unique:categories,Name,' . $id . ',CategoryID',
+            'Description' => 'nullable|string',
         ]);
-
-        // Cập nhật thông tin category
-        $category->update($request->all());
-
-        // Trả về category đã cập nhật dưới dạng JSON
-        return response()->json($category);
+        $category->update($validated);
+        return response()->json(['success' => true, 'data' => $category]);
     }
 
     /**
@@ -94,11 +84,11 @@ class CategoryController extends Controller
      */
     public function destroy($id)
     {
-        // Tìm category theo ID và xóa
-        $category = Category::findOrFail($id);
+        $category = Category::find($id);
+        if (!$category) {
+            return response()->json(['success' => false, 'message' => 'Category not found'], 404);
+        }
         $category->delete();
-
-        // Trả về phản hồi rỗng với mã 204 (No Content)
-        return response()->json(null, 204);
+        return response()->json(['success' => true, 'message' => 'Category deleted']);
     }
 }

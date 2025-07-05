@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController; // Import HomeController cho trang chủ
-use App\Http\Controllers\ProfileController; // Import cho các route mặc định của Breeze
+
 
 // Import các Controller mới cho giao diện người dùng (frontend)
 use App\Http\Controllers\ProductDetailController; // Controller cho trang chi tiết sản phẩm
@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\NewsController;      // Import NewsController cho
 
 // Import NewsApiController cho các API route
 use App\Http\Controllers\Api\NewsApiController;
+use App\Http\Controllers\PaymentGatewayController;
 
 
 /*
@@ -42,11 +43,11 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // Nhóm các route liên quan đến Profile người dùng, yêu cầu xác thực
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
+// Route::middleware('auth')->group(function () {
+//     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+//     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+//     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+// });
 
 // Bao gồm các route xác thực (login, register, logout, password reset) từ file auth.php
 require __DIR__.'/auth.php';

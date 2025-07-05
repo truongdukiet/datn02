@@ -49,20 +49,41 @@ class NewsApiController extends Controller
         return response()->json($news);
     }
 
-    // Bạn có thể thêm các phương thức store, update, destroy tại đây nếu React frontend cần tương tác ghi dữ liệu.
-    // Ví dụ về store:
-    /*
-    public function store(Request $request): JsonResponse
+    public function store(Request $request)
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            // ... các validation khác
+        $validated = $request->validate([
+            'Title' => 'required|string|max:255',
+            'Content' => 'required|string',
+            'Image' => 'nullable|string|max:255',
+            'Status' => 'nullable|boolean',
         ]);
-
-        $news = News::create($request->all()); // Cần đảm bảo $fillable trong News model
-
-        return response()->json($news, 201); // Trả về 201 Created
+        $news = News::create($validated);
+        return response()->json(['success' => true, 'data' => $news], 201);
     }
-    */
+
+    public function update(Request $request, $id)
+    {
+        $news = News::find($id);
+        if (!$news) {
+            return response()->json(['success' => false, 'message' => 'News not found'], 404);
+        }
+        $validated = $request->validate([
+            'Title' => 'sometimes|string|max:255',
+            'Content' => 'sometimes|string',
+            'Image' => 'nullable|string|max:255',
+            'Status' => 'nullable|boolean',
+        ]);
+        $news->update($validated);
+        return response()->json(['success' => true, 'data' => $news]);
+    }
+
+    public function destroy($id)
+    {
+        $news = News::find($id);
+        if (!$news) {
+            return response()->json(['success' => false, 'message' => 'News not found'], 404);
+        }
+        $news->delete();
+        return response()->json(['success' => true, 'message' => 'News deleted']);
+    }
 }

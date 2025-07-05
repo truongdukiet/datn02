@@ -16,11 +16,8 @@ class ProductController extends Controller
     public function index()
     {
         // Trả về tất cả sản phẩm dưới dạng JSON
-        $products = Product::all();
-        return response()->json([
-            'status' => 'success',
-            'data' => $products
-        ]);
+        $products = Product::with(['category', 'variants.attributes.attribute', 'reviews'])->get();
+        return response()->json(['success' => true, 'data' => $products]);
     }
 
     /**
@@ -32,20 +29,19 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         // Validate dữ liệu đầu vào
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
+        $validated = $request->validate([
+            'CategoryID' => 'required|integer|exists:categories,CategoryID',
+            'Name' => 'required|string|max:255',
+            'Description' => 'nullable|string',
+            'Image' => 'nullable|string',
+            'base_price' => 'required|numeric|min:0',
+            'Status' => 'nullable|boolean',
         ]);
 
         // Tạo sản phẩm mới
-        $product = Product::create($request->all());
+        $product = Product::create($validated);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Product created successfully!',
-            'data' => $product
-        ], 201); // 201 Created
+        return response()->json(['success' => true, 'data' => $product], 201); // 201 Created
     }
 
     /**
@@ -56,20 +52,13 @@ class ProductController extends Controller
      */
     public function show($id)
     {
-        // Tìm sản phẩm theo ID
-        $product = Product::find($id);
+        $product = Product::with(['category', 'variants.attributes.attribute', 'reviews'])->find($id);
 
         if (!$product) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Product not found!'
-            ], 404); // 404 Not Found
+            return response()->json(['success' => false, 'message' => 'Product not found'], 404);
         }
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $product
-        ]);
+        return response()->json(['success' => true, 'data' => $product]);
     }
 
     /**
@@ -84,27 +73,23 @@ class ProductController extends Controller
         $product = Product::find($id);
 
         if (!$product) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Product not found!'
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Product not found'], 404);
         }
 
         // Validate dữ liệu đầu vào
-        $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'sometimes|required|numeric|min:0',
+        $validated = $request->validate([
+            'CategoryID' => 'sometimes|integer|exists:categories,CategoryID',
+            'Name' => 'sometimes|string|max:255',
+            'Description' => 'nullable|string',
+            'Image' => 'nullable|string',
+            'base_price' => 'sometimes|numeric|min:0',
+            'Status' => 'nullable|boolean',
         ]);
 
         // Cập nhật sản phẩm
-        $product->update($request->all());
+        $product->update($validated);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Product updated successfully!',
-            'data' => $product
-        ]);
+        return response()->json(['success' => true, 'data' => $product]);
     }
 
     /**
@@ -118,17 +103,11 @@ class ProductController extends Controller
         $product = Product::find($id);
 
         if (!$product) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Product not found!'
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Product not found'], 404);
         }
 
         $product->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Product deleted successfully!'
-        ], 204); // 204 No Content
+        return response()->json(['success' => true, 'message' => 'Product deleted']);
     }
 }
