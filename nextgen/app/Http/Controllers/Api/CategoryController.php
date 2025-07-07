@@ -16,8 +16,18 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        $categories = Category::with('products')->get();
-        return response()->json(['success' => true, 'data' => $categories]);
+        $categories = Category::all();
+        $data = $categories->map(function($category) {
+            return [
+                'CategoryID' => $category->CategoryID,
+                'Name' => $category->Name,
+                'Description' => $category->Description,
+                'Image' => $category->Image,
+                'Create_at' => $category->Create_at,
+                'Update_at' => $category->Update_at,
+            ];
+        });
+        return response()->json(['success' => true, 'data' => $data]);
     }
 
     /**
@@ -32,9 +42,33 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'Name' => 'required|string|max:255|unique:categories,Name',
             'Description' => 'nullable|string',
+            'Image' => 'nullable', // Có thể là file hoặc string
         ]);
+
+        // Xử lý upload file ảnh nếu có
+        if ($request->hasFile('Image')) {
+            $imagePath = $request->file('Image')->store('categories', 'public');
+            $validated['Image'] = $imagePath;
+        } elseif ($request->has('Image')) {
+            // Nếu là chuỗi (đường dẫn ảnh)
+            $validated['Image'] = $request->input('Image');
+        } else {
+            $validated['Image'] = null;
+        }
+        $validated['Create_at'] = now();
+        $validated['Update_at'] = now();
         $category = Category::create($validated);
-        return response()->json(['success' => true, 'data' => $category], 201);
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'CategoryID' => $category->CategoryID,
+                'Name' => $category->Name,
+                'Description' => $category->Description,
+                'Image' => $category->Image,
+                'Create_at' => $category->Create_at,
+                'Update_at' => $category->Update_at,
+            ]
+        ], 201);
     }
 
     /**
@@ -46,11 +80,21 @@ class CategoryController extends Controller
      */
     public function show($id)
     {
-        $category = Category::with('products')->find($id);
+        $category = Category::find($id);
         if (!$category) {
             return response()->json(['success' => false, 'message' => 'Category not found'], 404);
         }
-        return response()->json(['success' => true, 'data' => $category]);
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'CategoryID' => $category->CategoryID,
+                'Name' => $category->Name,
+                'Description' => $category->Description,
+                'Image' => $category->Image,
+                'Create_at' => $category->Create_at,
+                'Update_at' => $category->Update_at,
+            ]
+        ]);
     }
 
     /**
@@ -70,9 +114,28 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'Name' => 'sometimes|string|max:255|unique:categories,Name,' . $id . ',CategoryID',
             'Description' => 'nullable|string',
+            'Image' => 'nullable',
         ]);
+        // Xử lý upload file ảnh nếu có
+        if ($request->hasFile('Image')) {
+            $imagePath = $request->file('Image')->store('categories', 'public');
+            $validated['Image'] = $imagePath;
+        } elseif ($request->has('Image')) {
+            $validated['Image'] = $request->input('Image');
+        }
+        $validated['Update_at'] = now();
         $category->update($validated);
-        return response()->json(['success' => true, 'data' => $category]);
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'CategoryID' => $category->CategoryID,
+                'Name' => $category->Name,
+                'Description' => $category->Description,
+                'Image' => $category->Image,
+                'Create_at' => $category->Create_at,
+                'Update_at' => $category->Update_at,
+            ]
+        ]);
     }
 
     /**

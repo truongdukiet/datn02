@@ -2,6 +2,9 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
+use App\Models\User;
+use Illuminate\Auth\Events\Verified;
 
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ProductController;
@@ -17,6 +20,7 @@ use App\Http\Controllers\Api\FavoriteProductController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\VariantAttributeController;
 use App\Http\Controllers\Api\NewsApiController;
+use App\Http\Controllers\Api\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -72,3 +76,30 @@ Route::get('/news/{slug}', [NewsApiController::class, 'show']);
 
 // Nếu muốn CRUD đầy đủ cho news, dùng:
 // Route::apiResource('news', NewsApiController::class);
+
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::get('/verify-email/{id}/{hash}', function (Request $request, $id, $hash) {
+    $user = User::findOrFail($id);
+
+    if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+        return response()->json(['success' => false, 'message' => 'Invalid verification link.'], 400);
+    }
+
+    if ($user->hasVerifiedEmail()) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Email already verified.',
+            'email_verified_at' => $user->email_verified_at,
+        ]);
+    }
+
+    $user->markEmailAsVerified();
+    event(new Verified($user));
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Email verified successfully.',
+        'email_verified_at' => $user->email_verified_at,
+    ]);
+});

@@ -21,6 +21,9 @@ use App\Http\Controllers\Admin\NewsController;      // Import NewsController cho
 // Import NewsApiController cho các API route
 use App\Http\Controllers\Api\NewsApiController;
 use App\Http\Controllers\PaymentGatewayController;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Auth\Events\Registered;
+use App\Models\User;
 
 
 /*
@@ -103,3 +106,24 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Các route Resource cho quản lý Tin tức (CRUD)
     Route::resource('news', NewsController::class);
 });
+
+Route::get('/test-mail', function () {
+    Mail::raw('Test gửi mail thành công!', function ($message) {
+        $message->to('chauttc01@gmail.com')
+                ->subject('Test Mail');
+    });
+    return 'Đã gửi mail!';
+});
+
+Route::get('/test-verify-mail/{id}', function ($id) {
+    $user = \App\Models\User::find($id);
+    event(new Registered($user));
+    return 'Đã gửi mail xác thực!';
+});
+
+Route::get('/login', function () {
+    return '<h2>Đăng nhập</h2><p>Trang đăng nhập đang được phát triển.</p>';
+});
+
+
+

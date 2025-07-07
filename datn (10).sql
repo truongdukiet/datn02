@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th7 03, 2025 lúc 06:53 PM
+-- Thời gian đã tạo: Th7 07, 2025 lúc 03:13 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -91,6 +91,7 @@ CREATE TABLE `categories` (
   `CategoryID` int(11) NOT NULL,
   `Name` varchar(255) DEFAULT NULL,
   `Description` text DEFAULT NULL,
+  `Image` varchar(255) NOT NULL,
   `Create_at` datetime DEFAULT NULL,
   `Update_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -99,19 +100,20 @@ CREATE TABLE `categories` (
 -- Đang đổ dữ liệu cho bảng `categories`
 --
 
-INSERT INTO `categories` (`CategoryID`, `Name`, `Description`, `Create_at`, `Update_at`) VALUES
-(1, 'Bàn ăn', 'Các loại bàn ăn gỗ, bàn ăn tròn, bàn ăn hiện đại', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
-(2, 'Ghế', 'Các loại ghế ăn, ghế sofa, ghế gỗ tự nhiên', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
-(3, 'Sofa', 'Sofa da, sofa vải, sofa gỗ', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
-(4, 'Tủ bếp', 'Tủ bếp hiện đại, tủ bếp gỗ', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
-(5, 'Tủ giày', 'Tủ giày gỗ, tủ giày thông minh', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
-(6, 'Tủ quần áo', 'Tủ quần áo gỗ, tủ quần áo nhiều ngăn', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
-(7, 'Kệ tivi', 'Kệ tivi phòng khách', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
-(8, 'Giường ngủ', 'Giường ngủ gỗ tự nhiên, giường ngủ hiện đại', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
-(9, 'Nệm', 'Nệm cao su, nệm lò xo, nệm mousse', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
-(10, 'Combo bàn ăn', 'Combo bàn ăn và ghế', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
-(11, 'Combo sofa', 'Combo sofa phòng khách', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
-(12, 'Gương - Ngủ', 'Gương phòng ngủ, gương trang trí', '2025-07-01 22:40:00', '2025-07-01 22:40:00');
+INSERT INTO `categories` (`CategoryID`, `Name`, `Description`, `Image`, `Create_at`, `Update_at`) VALUES
+(1, 'Bàn ăn cao cấp', 'Các loại bàn ăn chất lượng cao, thiết kế hiện đại.', '', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
+(2, 'Ghế', 'Các loại ghế ăn, ghế sofa, ghế gỗ tự nhiên', '', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
+(3, 'Sofa', 'Sofa da, sofa vải, sofa gỗ', '', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
+(4, 'Tủ bếp', 'Tủ bếp hiện đại, tủ bếp gỗ', '', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
+(5, 'Tủ giày', 'Tủ giày gỗ, tủ giày thông minh', '', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
+(6, 'Tủ quần áo', 'Tủ quần áo gỗ, tủ quần áo nhiều ngăn', '', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
+(7, 'Kệ tivi', 'Kệ tivi phòng khách', '', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
+(8, 'Giường ngủ', 'Giường ngủ gỗ tự nhiên, giường ngủ hiện đại', '', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
+(9, 'Nệm', 'Nệm cao su, nệm lò xo, nệm mousse', '', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
+(10, 'Combo bàn ăn', 'Combo bàn ăn và ghế', '', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
+(11, 'Combo sofa', 'Combo sofa phòng khách', '', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
+(12, 'Gương - Ngủ', 'Gương phòng ngủ, gương trang trí', '', '2025-07-01 22:40:00', '2025-07-01 22:40:00'),
+(13, 'Thảm lông', 'Các loại thảm.', '', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -197,7 +199,8 @@ CREATE TABLE `orderdetail` (
 
 INSERT INTO `orderdetail` (`OrderDetailID`, `OrderID`, `ProductVariantID`, `Quantity`, `Unit_price`, `Subtotal`) VALUES
 (1, NULL, NULL, NULL, NULL, NULL),
-(2, NULL, NULL, NULL, NULL, NULL);
+(2, NULL, NULL, NULL, NULL, NULL),
+(3, 5, 5, 2, 6000000, NULL);
 
 -- --------------------------------------------------------
 
@@ -225,10 +228,11 @@ CREATE TABLE `orders` (
 --
 
 INSERT INTO `orders` (`OrderID`, `InvoiceCode`, `UserID`, `VoucherID`, `PaymentID`, `Status`, `Total_amount`, `Receiver_name`, `Receiver_phone`, `Shipping_address`, `Create_at`, `Update_at`) VALUES
-(1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-01 18:34:13', '2025-07-01 18:34:13'),
+(1, NULL, NULL, NULL, NULL, 'completed', 15000000, 'Nguyen Van B', '0987654321', '456 Đường XYZ', '2025-07-01 18:34:13', '2025-07-05 17:24:18'),
 (2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-01 18:35:53', '2025-07-01 18:35:53'),
 (3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-01 18:40:05', '2025-07-01 18:40:05'),
-(4, NULL, NULL, NULL, NULL, NULL, 11500000, NULL, NULL, NULL, '2025-07-01 18:41:39', '2025-07-01 18:41:39');
+(4, NULL, NULL, NULL, NULL, NULL, 11500000, NULL, NULL, NULL, '2025-07-01 18:41:39', '2025-07-01 18:41:39'),
+(5, NULL, 1, 2, 2, 'pending', 12000000, 'Nguyen Van A', '0123456789', '123 Đường ABC', '2025-07-05 17:22:46', '2025-07-05 17:22:46');
 
 -- --------------------------------------------------------
 
@@ -258,10 +262,11 @@ CREATE TABLE `payment_gateway` (
 --
 
 INSERT INTO `payment_gateway` (`PaymentID`, `Name`) VALUES
-(2, 'Chuyển khoản ngân hàng'),
+(2, 'COD'),
 (3, 'Ví điện tử Momo'),
 (4, 'Thẻ tín dụng/ghi nợ'),
-(5, 'Thanh toán khi nhận hàng');
+(5, 'Thanh toán khi nhận hàng'),
+(6, 'Ví điện tử ZaloPay');
 
 -- --------------------------------------------------------
 
@@ -305,11 +310,21 @@ CREATE TABLE `products` (
 --
 
 INSERT INTO `products` (`ProductID`, `CategoryID`, `Name`, `Description`, `Image`, `base_price`, `Status`, `Create_at`, `Update_at`) VALUES
-(1, 1, 'Bàn ăn Gỗ Cao Su MOHO OSLO01', 'Bàn ăn gỗ cao su tự nhiên, thiết kế hiện đại', 'Ban-an-Go-Cao-Su-MOHO-OSLO01.png', 3500000, 1, '2025-07-01 22:42:19', '2025-07-01 22:42:19'),
+(1, 1, 'Sofa gỗ cao su cập nhật', 'Mô tả mới', 'Ban-an-Go-Cao-Su-MOHO-OSLO01.png', 6000000, 1, '2025-07-01 22:42:19', '2025-07-05 15:55:11'),
 (2, 1, 'Bàn ăn Gỗ MOHO GRENAA01', 'Bàn ăn gỗ tự nhiên, phong cách Bắc Âu', 'Ban-an-Go-MOHO-GRENAA01.png', 4200000, 1, '2025-07-01 22:42:19', '2025-07-01 22:42:19'),
 (3, 2, 'Ghế ăn Gỗ Cao Su Tự Nhiên Milan01', 'Ghế ăn gỗ cao su tự nhiên, kiểu dáng Milan', 'Ghe-an-Go-Cao-Su-Tu-Nhien-milan01.png', 900000, 1, '2025-07-01 22:42:19', '2025-07-01 22:42:19'),
 (4, 3, 'Sofa Da RIGA 2m', 'Sofa da cao cấp, dài 2m, phù hợp phòng khách hiện đại', 'Ghe-Sofa-Da-RIGA-2m.png', 7500000, 1, '2025-07-01 22:42:19', '2025-07-01 22:42:19'),
-(5, 4, 'Tủ bếp Kitchen Premium Narvik01', 'Tủ bếp gỗ cao cấp, thiết kế hiện đại', 'Kitchen-Premium-Narvik01.png', 12000000, 1, '2025-07-01 22:42:19', '2025-07-01 22:42:19');
+(5, 4, 'Tủ bếp Kitchen Premium Narvik01', 'Tủ bếp gỗ cao cấp, thiết kế hiện đại', 'Kitchen-Premium-Narvik01.png', 12000000, 1, '2025-07-01 22:42:19', '2025-07-01 22:42:19'),
+(6, 1, 'Sofa gỗ cao su', 'Sofa đẹp', NULL, 5000000, 1, '2025-07-05 15:34:44', '2025-07-05 15:34:44'),
+(7, 1, 'Sofa gỗ cao su', 'Sofa đẹp', NULL, 5000000, 1, '2025-07-05 15:36:27', '2025-07-05 15:36:27'),
+(8, 1, 'Sofa gỗ cao su', 'Sofa đẹp', NULL, 5000000, 1, '2025-07-05 15:38:32', '2025-07-05 15:38:32'),
+(9, 1, 'Sofa gỗ cao su', 'Sofa đẹp', NULL, 5000000, 1, '2025-07-05 15:39:15', '2025-07-05 15:39:15'),
+(10, 1, 'Sofa gỗ cao su', 'Sofa đẹp', NULL, 5000000, 1, '2025-07-05 15:46:42', '2025-07-05 15:46:42'),
+(11, 1, 'Sofa gỗ cao su', 'Sofa đẹp', NULL, 5000000, 1, '2025-07-05 15:47:53', '2025-07-05 15:47:53'),
+(12, 1, 'Sofa gỗ cao su', 'Sofa đẹp', NULL, 5000000, 1, '2025-07-05 15:51:37', '2025-07-05 15:51:37'),
+(13, 1, 'Sofa gỗ cao su', 'Sofa đẹp', NULL, 5000000, 1, '2025-07-05 15:53:50', '2025-07-05 15:53:50'),
+(14, 1, 'Sofa gỗ cao su', 'Sofa đẹp', NULL, 5000000, 1, '2025-07-05 15:54:19', '2025-07-05 15:54:19'),
+(15, 1, 'Sofa gỗ cao su', 'Sofa đẹp', NULL, 5000000, 1, '2025-07-05 17:03:30', '2025-07-05 17:03:30');
 
 -- --------------------------------------------------------
 
@@ -320,7 +335,7 @@ INSERT INTO `products` (`ProductID`, `CategoryID`, `Name`, `Description`, `Image
 CREATE TABLE `productvariants` (
   `ProductVariantID` int(11) NOT NULL,
   `ProductID` int(11) NOT NULL,
-  `Sku` int(20) NOT NULL,
+  `Sku` varchar(255) NOT NULL,
   `Price` int(20) NOT NULL,
   `Stock` int(20) NOT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
@@ -332,16 +347,21 @@ CREATE TABLE `productvariants` (
 --
 
 INSERT INTO `productvariants` (`ProductVariantID`, `ProductID`, `Sku`, `Price`, `Stock`, `created_at`, `Update_at`) VALUES
-(1, 1, 10001, 3600000, 10, '2025-07-01 22:42:29', '2025-07-01 22:42:29'),
-(2, 1, 10002, 3700000, 5, '2025-07-01 22:42:29', '2025-07-01 22:42:29'),
-(3, 2, 20001, 4300000, 8, '2025-07-01 22:42:30', '2025-07-01 22:42:30'),
-(4, 2, 20002, 4400000, 6, '2025-07-01 22:42:30', '2025-07-01 22:42:30'),
-(5, 3, 30001, 950000, 15, '2025-07-01 22:42:30', '2025-07-01 22:42:30'),
-(6, 3, 30002, 970000, 10, '2025-07-01 22:42:30', '2025-07-01 22:42:30'),
-(7, 4, 40001, 7600000, 4, '2025-07-01 22:42:30', '2025-07-01 22:42:30'),
-(8, 4, 40002, 7700000, 3, '2025-07-01 22:42:30', '2025-07-01 22:42:30'),
-(9, 5, 50001, 12100000, 2, '2025-07-01 22:42:30', '2025-07-01 22:42:30'),
-(10, 5, 50002, 12200000, 1, '2025-07-01 22:42:30', '2025-07-01 22:42:30');
+(3, 2, '20001', 4300000, 8, '2025-07-01 22:42:30', '2025-07-01 22:42:30'),
+(4, 2, '20002', 4400000, 6, '2025-07-01 22:42:30', '2025-07-01 22:42:30'),
+(5, 3, '30001', 950000, 15, '2025-07-01 22:42:30', '2025-07-01 22:42:30'),
+(6, 3, '30002', 970000, 10, '2025-07-01 22:42:30', '2025-07-01 22:42:30'),
+(7, 4, '40001', 7600000, 4, '2025-07-01 22:42:30', '2025-07-01 22:42:30'),
+(8, 4, '40002', 7700000, 3, '2025-07-01 22:42:30', '2025-07-01 22:42:30'),
+(9, 5, '50001', 12100000, 2, '2025-07-01 22:42:30', '2025-07-01 22:42:30'),
+(10, 5, '50002', 12200000, 1, '2025-07-01 22:42:30', '2025-07-01 22:42:30'),
+(11, 10, 'SKU-686948e23c737', 5000000, 10, '2025-07-05 22:46:42', '2025-07-05 15:46:42'),
+(12, 11, 'SKU-68694929e17cd', 5000000, 10, '2025-07-05 22:47:53', '2025-07-05 15:47:53'),
+(13, 12, 'SKU-68694a09c9a83', 5000000, 10, '2025-07-05 22:51:37', '2025-07-05 15:51:37'),
+(14, 13, 'SKU-68694a8e75e43', 5000000, 10, '2025-07-05 22:53:50', '2025-07-05 15:53:50'),
+(15, 14, 'SKU-68694aabcbd84', 5000000, 10, '2025-07-05 22:54:19', '2025-07-05 15:54:19'),
+(16, 1, 'SKU-68694adfdd64a', 6000000, 15, '2025-07-05 22:55:11', '2025-07-05 15:55:11'),
+(17, 15, 'SKU-68695ae2e9d4d', 5000000, 10, '2025-07-06 00:03:30', '2025-07-05 17:03:30');
 
 -- --------------------------------------------------------
 
@@ -381,6 +401,7 @@ CREATE TABLE `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`) VALUES
+('35VCNEAQThNfxX5N7smbQDcurX6ExNTIreELGtkn', NULL, '127.0.0.1', 'PostmanRuntime/7.39.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiY29PWDZtamdvRkNYejJnS0hQS2RQODlVdDZlelZlWTh5WXV3WjZiQSI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjE6Imh0dHA6Ly9sb2NhbGhvc3Q6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1751735920),
 ('CaOBolc9HesXAVVRyoXg7IwAMSfy5DDB0ruypqJp', NULL, '127.0.0.1', 'PostmanRuntime/7.39.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiU0pteElUcHo1dGVXQ2p0eDR0QXZ2TEhHN0hYdUFxSElzeU5JUkM4NCI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjE6Imh0dHA6Ly9sb2NhbGhvc3Q6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1751561336),
 ('DeRRorD41k792wupwsnDMKXhvFG9X57LBIP2s7JK', NULL, '127.0.0.1', 'PostmanRuntime/7.39.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiUTN1a0g1UGNmcjRvc3M3MkIxazJMYnZKa1RQOWIyd25xNldMekphOSI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjE6Imh0dHA6Ly9sb2NhbGhvc3Q6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1751394431);
 
@@ -394,7 +415,9 @@ CREATE TABLE `users` (
   `UserID` int(11) NOT NULL,
   `Username` varchar(255) DEFAULT NULL,
   `Password` varchar(255) DEFAULT NULL,
+  `remember_token` varchar(100) DEFAULT NULL,
   `Email` varchar(255) DEFAULT NULL,
+  `email_verified_at` datetime DEFAULT NULL,
   `Role` varchar(255) DEFAULT NULL,
   `Fullname` varchar(255) DEFAULT NULL,
   `Phone` varchar(255) DEFAULT NULL,
@@ -408,8 +431,10 @@ CREATE TABLE `users` (
 -- Đang đổ dữ liệu cho bảng `users`
 --
 
-INSERT INTO `users` (`UserID`, `Username`, `Password`, `Email`, `Role`, `Fullname`, `Phone`, `Address`, `Status`, `Created_at`, `Updated_at`) VALUES
-(1, NULL, '$2y$12$.0Bkaw2FQkVYTZC5kbr9X.hvgY4XrChnk9WDElV8ap4EveR4yU63C', 'blackrabitxx@gmail.com', NULL, NULL, NULL, NULL, NULL, '2025-06-06 14:55:57', '2025-06-06 14:55:57');
+INSERT INTO `users` (`UserID`, `Username`, `Password`, `remember_token`, `Email`, `email_verified_at`, `Role`, `Fullname`, `Phone`, `Address`, `Status`, `Created_at`, `Updated_at`) VALUES
+(1, NULL, '$2y$12$.0Bkaw2FQkVYTZC5kbr9X.hvgY4XrChnk9WDElV8ap4EveR4yU63C', NULL, 'blackrabitxx@gmail.com', NULL, NULL, NULL, NULL, NULL, NULL, '2025-06-06 14:55:57', '2025-06-06 14:55:57'),
+(2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -431,10 +456,6 @@ CREATE TABLE `variant_attributes` (
 --
 
 INSERT INTO `variant_attributes` (`VariantAttributeID`, `ProductVariantID`, `AttributeID`, `value`, `created_at`, `updated_at`) VALUES
-(5, 1, 1, 'Tự Nhiên', '2025-07-01 15:43:13', '2025-07-01 15:43:13'),
-(6, 1, 2, '1m6', '2025-07-01 15:43:13', '2025-07-01 15:43:13'),
-(7, 2, 1, 'Nâu', '2025-07-01 15:43:13', '2025-07-01 15:43:13'),
-(8, 2, 2, '1m8', '2025-07-01 15:43:13', '2025-07-01 15:43:13'),
 (9, 3, 1, 'Trắng', '2025-07-01 15:43:13', '2025-07-01 15:43:13'),
 (10, 3, 2, '1m6', '2025-07-01 15:43:13', '2025-07-01 15:43:13'),
 (11, 4, 1, 'Nâu', '2025-07-01 15:43:13', '2025-07-01 15:43:13'),
@@ -444,7 +465,13 @@ INSERT INTO `variant_attributes` (`VariantAttributeID`, `ProductVariantID`, `Att
 (15, 7, 1, 'Kem', '2025-07-01 15:43:13', '2025-07-01 15:43:13'),
 (16, 8, 1, 'Xám', '2025-07-01 15:43:13', '2025-07-01 15:43:13'),
 (17, 9, 2, '2m4', '2025-07-01 15:43:13', '2025-07-01 15:43:13'),
-(18, 10, 2, '3m', '2025-07-01 15:43:13', '2025-07-01 15:43:13');
+(18, 10, 2, '3m', '2025-07-01 15:43:13', '2025-07-01 15:43:13'),
+(19, 15, 1, 'Đỏ', '2025-07-05 08:54:19', '2025-07-05 08:54:19'),
+(20, 15, 2, 'XL', '2025-07-05 08:54:19', '2025-07-05 08:54:19'),
+(21, 16, 1, 'Đỏ', '2025-07-05 08:55:11', '2025-07-05 08:55:11'),
+(22, 16, 2, 'XL', '2025-07-05 08:55:11', '2025-07-05 08:55:11'),
+(23, 17, 1, 'Đỏ', '2025-07-05 10:03:30', '2025-07-05 10:03:30'),
+(24, 17, 2, 'XL', '2025-07-05 10:03:30', '2025-07-05 10:03:30');
 
 -- --------------------------------------------------------
 
@@ -645,7 +672,7 @@ ALTER TABLE `cart`
 -- AUTO_INCREMENT cho bảng `categories`
 --
 ALTER TABLE `categories`
-  MODIFY `CategoryID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `CategoryID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT cho bảng `favorite_products`
@@ -675,19 +702,19 @@ ALTER TABLE `notifications`
 -- AUTO_INCREMENT cho bảng `orderdetail`
 --
 ALTER TABLE `orderdetail`
-  MODIFY `OrderDetailID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `OrderDetailID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT cho bảng `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `OrderID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `OrderID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT cho bảng `payment_gateway`
 --
 ALTER TABLE `payment_gateway`
-  MODIFY `PaymentID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `PaymentID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT cho bảng `personal_access_tokens`
@@ -699,13 +726,13 @@ ALTER TABLE `personal_access_tokens`
 -- AUTO_INCREMENT cho bảng `products`
 --
 ALTER TABLE `products`
-  MODIFY `ProductID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `ProductID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT cho bảng `productvariants`
 --
 ALTER TABLE `productvariants`
-  MODIFY `ProductVariantID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `ProductVariantID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT cho bảng `review`
@@ -717,13 +744,13 @@ ALTER TABLE `review`
 -- AUTO_INCREMENT cho bảng `users`
 --
 ALTER TABLE `users`
-  MODIFY `UserID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `UserID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT cho bảng `variant_attributes`
 --
 ALTER TABLE `variant_attributes`
-  MODIFY `VariantAttributeID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `VariantAttributeID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- AUTO_INCREMENT cho bảng `voucher`
