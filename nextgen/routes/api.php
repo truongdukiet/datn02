@@ -2,7 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Auth; 
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 
@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\VariantAttributeController;
 use App\Http\Controllers\Api\NewsApiController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PasswordResetController;
 
 /*
 |--------------------------------------------------------------------------
@@ -103,3 +104,6 @@ Route::get('/verify-email/{id}/{hash}', function (Request $request, $id, $hash) 
         'email_verified_at' => $user->email_verified_at,
     ]);
 });
+
+Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLinkEmail']);
+Route::post('/reset-password', [PasswordResetController::class, 'reset']);

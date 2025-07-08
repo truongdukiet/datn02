@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th7 07, 2025 lúc 03:13 PM
+-- Thời gian đã tạo: Th7 08, 2025 lúc 07:03 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -287,6 +287,13 @@ CREATE TABLE `personal_access_tokens` (
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Đang đổ dữ liệu cho bảng `personal_access_tokens`
+--
+
+INSERT INTO `personal_access_tokens` (`id`, `tokenable_type`, `tokenable_id`, `name`, `token`, `abilities`, `last_used_at`, `expires_at`, `created_at`, `updated_at`) VALUES
+(1, 'App\\Models\\User', 14, 'auth_token', '7992bcc9bfe8a0a746334fb85a14c0cba3136ca58ff54524c30c9dd901e2e39d', '[\"*\"]', NULL, NULL, '2025-07-07 08:43:33', '2025-07-07 08:43:33');
+
 -- --------------------------------------------------------
 
 --
@@ -401,9 +408,9 @@ CREATE TABLE `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`) VALUES
-('35VCNEAQThNfxX5N7smbQDcurX6ExNTIreELGtkn', NULL, '127.0.0.1', 'PostmanRuntime/7.39.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiY29PWDZtamdvRkNYejJnS0hQS2RQODlVdDZlelZlWTh5WXV3WjZiQSI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjE6Imh0dHA6Ly9sb2NhbGhvc3Q6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1751735920),
-('CaOBolc9HesXAVVRyoXg7IwAMSfy5DDB0ruypqJp', NULL, '127.0.0.1', 'PostmanRuntime/7.39.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiU0pteElUcHo1dGVXQ2p0eDR0QXZ2TEhHN0hYdUFxSElzeU5JUkM4NCI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjE6Imh0dHA6Ly9sb2NhbGhvc3Q6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1751561336),
-('DeRRorD41k792wupwsnDMKXhvFG9X57LBIP2s7JK', NULL, '127.0.0.1', 'PostmanRuntime/7.39.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiUTN1a0g1UGNmcjRvc3M3MkIxazJMYnZKa1RQOWIyd25xNldMekphOSI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjE6Imh0dHA6Ly9sb2NhbGhvc3Q6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1751394431);
+('aFWHytU5Z09diM8Gi6HHUBNtZmT6JDzBqmVPvj1K', NULL, '127.0.0.1', 'PostmanRuntime/7.39.1', 'YTo0OntzOjY6Il90b2tlbiI7czo0MDoiZTBoRmlsYzluQ1hhcVpta29aTGdta0c4YW5WT3FWbWxHajJjaVlQWiI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czo3ODoiaHR0cDovL2xvY2FsaG9zdDo4MDAwL3ZlcmlmeS1lbWFpbC8xNC9iODQzM2UxY2FlZWJjMTU5YjExNDYzZjU0MGE5MzYyMzM3MDc4NGU1Ijt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly9sb2NhbGhvc3Q6ODAwMC9sb2dpbiI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1751902570),
+('DPgvSPlFuYM1Mqa2akiG9IOMf9J8ZKUtue9ygc0n', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0', 'YTo0OntzOjY6Il90b2tlbiI7czo0MDoiWUw1bWg1TVJMaHFsQ3lld0FIUXliUEpmQ2JyaG42Z2dNMDNEN3RDayI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly9sb2NhbGhvc3Q6ODAwMC9sb2dpbiI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6MzoidXJsIjthOjE6e3M6ODoiaW50ZW5kZWQiO3M6Nzg6Imh0dHA6Ly9sb2NhbGhvc3Q6ODAwMC92ZXJpZnktZW1haWwvMTQvYjg0MzNlMWNhZWViYzE1OWIxMTQ2M2Y1NDBhOTM2MjMzNzA3ODRlNSI7fX0=', 1751901820),
+('qm16b9WyUqvE9PPizrltDzKUxoulTzitsFUNxeBp', NULL, '127.0.0.1', 'PostmanRuntime/7.39.1', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiMEdtb1ZWNzR1RnFSaHJ6b3ZTdjFYNVZPRDRFc0dmajFEY0Q2VDVRUSI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjE6Imh0dHA6Ly9sb2NhbGhvc3Q6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1751992422);
 
 -- --------------------------------------------------------
 
@@ -432,9 +439,11 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`UserID`, `Username`, `Password`, `remember_token`, `Email`, `email_verified_at`, `Role`, `Fullname`, `Phone`, `Address`, `Status`, `Created_at`, `Updated_at`) VALUES
-(1, NULL, '$2y$12$.0Bkaw2FQkVYTZC5kbr9X.hvgY4XrChnk9WDElV8ap4EveR4yU63C', NULL, 'blackrabitxx@gmail.com', NULL, NULL, NULL, NULL, NULL, NULL, '2025-06-06 14:55:57', '2025-06-06 14:55:57'),
-(2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+(1, NULL, '$2y$12$/Vk4TEuGYYhjhATyHfpkDOwUrlEEAbCDvqQzAA.YltOEi4b9S0w76', NULL, 'blackrabitxx@gmail.com', NULL, NULL, NULL, NULL, NULL, NULL, '2025-06-06 14:55:57', '2025-06-06 14:55:57'),
+(2, NULL, NULL, NULL, NULL, NULL, NULL, 'Nguyen Van L', '0123456789', NULL, NULL, NULL, NULL),
+(3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(14, 'nguyenvana', '$2y$12$L5VNH3JnJtJSY1T6vke9Fe8XGNY/IRF0ygGjUxP2dOK3tlfAfzkpe', NULL, 'chauttc01@gmail.com', '2025-07-07 15:38:04', NULL, 'Nguyen Van A', NULL, NULL, NULL, NULL, NULL),
+(15, 'y', '$2y$12$MjG6maOJtsu4LhhZt0gQUO6p/1B2645tZ1mA9c0HO6wSSxa.0s6Yq', NULL, 'nguyenvany@example.com', NULL, NULL, 'Nguyễn Văn X', '0123456789', 'Hà Nội', 1, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -720,7 +729,7 @@ ALTER TABLE `payment_gateway`
 -- AUTO_INCREMENT cho bảng `personal_access_tokens`
 --
 ALTER TABLE `personal_access_tokens`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT cho bảng `products`
@@ -744,7 +753,7 @@ ALTER TABLE `review`
 -- AUTO_INCREMENT cho bảng `users`
 --
 ALTER TABLE `users`
-  MODIFY `UserID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `UserID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT cho bảng `variant_attributes`
