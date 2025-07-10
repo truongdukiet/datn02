@@ -4,7 +4,8 @@
 // Mỗi 'use' là như việc bạn nhập một công cụ đặc biệt vào để sử dụng trong file này.
 use Illuminate\Database\Migrations\Migration; // Đây là lớp cơ bản mà tất cả các file migration phải kế thừa.
 use Illuminate\Database\Schema\Blueprint;    // Blueprint giúp bạn định nghĩa cấu trúc bảng (ví dụ: thêm cột, kiểu dữ liệu).
-use Illuminate\Support\Facades\Schema;       // Lớp Schema cung cấp các phương thức để tương tác với cơ sở dữ liệu (tạo bảng, xóa bảng, sửa bảng).
+
+use Illuminate\Support\Facades\Schema;      // Lớp Schema cung cấp các phương thức để tương tác với cơ sở dữ liệu (tạo bảng, xóa bảng, sửa bảng).
 
 // Đây là phần chính của file migration.
 // return new class extends Migration nghĩa là bạn đang tạo một lớp mới (class)
@@ -29,7 +30,9 @@ return new class extends Migration
             // Lệnh này tạo một cột 'id' (khóa chính - Primary Key).
             // Mặc định nó sẽ là kiểu UNSIGNED BIGINT AUTO_INCREMENT PRIMARY KEY.
             // Điều này có nghĩa là mỗi bản ghi (dòng) trong bảng sẽ có một ID duy nhất, tự động tăng.
-            $table->id();
+            // Dựa trên SQL dump bạn cung cấp, khóa chính của bảng `cart` là `CartID` (int(11) NOT NULL AUTO_INCREMENT)
+            // Vì vậy, thay vì $table->id(); chúng ta sẽ dùng:
+            $table->increments('CartID'); // Khóa chính CartID
 
             // $table->timestamps();
             // Lệnh này tạo ra hai cột đặc biệt: 'created_at' và 'updated_at'.
@@ -45,6 +48,24 @@ return new class extends Migration
             // $table->decimal('price', 8, 2); // Giá sản phẩm, với 8 chữ số tổng cộng và 2 chữ số sau dấu thập phân
             // $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade'); // Khóa ngoại liên kết với bảng 'users'
             // $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade'); // Khóa ngoại liên kết với bảng 'products'
+            // Dựa trên SQL dump của bạn, các cột thời gian là `Create_at` và `Update_at` (datetime)
+            $table->dateTime('Create_at')->nullable(); // Có thể NULL theo SQL dump
+            $table->dateTime('Update_at')->nullable(); // Có thể NULL theo SQL dump
+
+
+            // --- Thêm các cột khác dựa trên SQL dump của bạn: ---
+            // `UserID` int(11) DEFAULT NULL
+            $table->unsignedInteger('UserID')->nullable();
+            // `ProductVariantID` int(11) DEFAULT NULL
+            $table->unsignedInteger('ProductVariantID')->nullable();
+            // `Quantity` int(11) DEFAULT NULL
+            $table->integer('Quantity')->nullable();
+
+            // Định nghĩa khóa ngoại (Foreign Keys)
+            // Liên kết UserID với bảng users
+            $table->foreign('UserID')->references('UserID')->on('users')->onDelete('set null'); // onDelete('set null') vì UserID có thể DEFAULT NULL
+            // Liên kết ProductVariantID với bảng productvariants
+            $table->foreign('ProductVariantID')->references('ProductVariantID')->on('productvariants')->onDelete('set null'); // onDelete('set null') vì ProductVariantID có thể DEFAULT NULL
         });
     }
 
@@ -61,6 +82,7 @@ return new class extends Migration
         // Lệnh này dùng để XÓA BỎ BẢNG có tên là 'cart' khỏi cơ sở dữ liệu.
         // 'dropIfExists' có nghĩa là nó sẽ chỉ xóa nếu bảng đó tồn tại,
         // tránh gây lỗi nếu bạn cố gắng xóa một bảng không có.
-        $table->dropIfExists('cart');
+
+        Schema::dropIfExists('cart'); // Lỗi 'báo đỏ' là do bạn dùng $table ở đây, phải là Schema::dropIfExists
     }
 };

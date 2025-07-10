@@ -6,28 +6,30 @@ use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
-    protected $primaryKey = 'orderid';
+    protected $primaryKey = 'OrderID';
     protected $fillable = [
-        'invoicecode',
-        'userid',
-        'voucherid',
-        'paymentid',
-        'order_date',
-        'status',
-        'total_amount',
-        'receiver_name',
-        'receiver_phone',
-        'shipping_address',
-        'created_at',
-        'updated_at',
+        'InvoiceCode',
+        'UserID',
+        'VoucherID',
+        'PaymentID',
+        'Status',
+        'Total_amount',
+        'Receiver_name',
+        'Receiver_phone',
+        'Shipping_address',
+        'Create_at',
+        'Update_at',
     ];
+
+    const CREATED_AT = 'Create_at';
+    const UPDATED_AT = 'Update_at';
 
     /**
      * Get the user that owns the order.
      */
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(\App\Models\User::class, 'UserID', 'UserID');
     }
 
     /**
@@ -37,4 +39,20 @@ class Order extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function orderDetails()
+    {
+        return $this->hasMany(OrderDetail::class, 'orderid', 'orderid');
+    }
+
+    public function voucher()
+    {
+        return $this->belongsTo(\App\Models\Voucher::class, 'VoucherID', 'VoucherID');
+    }
+
+    public function paymentGateway()
+    {
+        return $this->belongsTo(\App\Models\PaymentGateway::class, 'PaymentID', 'PaymentID');
+    }
+
 }
