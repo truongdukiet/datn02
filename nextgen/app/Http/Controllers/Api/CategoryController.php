@@ -16,10 +16,18 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        // Lấy tất cả các category từ database
         $categories = Category::all();
-        // Trả về danh sách dưới dạng JSON
-        return response()->json($categories);
+        $data = $categories->map(function($category) {
+            return [
+                'CategoryID' => $category->CategoryID,
+                'Name' => $category->Name,
+                'Description' => $category->Description,
+                'Image' => $category->Image,
+                'Create_at' => $category->Create_at,
+                'Update_at' => $category->Update_at,
+            ];
+        });
+        return response()->json(['success' => true, 'data' => $data]);
     }
 
     /**
@@ -31,17 +39,36 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
-        // Validate dữ liệu đầu vào
-        $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name',
-            'description' => 'nullable|string',
+        $validated = $request->validate([
+            'Name' => 'required|string|max:255|unique:categories,Name',
+            'Description' => 'nullable|string',
+            'Image' => 'nullable', // Có thể là file hoặc string
         ]);
 
-        // Tạo category mới
-        $category = Category::create($request->all());
-
-        // Trả về category vừa tạo dưới dạng JSON với mã 201 (Created)
-        return response()->json($category, 201);
+        // Xử lý upload file ảnh nếu có
+        if ($request->hasFile('Image')) {
+            $imagePath = $request->file('Image')->store('categories', 'public');
+            $validated['Image'] = $imagePath;
+        } elseif ($request->has('Image')) {
+            // Nếu là chuỗi (đường dẫn ảnh)
+            $validated['Image'] = $request->input('Image');
+        } else {
+            $validated['Image'] = null;
+        }
+        $validated['Create_at'] = now();
+        $validated['Update_at'] = now();
+        $category = Category::create($validated);
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'CategoryID' => $category->CategoryID,
+                'Name' => $category->Name,
+                'Description' => $category->Description,
+                'Image' => $category->Image,
+                'Create_at' => $category->Create_at,
+                'Update_at' => $category->Update_at,
+            ]
+        ], 201);
     }
 
     /**
@@ -53,10 +80,21 @@ class CategoryController extends Controller
      */
     public function show($id)
     {
-        // Tìm category theo ID, nếu không tìm thấy sẽ tự động trả về 404
-        $category = Category::findOrFail($id);
-        // Trả về category dưới dạng JSON
-        return response()->json($category);
+        $category = Category::find($id);
+        if (!$category) {
+            return response()->json(['success' => false, 'message' => 'Category not found'], 404);
+        }
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'CategoryID' => $category->CategoryID,
+                'Name' => $category->Name,
+                'Description' => $category->Description,
+                'Image' => $category->Image,
+                'Create_at' => $category->Create_at,
+                'Update_at' => $category->Update_at,
+            ]
+        ]);
     }
 
     /**
@@ -69,20 +107,35 @@ class CategoryController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // Tìm category theo ID
-        $category = Category::findOrFail($id);
-
-        // Validate dữ liệu đầu vào, bỏ qua tên hiện tại khi kiểm tra unique
-        $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name,' . $id,
-            'description' => 'nullable|string',
+        $category = Category::find($id);
+        if (!$category) {
+            return response()->json(['success' => false, 'message' => 'Category not found'], 404);
+        }
+        $validated = $request->validate([
+            'Name' => 'sometimes|string|max:255|unique:categories,Name,' . $id . ',CategoryID',
+            'Description' => 'nullable|string',
+            'Image' => 'nullable',
         ]);
-
-        // Cập nhật thông tin category
-        $category->update($request->all());
-
-        // Trả về category đã cập nhật dưới dạng JSON
-        return response()->json($category);
+        // Xử lý upload file ảnh nếu có
+        if ($request->hasFile('Image')) {
+            $imagePath = $request->file('Image')->store('categories', 'public');
+            $validated['Image'] = $imagePath;
+        } elseif ($request->has('Image')) {
+            $validated['Image'] = $request->input('Image');
+        }
+        $validated['Update_at'] = now();
+        $category->update($validated);
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'CategoryID' => $category->CategoryID,
+                'Name' => $category->Name,
+                'Description' => $category->Description,
+                'Image' => $category->Image,
+                'Create_at' => $category->Create_at,
+                'Update_at' => $category->Update_at,
+            ]
+        ]);
     }
 
     /**
@@ -94,11 +147,11 @@ class CategoryController extends Controller
      */
     public function destroy($id)
     {
-        // Tìm category theo ID và xóa
-        $category = Category::findOrFail($id);
+        $category = Category::find($id);
+        if (!$category) {
+            return response()->json(['success' => false, 'message' => 'Category not found'], 404);
+        }
         $category->delete();
-
-        // Trả về phản hồi rỗng với mã 204 (No Content)
-        return response()->json(null, 204);
+        return response()->json(['success' => true, 'message' => 'Category deleted']);
     }
 }
