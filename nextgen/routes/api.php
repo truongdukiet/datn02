@@ -2,14 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ProductVariantController;
-use App\Http\Controllers\VariantAttributeController;
-use App\Http\Controllers\AttributeController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\UserController;
-use Illuminate\Support\Facades\Auth; 
-
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 

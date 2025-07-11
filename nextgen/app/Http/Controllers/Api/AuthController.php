@@ -42,7 +42,7 @@ class AuthController extends Controller
         ]);
 
         // Tạo link xác thực (giả sử bạn có route xác thực dạng /verify-email/{id}/{hash})
-        $verificationUrl = url('/verify-email/' . $user->UserID . '/' . sha1($user->Email));
+        $verificationUrl = url('/api/verify-email/' . $user->UserID . '/' . sha1($user->Email));
 
         // Gửi mail xác thực thủ công
         Mail::raw(

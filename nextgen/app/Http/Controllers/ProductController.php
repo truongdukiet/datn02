@@ -118,8 +118,6 @@ class ProductController extends Controller
         $product->restore();
 
         return response()->json(['message' => 'Sản phẩm đã được phục hồi!']);
-=======
-        return response()->json(['message' => 'Sản phẩm đã được công khai lại.']);
 
         // Lấy tất cả sản phẩm, kèm biến thể và category (nếu muốn)
         $products = \App\Models\Product::with(['category', 'variants.variantAttributes'])->get();

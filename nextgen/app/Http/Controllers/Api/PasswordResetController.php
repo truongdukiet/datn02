@@ -40,7 +40,7 @@ class PasswordResetController extends Controller
             ]
         );
         // Tạo link reset
-        $resetUrl = url("/reset-password?token=$token&email=" . urlencode($user->Email));
+        $resetUrl = url("/api/reset-password?token=$token&email=" . urlencode($user->Email));
         // Gửi mail thủ công
         Mail::raw(
             "Chào {$user->Fullname},\n\nVui lòng nhấn vào link sau để đặt lại mật khẩu:\n$resetUrl",
