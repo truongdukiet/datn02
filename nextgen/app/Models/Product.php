@@ -15,23 +15,19 @@ class Product extends Model
 {
     use HasFactory;
 
-    // Tên bảng nếu khác với tên số nhiều của model (mặc định là 'products')
-    // protected $table = 'products';
+    protected $table = 'products';
+    protected $primaryKey = 'ProductID';
+    public $timestamps = false;
 
-    // Định nghĩa khóa chính nếu nó không phải là 'id'
-    protected $primaryKey = 'productid';
-
-    // Cho phép gán hàng loạt (mass assignment) cho các cột này.
-    // Điều này có nghĩa là bạn có thể tạo hoặc cập nhật một bản ghi
-    // bằng cách truyền một mảng các thuộc tính vào phương thức create() hoặc update().
     protected $fillable = [
-        'categoryid',
-        'name',
-        'description',
-        'price',
-        'image',
-        'stock',
-        'status',
+        'CategoryID', 
+        'Name', 
+        'Description', 
+        'Image', 
+        'base_price', 
+        'Status', 
+        'Create_at', 
+        'Update_at'
     ];
 
     /**
@@ -40,27 +36,49 @@ class Product extends Model
      */
     public function category()
     {
-        return $this->belongsTo(Category::class, 'categoryid', 'categoryid');
+        return $this->belongsTo(Category::class, 'CategoryID', 'CategoryID');
     }
 
+    /**
+     * Định nghĩa mối quan hệ với ProductVariant.
+     * Một sản phẩm có thể có nhiều biến thể.
+     */
     public function variants()
     {
-        return $this->hasMany(ProductVariant::class, 'productid', 'productid');
+        return $this->hasMany(ProductVariant::class, 'ProductID', 'ProductID');
     }
 
-    // Nếu bạn không muốn Laravel tự động quản lý created_at và updated_at,
-    // bạn có thể đặt protected $timestamps = false;
-    // Mặc định là true.
+    /**
+     * Định nghĩa mối quan hệ với Review.
+     * Một sản phẩm có thể có nhiều đánh giá.
+     */
+    public function reviews()
+    {
+        return $this->hasManyThrough(
+            \App\Models\Review::class,
+            \App\Models\ProductVariant::class,
+            'ProductID',           // Foreign key on ProductVariant table...
+            'ProductVariantID',    // Foreign key on Review table...
+            'ProductID',           // Local key on Product table...
+            'ProductVariantID'     // Local key on ProductVariant table...
+        );
+    }
 
-    // Các thuộc tính nên được ẩn khi chuyển đổi model thành mảng hoặc JSON.
-    // protected $hidden = [
-    //     'password',
-    //     'remember_token',
-    // ];
+    /**
+     * Định nghĩa mối quan hệ với FavoriteProduct.
+     * Một sản phẩm có thể được yêu thích bởi nhiều người dùng.
+     */
+    public function favorites()
+    {
+        return $this->hasMany(FavoriteProduct::class, 'ProductID', 'ProductID');
+    }
 
-    // Các thuộc tính nên được chuyển đổi thành kiểu dữ liệu cụ thể.
-    // protected $casts = [
-    //     'email_verified_at' => 'datetime',
-    //     'password' => 'hashed',
-    // ];
+    /**
+     * Định nghĩa mối quan hệ với OrderDetail.
+     * Một sản phẩm có thể xuất hiện trong nhiều chi tiết đơn hàng.
+     */
+    public function orderDetails()
+    {
+        return $this->hasMany(OrderDetail::class, 'ProductID', 'ProductID');
+    }
 }

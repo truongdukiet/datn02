@@ -62,4 +62,9 @@ class Review extends Model
         // Khóa ngoại trong bảng review là OrderDetailID, khóa chính của bảng orderdetail cũng là OrderDetailID
         return $this->belongsTo(OrderDetail::class, 'OrderDetailID', 'OrderDetailID');
     }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class, 'ProductID', 'ProductID');
+    }
 }
