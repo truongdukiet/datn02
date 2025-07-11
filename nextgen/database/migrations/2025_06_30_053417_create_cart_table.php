@@ -4,6 +4,7 @@
 // Mỗi 'use' là như việc bạn nhập một công cụ đặc biệt vào để sử dụng trong file này.
 use Illuminate\Database\Migrations\Migration; // Đây là lớp cơ bản mà tất cả các file migration phải kế thừa.
 use Illuminate\Database\Schema\Blueprint;    // Blueprint giúp bạn định nghĩa cấu trúc bảng (ví dụ: thêm cột, kiểu dữ liệu).
+
 use Illuminate\Support\Facades\Schema;      // Lớp Schema cung cấp các phương thức để tương tác với cơ sở dữ liệu (tạo bảng, xóa bảng, sửa bảng).
 
 // Đây là phần chính của file migration.
@@ -38,6 +39,15 @@ return new class extends Migration
             // - 'created_at': Tự động lưu thời gian khi bản ghi này được tạo ra.
             // - 'updated_at': Tự động cập nhật thời gian khi bản ghi này được chỉnh sửa lần cuối.
             // Rất hữu ích để theo dõi lịch sử thay đổi của dữ liệu.
+            $table->timestamps();
+
+            // --- Bạn có thể thêm các cột khác vào đây, ví dụ: ---
+            // $table->string('user_id'); // ID của người dùng sở hữu giỏ hàng
+            // $table->string('product_id'); // ID của sản phẩm trong giỏ hàng
+            // $table->integer('quantity')->default(1); // Số lượng sản phẩm, mặc định là 1
+            // $table->decimal('price', 8, 2); // Giá sản phẩm, với 8 chữ số tổng cộng và 2 chữ số sau dấu thập phân
+            // $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade'); // Khóa ngoại liên kết với bảng 'users'
+            // $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade'); // Khóa ngoại liên kết với bảng 'products'
             // Dựa trên SQL dump của bạn, các cột thời gian là `Create_at` và `Update_at` (datetime)
             $table->dateTime('Create_at')->nullable(); // Có thể NULL theo SQL dump
             $table->dateTime('Update_at')->nullable(); // Có thể NULL theo SQL dump
@@ -72,6 +82,7 @@ return new class extends Migration
         // Lệnh này dùng để XÓA BỎ BẢNG có tên là 'cart' khỏi cơ sở dữ liệu.
         // 'dropIfExists' có nghĩa là nó sẽ chỉ xóa nếu bảng đó tồn tại,
         // tránh gây lỗi nếu bạn cố gắng xóa một bảng không có.
+
         Schema::dropIfExists('cart'); // Lỗi 'báo đỏ' là do bạn dùng $table ở đây, phải là Schema::dropIfExists
     }
 };

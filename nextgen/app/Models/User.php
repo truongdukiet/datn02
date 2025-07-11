@@ -18,6 +18,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $primaryKey = 'UserID'; // Đảm bảo khớp với tên cột trong DB
     public $timestamps = false; // Tắt timestamps tự động vì tên cột khác (Created_at, Updated_at)
 
+
     const CREATED_AT = 'Created_at';
     const UPDATED_AT = 'Updated_at';
 
