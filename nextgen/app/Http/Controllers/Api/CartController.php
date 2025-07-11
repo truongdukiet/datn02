@@ -8,50 +8,13 @@ use App\Models\Cart;
 
 class CartController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
-    }
-
     // Lấy giỏ hàng của user
     public function viewCart(Request $request)
     {
         $userId = $request->query('UserID');
+        if (!$userId) {
+            return response()->json(['success' => false, 'message' => 'UserID is required'], 400);
+        }
         $cart = Cart::with(['productVariant.product'])
             ->where('UserID', $userId)
             ->get();
@@ -119,6 +82,9 @@ class CartController extends Controller
     public function clearCart(Request $request)
     {
         $userId = $request->input('UserID');
+        if (!$userId) {
+            return response()->json(['success' => false, 'message' => 'UserID is required'], 400);
+        }
         Cart::where('UserID', $userId)->delete();
         return response()->json(['success' => true, 'message' => 'Cart cleared']);
     }

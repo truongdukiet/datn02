@@ -56,13 +56,11 @@ Route::apiResource('reviews', ReviewController::class);
 Route::apiResource('variant-attributes', VariantAttributeController::class);
 
 // Cart routes (custom, không dùng apiResource)
-Route::prefix('cart')->group(function () {
-    Route::post('add', [CartController::class, 'addToCart']);
-    Route::get('view', [CartController::class, 'viewCart']);
-    Route::put('update', [CartController::class, 'updateCartItem']);
-    Route::delete('remove', [CartController::class, 'removeFromCart']);
-    Route::post('clear', [CartController::class, 'clearCart']);
-});
+Route::get('/carts', [CartController::class, 'viewCart']);
+Route::post('/carts', [CartController::class, 'addToCart']);
+Route::put('/carts', [CartController::class, 'updateCartItem']);
+Route::delete('/carts/item', [CartController::class, 'removeFromCart']);
+Route::delete('/carts', [CartController::class, 'clearCart']);
 
 // FavoriteProduct routes (custom, không dùng apiResource)
 Route::prefix('favorite-products')->group(function () {
