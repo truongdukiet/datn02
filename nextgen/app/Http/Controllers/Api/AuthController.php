@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller
 {
@@ -41,15 +43,28 @@ class AuthController extends Controller
             'email_verified_at' => null,
         ]);
 
-        // Tạo link xác thực (giả sử bạn có route xác thực dạng /verify-email/{id}/{hash})
-        $verificationUrl = url('/api/verify-email/' . $user->UserID . '/' . sha1($user->Email));
+        // Tạo token xác thực ngẫu nhiên và lưu vào database
+        $verificationToken = Str::random(64);
+        
+        // Lưu token vào bảng password_reset_tokens (tái sử dụng bảng này cho email verification)
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $user->Email],
+            [
+                'email' => $user->Email,
+                'token' => $verificationToken,
+                'created_at' => now(),
+            ]
+        );
+
+        // Tạo link xác thực với ID và token ngẫu nhiên
+        $verificationUrl = url('/verify-email/' . $user->UserID . '/' . $verificationToken);
 
         // Gửi mail xác thực thủ công
         Mail::raw(
-            "Chào {$user->Fullname},\n\nVui lòng nhấn vào link sau để xác thực tài khoản:\n$verificationUrl",
+            "Chào {$user->Fullname},\n\nVui lòng nhấn vào link sau để xác thực tài khoản:\n$verificationUrl\n\nSau khi xác thực thành công, bạn sẽ được chuyển đến trang đăng nhập.",
             function ($message) use ($user) {
                 $message->to($user->Email)
-                        ->subject('Xác thực tài khoản');
+                        ->subject('Xác thực tài khoản - NextGen');
             }
         );
 
@@ -108,33 +123,4 @@ class AuthController extends Controller
         ]);
     }
 
-    // Xác thực email (dùng link gửi qua email)
-    public function verify(Request $request, $id, $hash)
-    {
-        $user = User::findOrFail($id);
-
-        if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Liên kết không hợp lệ hoặc đã hết hạn.'
-            ], 400);
-        }
-
-        if ($user->hasVerifiedEmail()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Tài khoản đã được kích hoạt trước đó.',
-                'email_verified_at' => $user->email_verified_at,
-            ]);
-        }
-
-        $user->markEmailAsVerified();
-        event(new Verified($user));
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Tài khoản đã được kích hoạt thành công.',
-            'email_verified_at' => $user->email_verified_at,
-        ]);
-    }
 }

@@ -16,6 +16,45 @@ use Illuminate\Support\Facades\DB;
 
 class PasswordResetController extends Controller
 {
+    // Redirect đến web form reset password
+    public function redirectToWebForm(Request $request)
+    {
+        $token = $request->query('token');
+        $email = $request->query('email');
+        
+        if (!$token || !$email) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token hoặc email không hợp lệ.'
+            ], 400);
+        }
+
+        // Tìm user theo email
+        $user = User::where('Email', $email)->first();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Email không tồn tại trong hệ thống.'
+            ], 400);
+        }
+
+        // Kiểm tra token có hợp lệ không
+        $reset = DB::table('password_reset_tokens')
+            ->where('email', $email)
+            ->where('token', $token)
+            ->first();
+
+        if (!$reset) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token không hợp lệ hoặc đã hết hạn.'
+            ], 400);
+        }
+
+        // Redirect đến web form
+        return redirect("/reset-password/{$user->UserID}/{$token}");
+    }
+
     // Gửi email reset password
     public function sendResetLinkEmail(Request $request)
     {
@@ -40,7 +79,7 @@ class PasswordResetController extends Controller
             ]
         );
         // Tạo link reset
-        $resetUrl = url("/api/reset-password?token=$token&email=" . urlencode($user->Email));
+        $resetUrl = url("/api/reset-password?token=$token&email={$user->Email}");
         // Gửi mail thủ công
         Mail::raw(
             "Chào {$user->Fullname},\n\nVui lòng nhấn vào link sau để đặt lại mật khẩu:\n$resetUrl",
