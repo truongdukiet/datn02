@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rules;
 use App\Models\User;
 
 class PasswordResetWebController extends Controller
@@ -99,7 +100,7 @@ class PasswordResetWebController extends Controller
     public function resetPassword(Request $request, $id, $token)
     {
         $request->validate([
-            'password' => ['required', 'confirmed', 'min:6'],
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         $user = User::findOrFail($id);
