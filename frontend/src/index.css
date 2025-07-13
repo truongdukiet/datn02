@@ -1,0 +1,6 @@
+/* index.css - CSS mặc định cho toàn app */
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f8f9fa;
+}

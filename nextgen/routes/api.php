@@ -108,30 +108,13 @@ Route::get('/news/{slug}', [NewsApiController::class, 'show']);
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::get('/verify-email/{id}/{hash}', function (Request $request, $id, $hash) {
-    $user = User::findOrFail($id);
 
-    if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
-        return response()->json(['success' => false, 'message' => 'Invalid verification link.'], 400);
-    }
-
-    if ($user->hasVerifiedEmail()) {
-        return response()->json([
-            'success' => true,
-            'message' => 'Email already verified.',
-            'email_verified_at' => $user->email_verified_at,
-        ]);
-    }
-
-    $user->markEmailAsVerified();
-    event(new Verified($user));
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Email verified successfully.',
-        'email_verified_at' => $user->email_verified_at,
-    ]);
-});
-
+// Password reset routes
 Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLinkEmail']);
+Route::get('/reset-password', [PasswordResetController::class, 'redirectToWebForm']);
 Route::post('/reset-password', [PasswordResetController::class, 'reset']);
+
+Route::get('/verify-email/{userId}/{token}', [App\Http\Controllers\Api\AuthController::class, 'verifyEmail']);
+
+
+

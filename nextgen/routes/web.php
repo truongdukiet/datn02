@@ -37,6 +37,17 @@ use App\Models\User;
 |
 */
 
+// Email verification routes (đặt ở đầu để ưu tiên cao nhất)
+Route::get('/verify-email/{id}/{token}', [App\Http\Controllers\EmailVerificationController::class, 'verify'])->name('verification.verify');
+Route::get('/verify-email-success', [App\Http\Controllers\EmailVerificationController::class, 'success'])->name('verification.success');
+Route::get('/verify-email-error', [App\Http\Controllers\EmailVerificationController::class, 'error'])->name('verification.error');
+
+// Password reset routes
+Route::get('/forgot-password', [App\Http\Controllers\PasswordResetWebController::class, 'showForgotPasswordForm'])->name('password.request');
+Route::post('/forgot-password', [App\Http\Controllers\PasswordResetWebController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::get('/reset-password/{id}/{token}', [App\Http\Controllers\PasswordResetWebController::class, 'showResetPasswordForm'])->name('password.reset');
+Route::post('/reset-password/{id}/{token}', [App\Http\Controllers\PasswordResetWebController::class, 'resetPassword'])->name('password.update');
+
 // Route cho trang chủ, sử dụng HomeController@index để hiển thị trang chính của website
 Route::get('/', [HomeController::class, 'index']);
 
@@ -51,6 +62,45 @@ Route::get('/dashboard', function () {
 //     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 //     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 // });
+
+
+
+// Test route để debug
+Route::get('/test-verify/{id}/{token}', function($id, $token) {
+    return "Test verify: ID=$id, Token=$token";
+});
+
+// Test route đơn giản cho verify email
+Route::get('/test-verify-email/{id}/{token}', function($id, $token) {
+    return "Testing verify email: User ID=$id, Token=$token";
+});
+
+// Test route cho verify email thật
+Route::get('/test-real-verify/{id}/{token}', function($id, $token) {
+    try {
+        $user = \App\Models\User::findOrFail($id);
+        $verificationRecord = \Illuminate\Support\Facades\DB::table('password_reset_tokens')
+            ->where('email', $user->Email)
+            ->where('token', $token)
+            ->first();
+        
+        if ($verificationRecord) {
+            return "Token hợp lệ! User: " . $user->Fullname . ", Email: " . $user->Email;
+        } else {
+            return "Token không hợp lệ!";
+        }
+    } catch (\Exception $e) {
+        return "Lỗi: " . $e->getMessage();
+    }
+});
+
+// Clear cache route
+Route::get('/clear-cache', function() {
+    \Artisan::call('route:clear');
+    \Artisan::call('config:clear');
+    \Artisan::call('cache:clear');
+    return "Cache cleared!";
+});
 
 // Bao gồm các route xác thực (login, register, logout, password reset) từ file auth.php
 require __DIR__.'/auth.php';
@@ -115,15 +165,9 @@ Route::get('/test-mail', function () {
     return 'Đã gửi mail!';
 });
 
-Route::get('/test-verify-mail/{id}', function ($id) {
-    $user = \App\Models\User::find($id);
-    event(new Registered($user));
-    return 'Đã gửi mail xác thực!';
-});
 
-Route::get('/login', function () {
-    return '<h2>Đăng nhập</h2><p>Trang đăng nhập đang được phát triển.</p>';
-});
+
+
 
 
 
