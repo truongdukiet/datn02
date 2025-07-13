@@ -57,7 +57,8 @@ class AuthController extends Controller
         );
 
         // Tạo link xác thực với ID và token ngẫu nhiên
-        $verificationUrl = url('/verify-email/' . $user->UserID . '/' . $verificationToken);
+        $frontendUrl = 'http://localhost:5173'; // Đổi thành domain/frontend thực tế nếu deploy
+        $verificationUrl = $frontendUrl . '/verify-email/' . $user->UserID . '/' . $verificationToken;
 
         // Gửi mail xác thực thủ công
         Mail::raw(
@@ -123,4 +124,36 @@ class AuthController extends Controller
         ]);
     }
 
+    public function verifyEmail($userId, $token)
+    {
+        // Tìm user theo ID
+        $user = \App\Models\User::find($userId);
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Người dùng không tồn tại.'
+            ], 404);
+        }
+
+        // Lấy token từ bảng password_reset_tokens
+        $row = \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $user->Email)->first();
+        if (!$row || $row->token !== $token) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token không hợp lệ hoặc đã hết hạn.'
+            ], 400);
+        }
+
+        // Đánh dấu email đã xác thực
+        $user->email_verified_at = now();
+        $user->save();
+
+        // Xoá token sau khi xác thực thành công
+        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $user->Email)->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Xác thực email thành công!'
+        ]);
+    }
 }

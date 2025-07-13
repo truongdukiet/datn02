@@ -79,7 +79,8 @@ class PasswordResetController extends Controller
             ]
         );
         // Tạo link reset
-        $resetUrl = url("/api/reset-password?token=$token&email={$user->Email}");
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+        $resetUrl = $frontendUrl . "/reset-password?token=$token&email={$user->Email}";
         // Gửi mail thủ công
         Mail::raw(
             "Chào {$user->Fullname},\n\nVui lòng nhấn vào link sau để đặt lại mật khẩu:\n$resetUrl",

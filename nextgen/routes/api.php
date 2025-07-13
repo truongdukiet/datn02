@@ -114,5 +114,7 @@ Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLinkE
 Route::get('/reset-password', [PasswordResetController::class, 'redirectToWebForm']);
 Route::post('/reset-password', [PasswordResetController::class, 'reset']);
 
+Route::get('/verify-email/{userId}/{token}', [App\Http\Controllers\Api\AuthController::class, 'verifyEmail']);
+
 
 
