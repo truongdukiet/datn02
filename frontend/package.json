@@ -5,13 +5,12 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^7.6.3",
-    "react-scripts": "5.0.1"
+    "react-router-dom": "^7.6.3"
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "backend": "cd ../nextgen && php artisan serve",
+    "start:all": "concurrently \"npm run backend\" \"npm run dev\""
   },
   "browserslist": {
     "production": [
@@ -26,6 +25,7 @@
     ]
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "vite": "^7.0.4"
   }
 }
