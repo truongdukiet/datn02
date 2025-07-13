@@ -12,6 +12,7 @@ const Register = ({ onRegisterSuccess }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [success, setSuccess] = useState('');
 
   const handleChange = (e) => {
@@ -19,6 +20,7 @@ const Register = ({ onRegisterSuccess }) => {
       ...formData,
       [e.target.name]: e.target.value
     });
+    setFieldErrors({ ...fieldErrors, [e.target.name]: undefined });
   };
 
   const handleSubmit = async (e) => {
@@ -26,6 +28,7 @@ const Register = ({ onRegisterSuccess }) => {
     setLoading(true);
     setError('');
     setSuccess('');
+    setFieldErrors({});
     try {
       const data = await register(formData);
       setSuccess(data.message || 'Đăng ký thành công! Vui lòng kiểm tra email để kích hoạt tài khoản.');
@@ -39,6 +42,8 @@ const Register = ({ onRegisterSuccess }) => {
       if (onRegisterSuccess) onRegisterSuccess();
     } catch (err) {
       setError(err.message || 'Đăng ký thất bại');
+      // Nếu backend trả về errors dạng object
+      if (err.errors) setFieldErrors(err.errors);
     } finally {
       setLoading(false);
     }
@@ -52,64 +57,28 @@ const Register = ({ onRegisterSuccess }) => {
         {success && <div className="success-message">{success}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="Fullname">Họ tên:</label>
-            <input
-              type="text"
-              id="Fullname"
-              name="Fullname"
-              value={formData.Fullname}
-              onChange={handleChange}
-              required
-              placeholder="Nhập họ tên"
-            />
+            <label>Họ tên:</label>
+            <input type="text" name="Fullname" value={formData.Fullname} onChange={handleChange} required placeholder="Nhập họ tên" />
+            {fieldErrors.Fullname && <div className="error-message">{fieldErrors.Fullname[0]}</div>}
           </div>
           <div className="form-group">
-            <label htmlFor="Username">Tên đăng nhập:</label>
-            <input
-              type="text"
-              id="Username"
-              name="Username"
-              value={formData.Username}
-              onChange={handleChange}
-              required
-              placeholder="Nhập tên đăng nhập"
-            />
+            <label>Tên đăng nhập:</label>
+            <input type="text" name="Username" value={formData.Username} onChange={handleChange} required placeholder="Nhập tên đăng nhập" />
+            {fieldErrors.Username && <div className="error-message">{fieldErrors.Username[0]}</div>}
           </div>
           <div className="form-group">
-            <label htmlFor="Email">Email:</label>
-            <input
-              type="email"
-              id="Email"
-              name="Email"
-              value={formData.Email}
-              onChange={handleChange}
-              required
-              placeholder="Nhập email"
-            />
+            <label>Email:</label>
+            <input type="email" name="Email" value={formData.Email} onChange={handleChange} required placeholder="Nhập email" />
+            {fieldErrors.Email && <div className="error-message">{fieldErrors.Email[0]}</div>}
           </div>
           <div className="form-group">
-            <label htmlFor="Password">Mật khẩu:</label>
-            <input
-              type="password"
-              id="Password"
-              name="Password"
-              value={formData.Password}
-              onChange={handleChange}
-              required
-              placeholder="Nhập mật khẩu"
-            />
+            <label>Mật khẩu:</label>
+            <input type="password" name="Password" value={formData.Password} onChange={handleChange} required placeholder="Nhập mật khẩu" />
+            {fieldErrors.Password && <div className="error-message">{fieldErrors.Password[0]}</div>}
           </div>
           <div className="form-group">
-            <label htmlFor="Password_confirmation">Nhập lại mật khẩu:</label>
-            <input
-              type="password"
-              id="Password_confirmation"
-              name="Password_confirmation"
-              value={formData.Password_confirmation}
-              onChange={handleChange}
-              required
-              placeholder="Nhập lại mật khẩu"
-            />
+            <label>Nhập lại mật khẩu:</label>
+            <input type="password" name="Password_confirmation" value={formData.Password_confirmation} onChange={handleChange} required placeholder="Nhập lại mật khẩu" />
           </div>
           <button type="submit" className="login-btn" disabled={loading}>
             {loading ? 'Đang đăng ký...' : 'Đăng ký'}

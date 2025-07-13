@@ -32,7 +32,9 @@ const handleResponse = async (response) => {
     const data = await response.json();
     
     if (!response.ok) {
-        throw new Error(data.message || 'Có lỗi xảy ra');
+        const error = new Error(data.message || 'Có lỗi xảy ra');
+        if (data.errors) error.errors = data.errors; // Gắn errors vào object error
+        throw error;
     }
     
     return data;

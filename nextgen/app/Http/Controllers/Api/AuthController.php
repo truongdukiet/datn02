@@ -119,7 +119,8 @@ class AuthController extends Controller
                 'UserID' => $user->UserID,
                 'Fullname' => $user->Fullname,
                 'Username' => $user->Username,
-                'Email' => $user->Email
+                'Email' => $user->Email,
+                'Role' => $user->Role // Đúng chữ hoa
             ]
         ]);
     }

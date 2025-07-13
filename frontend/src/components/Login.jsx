@@ -10,27 +10,30 @@ const Login = ({ onLoginSuccess }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+    setFieldErrors({ ...fieldErrors, [e.target.name]: undefined });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
+    setFieldErrors({});
     try {
       const data = await login(formData.login, formData.Password);
       if (onLoginSuccess) {
         onLoginSuccess(data);
       }
-      setFormData({ email: '', password: '' });
+      setFormData({ login: '', Password: '' });
     } catch (err) {
       setError(err.message || 'Đăng nhập thất bại');
+      if (err.errors) setFieldErrors(err.errors);
     } finally {
       setLoading(false);
     }
@@ -40,11 +43,7 @@ const Login = ({ onLoginSuccess }) => {
     <div className="login-container">
       <div className="login-card">
         <h2>Đăng nhập</h2>
-        {error && (
-          <div className="error-message">
-            {error}
-          </div>
-        )}
+        {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="login">Email hoặc Username:</label>
@@ -57,6 +56,7 @@ const Login = ({ onLoginSuccess }) => {
               required
               placeholder="Nhập email hoặc username"
             />
+            {fieldErrors.login && <div className="error-message">{fieldErrors.login[0]}</div>}
           </div>
           <div className="form-group">
             <label htmlFor="Password">Mật khẩu:</label>
@@ -69,6 +69,7 @@ const Login = ({ onLoginSuccess }) => {
               required
               placeholder="Nhập mật khẩu"
             />
+            {fieldErrors.Password && <div className="error-message">{fieldErrors.Password[0]}</div>}
           </div>
           <button 
             type="submit" 
