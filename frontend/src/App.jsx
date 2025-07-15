@@ -1,22 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
 import './App.css';
-import ProductList from './components/ProductList.jsx';
-import Login from './components/Login.jsx';
-import Register from './components/Register.jsx';
-import AdminDashboard from './components/admin/AdminDashboard.jsx';
-import { logout } from './api';
-import VerifyEmailSuccess from './components/VerifyEmailSuccess.jsx';
-import VerifyEmail from './components/VerifyEmail.jsx';
-import ForgotPassword from './components/ForgotPassword.jsx';
-import ResetPassword from './components/ResetPassword.jsx';
-import AdminLayout from './components/admin/AdminLayout.jsx';
-import AdminUsers from './components/admin/AdminUsers.jsx';
-import AdminProducts from './components/admin/AdminProducts.jsx';
+import ProductList from './pages/client/Products/ProductList.jsx';
+import Login from './pages/client/Login/Login.jsx';
+import Register from './pages/client/Register/Register.jsx';
+import AdminDashboard from './pages/admin/Dashboard/AdminDashboard.jsx';
+import { logout } from './api/api';
+import VerifyEmailSuccess from './pages/client/Register/VerifyEmailSuccess.jsx';
+import VerifyEmail from './pages/client/Register/VerifyEmail.jsx';
+import ForgotPassword from './pages/client/Login/ForgotPassword.jsx';
+import ResetPassword from './pages/client/Login/ResetPassword.jsx';
+import AdminLayout from './layouts/AdminLayout/AdminLayout.jsx';
+import AdminUsers from './pages/admin/AdminUsers.jsx';
+import AdminProducts from './pages/admin/AdminProducts.jsx';
 // import AdminOrders from './components/admin/AdminOrders.jsx';
 // import AdminCategories from './components/admin/AdminCategories.jsx';
 // import AdminVouchers from './components/admin/AdminVouchers.jsx';
 // import AdminNews from './components/admin/AdminNews.jsx';
+import Home from './pages/client/Home/Home.jsx';
+import About from './pages/client/About/About.jsx';
+import Projects from './pages/client/Projects/Projects.jsx';
+import News from './pages/client/News/News.jsx';
+import Contact from './pages/client/Contact/Contact.jsx';
+import Cart from './pages/client/Cart/Cart.jsx';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -82,14 +88,12 @@ function App() {
 
       <main className="App-main">
         <Routes>
-          <Route
-            path="/"
-            element={
-              isAuthenticated
-                ? (Number(user?.Role) === 1 ? <Navigate to="/admin" replace /> : <Navigate to="/products" replace />)
-                : <Navigate to="/login" replace />
-            }
-          />
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/news" element={<News />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/cart" element={<Cart />} />
           <Route
             path="/login"
             element={
