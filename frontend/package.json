@@ -1,34 +1,37 @@
 {
-  "name": "frontend",
-  "version": "0.1.0",
+  "name": "nextgen",
   "private": true,
-  "dependencies": {
-    "antd": "^5.26.5",
-    "axios": "^1.10.0",
-    "classnames": "^2.5.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^7.6.3"
-  },
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
-    "backend": "cd ../nextgen && php artisan serve",
-    "all": "concurrently \"npm run dev\" \"npm run backend\""
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "dependencies": {
+    "@ant-design/v5-patch-for-react-19": "^1.0.3",
+    "@tanstack/react-query": "^5.83.0",
+    "antd": "^5.26.2",
+    "axios": "^1.10.0",
+    "classnames": "^2.5.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-hook-form": "^7.60.0",
+    "react-router-dom": "^7.6.2"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
-    "vite": "^7.0.4"
+    "@eslint/js": "^9.25.0",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react": "^4.4.1",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.25.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "vite": "^6.3.5"
   }
 }

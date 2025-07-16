@@ -1,4 +1,3 @@
-import React from "react";
 import ClientHeader from "../../../layouts/MainLayout/ClientHeader";
 
 const Services = () => {

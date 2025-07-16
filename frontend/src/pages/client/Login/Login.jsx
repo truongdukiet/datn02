@@ -1,90 +1,123 @@
-import React, { useState } from 'react';
-import { login } from "../../../api/api";
-import './Login.css';
-import { Link } from 'react-router-dom';
+import React from "react";
+import ClientHeader from "../../../layouts/MainLayout/ClientHeader";
+import { Link } from "react-router-dom";
+import { Checkbox } from "antd";
+import { useForm } from "react-hook-form";
 
-const Login = ({ onLoginSuccess }) => {
-  const [formData, setFormData] = useState({
-    login: '',      // đổi từ email thành login
-    Password: ''    // đổi từ password thành Password (chữ P hoa)
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState({});
+const Login = () => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-    setFieldErrors({ ...fieldErrors, [e.target.name]: undefined });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setFieldErrors({});
-    try {
-      const data = await login(formData.login, formData.Password);
-      if (onLoginSuccess) {
-        onLoginSuccess(data);
-      }
-      setFormData({ login: '', Password: '' });
-    } catch (err) {
-      setError(err.message || 'Đăng nhập thất bại');
-      if (err.errors) setFieldErrors(err.errors);
-    } finally {
-      setLoading(false);
-    }
+  const onSubmit = () => {
+    // loginUser(data)...
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <h2>Đăng nhập</h2>
-        {error && <div className="error-message">{error}</div>}
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="login">Email hoặc Username:</label>
-            <input
-              type="text"
-              id="login"
-              name="login"
-              value={formData.login}
-              onChange={handleChange}
-              required
-              placeholder="Nhập email hoặc username"
-            />
-            {fieldErrors.login && <div className="error-message">{fieldErrors.login[0]}</div>}
+    <>
+      <ClientHeader lightMode={false} />
+
+      <main className="tw-min-h-[80vh] tw-pt-24 container">
+        <div className="tw-my-6">
+          <div className="tw-flex tw-items-center tw-gap-5">
+            <Link to="/" className="tw-text-[#9E9E9E]">
+              Trang chủ
+            </Link>
+
+            <div className="tw-text-[#9E9E9E]">
+              <i className="fa-solid fa-chevron-right"></i>
+            </div>
+
+            <p className="tw-text-[#1A1C20] tw-font-bold tw-m-0">Đăng nhập</p>
           </div>
-          <div className="form-group">
-            <label htmlFor="Password">Mật khẩu:</label>
-            <input
-              type="password"
-              id="Password"
-              name="Password"
-              value={formData.Password}
-              onChange={handleChange}
-              required
-              placeholder="Nhập mật khẩu"
-            />
-            {fieldErrors.Password && <div className="error-message">{fieldErrors.Password[0]}</div>}
-          </div>
-          <button 
-            type="submit" 
-            className="login-btn"
-            disabled={loading}
+
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="tw-w-[600px] tw-max-w-full tw-mx-auto tw-mt-24"
           >
-            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
-          </button>
-        </form>
-        <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <Link to="/forgot-password" className="nav-link">Quên mật khẩu?</Link>
+            <h1 className="tw-text-center tw-text-5xl tw-font-bold tw-mb-6">
+              Đăng nhập
+            </h1>
+
+            <div className="row form-group">
+              <div className="col-md-12 mb-3 mb-md-0">
+                <label className="font-weight-bold" htmlFor="login">
+                  Tên đăng nhập
+                </label>
+                <input
+                  type="text"
+                  id="login"
+                  className={`form-control ${errors.login ? "is-invalid" : ""}`}
+                  placeholder="username123"
+                  {...register("login", {
+                    required: "Tên đăng nhập không được để trống",
+                    minLength: {
+                      value: 4,
+                      message: "Tên đăng nhập phải có ít nhất 4 kí tự",
+                    },
+                  })}
+                />
+                {errors.login && (
+                  <div className="invalid-feedback">{errors.login.message}</div>
+                )}
+              </div>
+            </div>
+
+            <div className="row form-group">
+              <div className="col-md-12 tw-mb-3 mb-md-0">
+                <label className="font-weight-bold" htmlFor="Password">
+                  Mật khẩu
+                </label>
+                <input
+                  type="password"
+                  id="Password"
+                  className={`form-control ${
+                    errors.Password ? "is-invalid" : ""
+                  }`}
+                  placeholder="Nhập mật khẩu"
+                  {...register("Password", {
+                    required: "Mật khẩu không được để trống",
+                  })}
+                />
+                {errors.Password && (
+                  <div className="invalid-feedback">
+                    {errors.Password.message}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="tw-flex tw-items-center tw-justify-between">
+              <div className="tw-flex tw-items-center tw-gap-x-2">
+                <Checkbox {...register("rememberMe")}>
+                  <p className="tw-text-[#1A1C20] tw-m-0">Ghi nhớ mật khẩu</p>
+                </Checkbox>
+              </div>
+
+              <Link className="tw-text-[#99CCD0] tw-underline">
+                Quên mật khẩu?
+              </Link>
+            </div>
+
+            <input
+              type="submit"
+              value="Đăng nhập"
+              className="btn btn-primary rounded-0 btn-lg tw-w-full tw-text-2xl tw-mt-6 tw-uppercase tw-font-semibold"
+            />
+
+            <p className="tw-text-center tw-mt-6">
+              Bạn chưa có tài khoản?{" "}
+              <Link to="/register" className="tw-text-[#99CCD0] tw-underline">
+                Đăng ký
+              </Link>
+            </p>
+          </form>
         </div>
-      </div>
-    </div>
+      </main>
+    </>
   );
 };
 
-export default Login; 
+export default Login;

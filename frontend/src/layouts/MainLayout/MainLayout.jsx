@@ -5,8 +5,8 @@ import ClientHeader from "./ClientHeader";
 const MainLayout = () => {
   return (
     <div className="site-wrap">
-      <ClientHeader />
       <Outlet />
+
       <ClientFooter />
     </div>
   );

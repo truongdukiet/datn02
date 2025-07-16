@@ -1,4 +1,3 @@
-import React from "react";
 import { Checkbox, Radio, Select, Slider } from "antd";
 import { useState } from "react";
 import ClientHeader from "../../../layouts/MainLayout/ClientHeader";
