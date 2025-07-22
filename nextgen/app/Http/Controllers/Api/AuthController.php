@@ -57,8 +57,8 @@ class AuthController extends Controller
         );
 
         // Tạo link xác thực với ID và token ngẫu nhiên
-        $frontendUrl = 'http://localhost:5173'; // Đổi thành domain/frontend thực tế nếu deploy
-        $verificationUrl = $frontendUrl . '/verify-email/' . $user->UserID . '/' . $verificationToken;
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+        $verificationUrl = $frontendUrl . '/verify-email?userId=' . $user->UserID . '&token=' . $verificationToken;
 
         // Gửi mail xác thực thủ công
         Mail::raw(
