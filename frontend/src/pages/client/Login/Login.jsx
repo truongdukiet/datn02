@@ -1,8 +1,10 @@
 import React from "react";
 import ClientHeader from "../../../layouts/MainLayout/ClientHeader";
-import { Link } from "react-router-dom";
-import { Checkbox } from "antd";
+import { Link, useNavigate } from "react-router-dom";
+import { Checkbox, message } from "antd";
 import { useForm } from "react-hook-form";
+import { useMutation } from "@tanstack/react-query";
+import apiClient from "../../../api/api";
 
 const Login = () => {
   const {
@@ -10,16 +12,33 @@ const Login = () => {
     handleSubmit,
     formState: { errors },
   } = useForm();
+  const navigate = useNavigate();
 
-  const onSubmit = () => {
-    // loginUser(data)...
+  const loginMutation = useMutation({
+    mutationFn: (data) => apiClient.post("/api/login", data),
+    onSuccess: (response) => {
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+
+      message.success("Đăng nhập thành công");
+      navigate("/");
+    },
+    onError: (error) => {
+      message.error(
+        error?.response?.data?.message || "Đăng nhập thất bại, vui lòng thử lại"
+      );
+    },
+  });
+
+  const onSubmit = (data) => {
+    loginMutation.mutate(data);
   };
 
   return (
     <>
       <ClientHeader lightMode={false} />
 
-      <main className="tw-min-h-[80vh] tw-pt-24 container">
+      <main className="tw-min-h-[80vh] tw-pt-24 tw-pb-24 container">
         <div className="tw-my-6">
           <div className="tw-flex tw-items-center tw-gap-5">
             <Link to="/" className="tw-text-[#9E9E9E]">
@@ -44,15 +63,15 @@ const Login = () => {
             <div className="row form-group">
               <div className="col-md-12 mb-3 mb-md-0">
                 <label className="font-weight-bold" htmlFor="login">
-                  Tên đăng nhập
+                  Tên đăng nhập hoặc Email
                 </label>
                 <input
                   type="text"
                   id="login"
                   className={`form-control ${errors.login ? "is-invalid" : ""}`}
-                  placeholder="username123"
+                  placeholder="Nhập tên đăng nhập hoặc email"
                   {...register("login", {
-                    required: "Tên đăng nhập không được để trống",
+                    required: "Tên đăng nhập hoặc Email không được để trống",
                     minLength: {
                       value: 4,
                       message: "Tên đăng nhập phải có ít nhất 4 kí tự",
@@ -96,16 +115,21 @@ const Login = () => {
                 </Checkbox>
               </div>
 
-              <Link className="tw-text-[#99CCD0] tw-underline">
+              <Link
+                to="/forgot-password"
+                className="tw-text-[#99CCD0] tw-underline"
+              >
                 Quên mật khẩu?
               </Link>
             </div>
 
-            <input
+            <button
               type="submit"
-              value="Đăng nhập"
+              disabled={loginMutation.isPending}
               className="btn btn-primary rounded-0 btn-lg tw-w-full tw-text-2xl tw-mt-6 tw-uppercase tw-font-semibold"
-            />
+            >
+              {loginMutation.isPending ? "Đang đăng nhập..." : "Đăng nhập"}
+            </button>
 
             <p className="tw-text-center tw-mt-6">
               Bạn chưa có tài khoản?{" "}

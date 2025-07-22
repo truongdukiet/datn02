@@ -1,8 +1,19 @@
 import { Link } from "react-router-dom";
 import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import ClientHeader from "../../../layouts/MainLayout/ClientHeader";
+import ProductItem from "../../../components/ProductItem/ProductItem";
+import apiClient from "../../../api/api";
 
 const Home = () => {
+  const { data: productsData, isLoading } = useQuery({
+    queryKey: ["products"],
+    queryFn: async () => {
+      const response = await apiClient.get("/api/products");
+      return response.data;
+    },
+  });
+
   useEffect(() => {
     // Initialize AOS (Animate On Scroll)
     if (window.AOS) {
@@ -52,6 +63,47 @@ const Home = () => {
             <div className="col-md-8">
               <span className="sub-text">Interior Design Company</span>
               <h1>Experience Interior Design</h1>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Featured Products Section */}
+      <div className="site-section tw-mb-32">
+        <div className="container">
+          <div className="row mb-5">
+            <div className="col-12 text-center">
+              <span className="sub-title">Exclusive Products</span>
+              <h2 className="font-weight-bold text-black mb-5">
+                Featured Products
+              </h2>
+            </div>
+          </div>
+          <div className="row">
+            {isLoading ? (
+              <div className="col-12 text-center py-5">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+              </div>
+            ) : (
+              <>
+                {productsData?.data?.slice(0, 8).map((product) => (
+                  <div
+                    key={product.ProductID}
+                    className="col-lg-3 col-md-6 mb-4"
+                  >
+                    <ProductItem product={product} />
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+          <div className="row mt-5 text-center">
+            <div className="col-12">
+              <Link to="/products" className="btn btn-primary btn-lg rounded-0">
+                View All Products
+              </Link>
             </div>
           </div>
         </div>

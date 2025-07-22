@@ -17,7 +17,7 @@ const Register = () => {
   const navigate = useNavigate();
   const password = watch("Password");
 
-  const loginMutation = useMutation({
+  const registerMutation = useMutation({
     mutationFn: (data) => apiClient.post("/api/register", data),
     onSuccess: () => {
       message.success("Đăng ký thành công");
@@ -31,7 +31,7 @@ const Register = () => {
   });
 
   const onSubmit = (data) => {
-    loginMutation.mutate(data);
+    registerMutation.mutate(data);
   };
 
   return (
@@ -230,8 +230,8 @@ const Register = () => {
 
             <input
               type="submit"
-              value={loginMutation.isPending ? "Đang đăng ký..." : "Đăng ký"}
-              disabled={loginMutation.isPending}
+              value={registerMutation.isPending ? "Đang đăng ký..." : "Đăng ký"}
+              disabled={registerMutation.isPending}
               className="btn btn-primary rounded-0 btn-lg tw-w-full tw-text-2xl tw-mt-6 tw-uppercase tw-font-semibold"
             />
 
