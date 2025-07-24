@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api; // Định nghĩa không gian tên (namespac
 
 use App\Http\Controllers\Controller; // Nhập (import) lớp Controller cơ bản của Laravel mà CartController sẽ kế thừa
 use Illuminate\Http\Request; // Nhập lớp Request để có thể nhận và xử lý dữ liệu từ các yêu cầu HTTP đến
-use App\Models\ProductVariant; // Nhập ProductVariant Model để tương tác với bảng 'product_variants' trong cơ sở dữ liệu
+use App\Models\ProductVariant; // Nhập ProductVariant Model để tương tác với bảng 'productvariants' trong cơ sở dữ liệu
 use App\Models\Cart; // Nhập Cart Model để tương tác với bảng 'cart' trong cơ sở dữ liệu (đã đồng bộ với cấu trúc bạn cung cấp)
 use Illuminate\Support\Facades\Auth; // Nhập Facade Auth để truy cập các phương thức liên quan đến xác thực người dùng (ví dụ: lấy ID người dùng)
 use Carbon\Carbon; // Nhập lớp Carbon để làm việc với thời gian, dùng cho các cột timestamps được quản lý thủ công
@@ -72,7 +72,7 @@ class CartController extends Controller // Khai báo lớp CartController, kế 
     {
         // 1. Xác thực dữ liệu đầu vào từ request
         $request->validate([ // Gọi phương thức validate để kiểm tra các trường dữ liệu
-            'ProductVariantID' => 'required|integer|exists:product_variants,ProductVariantID', // Yêu cầu ProductVariantID phải có, là số nguyên, và phải tồn tại trong cột 'ProductVariantID' của bảng 'product_variants'
+            'ProductVariantID' => 'required|integer|exists:productvariants,ProductVariantID', // Yêu cầu ProductVariantID phải có, là số nguyên, và phải tồn tại trong cột 'ProductVariantID' của bảng 'productvariants'
             'Quantity' => 'required|integer|min:1', // Yêu cầu Quantity phải có, là số nguyên, và có giá trị tối thiểu là 1
         ]);
 
