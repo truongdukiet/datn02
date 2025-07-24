@@ -1,13 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Admin; // Đảm bảo namespace đúng cho Admin
+namespace App\Http\Controllers\Admin; // Ensure namespace is Admin
 
-use App\Http\Controllers\Controller; // Kế thừa từ Controller cơ bản
+use App\Http\Controllers\Controller; // Inherit from the base Controller
 use App\Models\News; // Import News Model
 use Illuminate\Http\Request;
-use Illuminate\Support\Str; // Để tạo slug
-use Illuminate\Support\Facades\Auth; // Để lấy UserID của tác giả
-use Illuminate\Support\Facades\Storage; // Để xử lý file ảnh
+use Illuminate\Support\Str; // For slug generation
+use Illuminate\Support\Facades\Auth; // To get the author's UserID
+use Illuminate\Support\Facades\Storage; // For file storage operations
+use Illuminate\Validation\ValidationException; // Import ValidationException for API error handling
 
 class NewsController extends Controller
 {
@@ -15,181 +16,207 @@ class NewsController extends Controller
      * Display a listing of the resource.
      * Hiển thị danh sách tất cả các bài viết tin tức.
      *
-     * @return \Illuminate\View\View
-     */
-    public function index()
-    {
-        // Lấy tất cả các bài viết tin tức từ database, sắp xếp theo thời gian tạo mới nhất
-        $news = News::orderBy('created_at', 'desc')->paginate(10); // Phân trang 10 bài viết mỗi trang
-
-        // Trả về view 'admin.news.index' và truyền dữ liệu tin tức vào
-        return view('admin.news.index', compact('news'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     * Hiển thị form để tạo một bài viết tin tức mới.
+     * GET /api/admin/news
      *
-     * @return \Illuminate\View\View
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function create()
+    public function index(Request $request)
     {
-        // Trả về view 'admin.news.create' chứa form thêm mới
-        return view('admin.news.create');
+        try {
+            // Retrieve all news articles from the database, ordered by creation time (latest first)
+            // You can add pagination, search, and filtering here if needed for API.
+            // Example with pagination: $news = News::orderBy('created_at', 'desc')->paginate($request->get('per_page', 10));
+            $news = News::orderBy('created_at', 'desc')->get();
+
+            // Return news data as JSON with 200 OK status
+            return response()->json($news, 200);
+        } catch (\Exception $e) {
+            // Handle any unexpected errors
+            return response()->json(['message' => 'Error fetching news articles.', 'error' => $e->getMessage()], 500);
+        }
     }
 
     /**
      * Store a newly created resource in storage.
      * Lưu một bài viết tin tức mới vào database.
      *
+     * POST /api/admin/news
+     *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
-        // 1. Validate dữ liệu đầu vào từ request
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Ảnh không bắt buộc, tối đa 2MB
-            'status' => 'required|string|in:draft,published', // Trạng thái phải là 'draft' hoặc 'published'
-            'published_at' => 'nullable|date', // Ngày xuất bản có thể null
-        ]);
+        try {
+            // 1. Validate incoming data from the request
+            $validatedData = $request->validate([
+                'title' => 'required|string|max:255',
+                'content' => 'required|string',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Image is optional, max 2MB
+                'status' => 'required|string|in:draft,published', // Status must be 'draft' or 'published'
+                'published_at' => 'nullable|date', // Publish date can be null
+            ]);
 
-        // 2. Xử lý upload ảnh nếu có
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('news_images', 'public'); // Lưu ảnh vào thư mục 'storage/app/public/news_images'
+            // 2. Handle image upload if present
+            $imagePath = null;
+            if ($request->hasFile('image')) {
+                // Store image in 'storage/app/public/news_images'
+                $imagePath = $request->file('image')->store('news_images', 'public');
+            }
+
+            // 3. Generate slug from the title
+            $slug = Str::slug($validatedData['title']);
+
+            // Ensure slug is unique. If it already exists, append a number.
+            $originalSlug = $slug;
+            $count = 1;
+            while (News::where('slug', $slug)->exists()) {
+                $slug = $originalSlug . '-' . $count++;
+            }
+
+            // 4. Create a new news article in the database
+            $news = News::create([
+                'title' => $validatedData['title'],
+                'slug' => $slug,
+                'content' => $validatedData['content'],
+                'image' => $imagePath,
+                'author_id' => Auth::id(), // Assign the UserID of the currently logged-in user as author
+                'status' => $validatedData['status'],
+                // If status is 'published', set published_at to request's date or current time; otherwise, null
+                'published_at' => $validatedData['status'] === 'published' ? ($validatedData['published_at'] ?? now()) : null,
+            ]);
+
+            // 5. Return the newly created news article as JSON with 201 Created status
+            return response()->json($news, 201);
+        } catch (ValidationException $e) {
+            // Handle validation errors
+            return response()->json(['errors' => $e->errors()], 422); // 422 Unprocessable Entity
+        } catch (\Exception $e) {
+            // Handle other unexpected errors (e.g., database errors, file storage errors)
+            return response()->json(['message' => 'Error creating news article.', 'error' => $e->getMessage()], 500); // 500 Internal Server Error
         }
-
-        // 3. Tạo slug từ tiêu đề
-        $slug = Str::slug($request->title);
-
-        // Đảm bảo slug là duy nhất. Nếu đã tồn tại, thêm số vào cuối.
-        $originalSlug = $slug;
-        $count = 1;
-        while (News::where('slug', $slug)->exists()) {
-            $slug = $originalSlug . '-' . $count++;
-        }
-
-        // 4. Tạo bài viết tin tức mới trong database
-        News::create([
-            'title' => $request->title,
-            'slug' => $slug,
-            'content' => $request->content,
-            'image' => $imagePath,
-            'author_id' => Auth::id(), // Gán UserID của người dùng đang đăng nhập làm tác giả
-            'status' => $request->status,
-            'published_at' => $request->status === 'published' ? ($request->published_at ?? now()) : null, // Nếu là 'published' thì gán ngày, ngược lại là null
-        ]);
-
-        // 5. Chuyển hướng về trang danh sách tin tức với thông báo thành công
-        return redirect()->route('admin.news.index')->with('success', 'Bài viết tin tức đã được tạo thành công!');
     }
 
     /**
      * Display the specified resource.
      * Hiển thị chi tiết một bài viết tin tức cụ thể.
      *
-     * @param  \App\Models\News  $news (Sử dụng Route Model Binding)
-     * @return \Illuminate\View\View
+     * GET /api/admin/news/{news}
+     *
+     * @param  \App\Models\News  $news (Uses Route Model Binding)
+     * @return \Illuminate\Http\JsonResponse
      */
     public function show(News $news)
     {
-        // Trả về view 'admin.news.show' và truyền đối tượng tin tức vào
-        return view('admin.news.show', compact('news'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     * Hiển thị form để chỉnh sửa một bài viết tin tức cụ thể.
-     *
-     * @param  \App\Models\News  $news (Sử dụng Route Model Binding)
-     * @return \Illuminate\View\View
-     */
-    public function edit(News $news)
-    {
-        // Trả về view 'admin.news.edit' và truyền đối tượng tin tức vào
-        return view('admin.news.edit', compact('news'));
+        // Laravel will automatically find the news article based on its ID/slug from the URL (Route Model Binding).
+        // If not found, Laravel will automatically return 404 Not Found.
+        return response()->json($news, 200); // Return news article as JSON with 200 OK status
     }
 
     /**
      * Update the specified resource in storage.
      * Cập nhật một bài viết tin tức cụ thể trong database.
      *
+     * PUT/PATCH /api/admin/news/{news}
+     *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\News  $news (Sử dụng Route Model Binding)
-     * @return \Illuminate\Http\RedirectResponse
+     * @param  \App\Models\News  $news (Uses Route Model Binding)
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, News $news)
     {
-        // 1. Validate dữ liệu đầu vào từ request
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Ảnh không bắt buộc, tối đa 2MB
-            'status' => 'required|string|in:draft,published',
-            'published_at' => 'nullable|date',
-        ]);
+        try {
+            // 1. Validate incoming data from the request
+            $validatedData = $request->validate([
+                'title' => 'required|string|max:255',
+                'content' => 'required|string',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Image is optional, max 2MB
+                'status' => 'required|string|in:draft,published',
+                'published_at' => 'nullable|date',
+                'clear_image' => 'nullable|boolean', // New field to explicitly clear the image
+            ]);
 
-        // 2. Xử lý upload ảnh mới nếu có
-        $imagePath = $news->image; // Giữ ảnh cũ nếu không có ảnh mới
-        if ($request->hasFile('image')) {
-            // Xóa ảnh cũ nếu tồn tại
-            if ($news->image && Storage::disk('public')->exists($news->image)) {
-                Storage::disk('public')->delete($news->image);
+            // 2. Handle new image upload or existing image deletion
+            $imagePath = $news->image; // Keep the old image path by default
+            if ($request->hasFile('image')) {
+                // Delete old image if it exists
+                if ($news->image && Storage::disk('public')->exists($news->image)) {
+                    Storage::disk('public')->delete($news->image);
+                }
+                $imagePath = $request->file('image')->store('news_images', 'public');
+            } elseif (isset($validatedData['clear_image']) && $validatedData['clear_image']) {
+                // If 'clear_image' is true, delete the existing image
+                if ($news->image && Storage::disk('public')->exists($news->image)) {
+                    Storage::disk('public')->delete($news->image);
+                }
+                $imagePath = null;
             }
-            $imagePath = $request->file('image')->store('news_images', 'public');
-        } elseif ($request->input('clear_image')) { // Xử lý xóa ảnh nếu có checkbox "clear_image"
-            if ($news->image && Storage::disk('public')->exists($news->image)) {
-                Storage::disk('public')->delete($news->image);
+
+            // 3. Generate slug from the title (only update if title has changed)
+            $slug = $news->slug;
+            if ($validatedData['title'] !== $news->title) {
+                $slug = Str::slug($validatedData['title']);
+                $originalSlug = $slug;
+                $count = 1;
+                // Ensure the new slug is unique, excluding the current news article
+                while (News::where('slug', $slug)->where('id', '!=', $news->id)->exists()) {
+                    $slug = $originalSlug . '-' . $count++;
+                }
             }
-            $imagePath = null;
+
+            // 4. Update the news article in the database
+            $news->update([
+                'title' => $validatedData['title'],
+                'slug' => $slug,
+                'content' => $validatedData['content'],
+                'image' => $imagePath,
+                'status' => $validatedData['status'],
+                'published_at' => $validatedData['status'] === 'published' ? ($validatedData['published_at'] ?? now()) : null,
+            ]);
+
+            // 5. Return the updated news article as JSON with 200 OK status
+            return response()->json($news, 200);
+        } catch (ValidationException $e) {
+            // Handle validation errors
+            return response()->json(['errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            // Handle other unexpected errors
+            return response()->json(['message' => 'Error updating news article.', 'error' => $e->getMessage()], 500);
         }
-
-        // 3. Tạo slug từ tiêu đề (chỉ cập nhật nếu tiêu đề thay đổi)
-        $slug = $news->slug;
-        if ($request->title !== $news->title) {
-            $slug = Str::slug($request->title);
-            $originalSlug = $slug;
-            $count = 1;
-            while (News::where('slug', $slug)->where('id', '!=', $news->id)->exists()) {
-                $slug = $originalSlug . '-' . $count++;
-            }
-        }
-
-        // 4. Cập nhật bài viết tin tức trong database
-        $news->update([
-            'title' => $request->title,
-            'slug' => $slug,
-            'content' => $request->content,
-            'image' => $imagePath,
-            'status' => $request->status,
-            'published_at' => $request->status === 'published' ? ($request->published_at ?? now()) : null,
-        ]);
-
-        // 5. Chuyển hướng về trang danh sách tin tức với thông báo thành công
-        return redirect()->route('admin.news.index')->with('success', 'Bài viết tin tức đã được cập nhật thành công!');
     }
 
     /**
      * Remove the specified resource from storage.
      * Xóa một bài viết tin tức cụ thể khỏi database.
      *
-     * @param  \App\Models\News  $news (Sử dụng Route Model Binding)
-     * @return \Illuminate\Http\RedirectResponse
+     * DELETE /api/admin/news/{news}
+     *
+     * @param  \App\Models\News  $news (Uses Route Model Binding)
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(News $news)
     {
-        // 1. Xóa ảnh liên quan nếu có
-        if ($news->image && Storage::disk('public')->exists($news->image)) {
-            Storage::disk('public')->delete($news->image);
+        try {
+            // 1. Delete associated image if it exists
+            if ($news->image && Storage::disk('public')->exists($news->image)) {
+                Storage::disk('public')->delete($news->image);
+            }
+
+            // 2. Delete the news article from the database
+            $news->delete();
+
+            // 3. Return a success message as JSON with 200 OK status (or 204 No Content)
+            return response()->json(['message' => 'News article deleted successfully.'], 200);
+            // Alternatively: return response()->noContent(); // 204 No Content
+        } catch (\Exception $e) {
+            // Handle errors during deletion
+            return response()->json(['message' => 'Error deleting news article.', 'error' => $e->getMessage()], 500);
         }
-
-        // 2. Xóa bài viết tin tức khỏi database
-        $news->delete();
-
-        // 3. Chuyển hướng về trang danh sách tin tức với thông báo thành công
-        return redirect()->route('admin.news.index')->with('success', 'Bài viết tin tức đã được xóa thành công!');
     }
+
+    // The 'create' and 'edit' methods are not needed for an API Controller
+    // as they are used to display HTML forms, not return API data.
+    // public function create() { ... }
+    // public function edit(News $news) { ... }
 }

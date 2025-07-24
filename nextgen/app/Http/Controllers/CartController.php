@@ -49,7 +49,7 @@ class CartController extends Controller
         ]);
 
         $userId = Auth::id();
-        $productVariantId = $request->input('product_variant_id');
+        $productVariantId = $request->input('productvariant_id');
         $quantity = $request->input('quantity');
 
         $cartItem = Cart::where('UserID', $userId)
