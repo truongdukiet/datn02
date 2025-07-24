@@ -140,5 +140,13 @@ Route::middleware('auth:sanctum')->group(function () {
         // THÊM ROUTE ĐỂ ĐẨY DANH MỤC LÊN GOOGLE SHEET TẠI ĐÂY
         // Route này sẽ có dạng /api/admin/categories/export-to-sheet
         Route::post('categories/export-to-sheet', [AdminCategoryController::class, 'exportToSheet']);
+
+        // THÊM ROUTE ĐỂ ĐẨY SỐ LIỆU DASHBOARD LÊN GOOGLE SHEET TẠI ĐÂY
+        // Route này sẽ có dạng /api/admin/dashboard/export-to-sheet
+        Route::post('dashboard/export-to-sheet', [DashboardController::class, 'exportStatsToSheet']);
+
+        // THÊM ROUTE ĐỂ ĐẨY DỮ LIỆU TIN TỨC LÊN GOOGLE SHEET TẠI ĐÂY
+        // Route này sẽ có dạng /api/admin/news/export-to-sheet
+        Route::post('news/export-to-sheet', [NewsController::class, 'exportNewsToSheet']);
     });
 });
