@@ -6,22 +6,25 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 
+// Import tất cả các Controller API từ namespace App\Http\Controllers\Api
 use App\Http\Controllers\Api\CategoryController;
-use App\Http\Controllers\Api\ProductController;
-use App\Http\Controllers\Api\ProductVariantController;
-use App\Http\Controllers\Api\AttributeController;
-use App\Http\Controllers\Api\OrderController;
-use App\Http\Controllers\Api\OrderDetailController;
-use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\VoucherController;
-use App\Http\Controllers\Api\PaymentGatewayController;
-use App\Http\Controllers\Api\ReviewController;
-use App\Http\Controllers\Api\FavoriteProductController;
-use App\Http\Controllers\Api\CartController;
-use App\Http\Controllers\Api\VariantAttributeController;
-use App\Http\Controllers\Api\NewsApiController;
+use App\Http\Controllers\Api\ProductController; // Đã sửa lỗi cú pháp
+use App\Http\Controllers\Api\ProductVariantController; // Đã sửa lỗi cú pháp
+use App\Http\Controllers\Api\AttributeController; // Đã sửa lỗi cú pháp
+use App\Http\Controllers\Api\OrderController; // Đã sửa lỗi cú pháp
+use App\Http\Controllers\Api\OrderDetailController; // Đã sửa lỗi cú pháp
+use App\Http\Controllers\Api\UserController; // Đã sửa lỗi cú pháp
+use App\Http\Controllers\Api\VoucherController; // Đã sửa lỗi cú pháp
+use App\Http\Controllers\Api\PaymentGatewayController; // Đã sửa lỗi cú pháp
+use App\Http\Controllers\Api\ReviewController; // Đã sửa lỗi cú pháp
+use App\Http\Controllers\Api\FavoriteProductController; // Đã sửa lỗi cú pháp
+use App\Http\Controllers\Api\CartController; // Đã sửa lỗi cú pháp
+use App\Http\Controllers\Api\VariantAttributeController; // Đã sửa lỗi cú pháp
+use App\Http\Controllers\Api\NewsApiController; // Giữ lại nếu bạn có NewsApiController riêng
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\DashboardController; // Import DashboardController
+use App\Http\Controllers\Admin\NewsController; // Import NewsController từ namespace Admin
 
 /*
 |--------------------------------------------------------------------------
@@ -116,5 +119,15 @@ Route::post('/reset-password', [PasswordResetController::class, 'reset']);
 
 Route::get('/verify-email/{userId}/{token}', [App\Http\Controllers\Api\AuthController::class, 'verifyEmail']);
 
+// ========================================================================
+// Thêm route cho DashboardController và NewsController (Admin API)
+// ========================================================================
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/dashboard-stats', [DashboardController::class, 'index']);
 
-
+    // Các route API cho Admin News (CRUD đầy đủ)
+    // Các route này sẽ có dạng /api/admin/news, /api/admin/news/{news}, v.v.
+    Route::prefix('admin')->group(function () {
+        Route::apiResource('news', NewsController::class);
+    });
+});

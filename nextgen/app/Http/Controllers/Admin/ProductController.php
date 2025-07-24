@@ -1,155 +1,231 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api; // Namespace phù hợp với các Controller API khác
 
 use App\Http\Controllers\Controller;
 use App\Models\Product; // Import Model Product
-use App\Models\Category; // Import Model Category để lấy danh sách danh mục
+use App\Models\Category; // Có thể cần để xác thực CategoryID
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage; // Để xử lý upload file
+use Illuminate\Validation\Rule; // Để xác thực duy nhất
+use Illuminate\Validation\ValidationException; // Để bắt lỗi xác thực
+use Illuminate\Support\Facades\Storage; // Để quản lý file ảnh
 
 class ProductController extends Controller
 {
     /**
      * Display a listing of the resource.
-     * Hiển thị danh sách các sản phẩm.
+     * Hiển thị danh sách tất cả các sản phẩm dưới dạng JSON.
      *
-     * @return \Illuminate\View\View
+     * GET /api/products
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Lấy tất cả sản phẩm và phân trang, eager load category để tránh N+1 problem
-        $products = Product::with('category')->paginate(10);
-        return view('admin.products.index', compact('products'));
-    }
+        try {
+            // Lấy tất cả sản phẩm, có thể thêm phân trang, tìm kiếm, lọc
+            $perPage = $request->query('per_page', 10);
+            $products = Product::paginate($perPage);
 
-    /**
-     * Show the form for creating a new resource.
-     * Hiển thị form để tạo sản phẩm mới.
-     *
-     * @return \Illuminate\View\View
-     */
-    public function create()
-    {
-        $categories = Category::all(); // Lấy tất cả danh mục để hiển thị trong dropdown
-        return view('admin.products.create', compact('categories'));
+            // Trả về dữ liệu sản phẩm dưới dạng JSON
+            return response()->json($products, 200);
+        } catch (\Exception $e) {
+            // Xử lý các lỗi không mong muốn
+            return response()->json(['message' => 'Error fetching products.', 'error' => $e->getMessage()], 500);
+        }
     }
 
     /**
      * Store a newly created resource in storage.
-     * Lưu sản phẩm mới vào cơ sở dữ liệu.
+     * Lưu một sản phẩm mới vào database và trả về JSON.
+     *
+     * POST /api/products
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'CategoryID' => 'required|exists:categories,CategoryID', // CategoryID phải tồn tại trong bảng categories
-            'Name' => 'required|string|max:255',
-            'Description' => 'nullable|string',
-            'Image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // File ảnh, tối đa 2MB
-            'base_price' => 'required|numeric|min:0',
-            'Status' => 'boolean',
-        ]);
+        try {
+            // 1. Xác thực dữ liệu đầu vào từ request
+            $validatedData = $request->validate([
+                'name' => 'required|string|max:255|unique:products,name',
+                'description' => 'nullable|string',
+                'price' => 'required|numeric|min:0',
+                'stock_quantity' => 'required|integer|min:0',
+                'category_id' => 'required|exists:categories,CategoryID', // Đảm bảo category_id tồn tại trong bảng categories
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Ảnh là tùy chọn, tối đa 2MB
+            ]);
 
-        $imagePath = null;
-        if ($request->hasFile('Image')) {
-            // Lưu ảnh vào thư mục 'public/products' và lấy đường dẫn
-            $imagePath = $request->file('Image')->store('products', 'public');
+            // 2. Xử lý upload ảnh nếu có
+            $imagePath = null;
+            if ($request->hasFile('image')) {
+                // Lưu ảnh vào 'storage/app/public/product_images'
+                $imagePath = $request->file('image')->store('product_images', 'public');
+            }
+
+            // 3. Tạo sản phẩm mới trong database
+            $product = Product::create([
+                'name' => $validatedData['name'],
+                'description' => $validatedData['description'],
+                'price' => $validatedData['price'],
+                'stock_quantity' => $validatedData['stock_quantity'],
+                'category_id' => $validatedData['category_id'],
+                'image' => $imagePath,
+                // Laravel tự động quản lý `created_at` và `updated_at`
+            ]);
+
+            // 4. Trả về sản phẩm vừa tạo với mã trạng thái 201 Created
+            return response()->json([
+                'message' => 'Product created successfully.',
+                'product' => $product
+            ], 201);
+
+        } catch (ValidationException $e) {
+            // Xử lý lỗi xác thực
+            return response()->json(['errors' => $e->errors()], 422); // 422 Unprocessable Entity
+        } catch (\Exception $e) {
+            // Xử lý các lỗi không mong muốn khác (ví dụ: lỗi database, lỗi lưu trữ file)
+            return response()->json(['message' => 'Error creating product.', 'error' => $e->getMessage()], 500); // 500 Internal Server Error
         }
-
-        Product::create([
-            'CategoryID' => $request->CategoryID,
-            'Name' => $request->Name,
-            'Description' => $request->Description,
-            'Image' => $imagePath, // Lưu đường dẫn ảnh
-            'base_price' => $request->base_price,
-            'Status' => $request->Status ?? 0, // Mặc định là 0 (inactive) nếu không được cung cấp
-            'Create_at' => now(),
-            'Update_at' => now(),
-        ]);
-
-        return redirect()->route('admin.products.index')->with('success', 'Sản phẩm đã được tạo thành công.');
     }
 
     /**
-     * Show the form for editing the specified resource.
-     * Hiển thị form để chỉnh sửa sản phẩm đã cho.
+     * Display the specified resource.
+     * Hiển thị chi tiết một sản phẩm cụ thể dưới dạng JSON.
      *
-     * @param  \App\Models\Product  $product
-     * @return \Illuminate\View\View
+     * GET /api/products/{product}
+     *
+     * @param  \App\Models\Product  $product (Sử dụng Route Model Binding)
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function edit(Product $product)
+    public function show(Product $product)
     {
-        $categories = Category::all(); // Lấy tất cả danh mục để hiển thị trong dropdown
-        // Laravel sẽ tự động tìm sản phẩm dựa trên ProductID từ URL (Route Model Binding)
-        return view('admin.products.edit', compact('product', 'categories'));
+        // Laravel sẽ tự động tìm sản phẩm dựa trên ID/slug từ URL (Route Model Binding).
+        // Nếu không tìm thấy, Laravel sẽ tự động trả về 404 Not Found.
+        return response()->json($product, 200); // Trả về sản phẩm dưới dạng JSON
     }
 
     /**
      * Update the specified resource in storage.
-     * Cập nhật sản phẩm đã cho trong cơ sở dữ liệu.
+     * Cập nhật một sản phẩm cụ thể trong database và trả về JSON.
+     *
+     * PUT/PATCH /api/products/{product}
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Product  $product
-     * @return \Illuminate\Http\RedirectResponse
+     * @param  \App\Models\Product  $product (Sử dụng Route Model Binding)
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, Product $product)
     {
-        $request->validate([
-            'CategoryID' => 'required|exists:categories,CategoryID',
-            'Name' => 'required|string|max:255',
-            'Description' => 'nullable|string',
-            'Image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // File ảnh, tối đa 2MB
-            'base_price' => 'required|numeric|min:0',
-            'Status' => 'boolean',
-        ]);
+        try {
+            // 1. Xác thực dữ liệu đầu vào từ request
+            $validatedData = $request->validate([
+                'name' => ['required', 'string', 'max:255', Rule::unique('products', 'name')->ignore($product->id)], // Tên duy nhất, bỏ qua sản phẩm hiện tại
+                'description' => 'nullable|string',
+                'price' => 'required|numeric|min:0',
+                'stock_quantity' => 'required|integer|min:0',
+                'category_id' => 'required|exists:categories,CategoryID',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'clear_image' => 'nullable|boolean', // Trường mới để xóa ảnh hiện có
+            ]);
 
-        // Xử lý cập nhật ảnh
-        if ($request->hasFile('Image')) {
-            // Xóa ảnh cũ nếu có
-            if ($product->Image) {
-                Storage::disk('public')->delete($product->Image);
+            // 2. Xử lý ảnh mới hoặc xóa ảnh cũ
+            $imagePath = $product->image; // Giữ đường dẫn ảnh cũ mặc định
+            if ($request->hasFile('image')) {
+                // Xóa ảnh cũ nếu tồn tại
+                if ($product->image && Storage::disk('public')->exists($product->image)) {
+                    Storage::disk('public')->delete($product->image);
+                }
+                $imagePath = $request->file('image')->store('product_images', 'public');
+            } elseif (isset($validatedData['clear_image']) && $validatedData['clear_image']) {
+                // Nếu 'clear_image' là true, xóa ảnh hiện có
+                if ($product->image && Storage::disk('public')->exists($product->image)) {
+                    Storage::disk('public')->delete($product->image);
+                }
+                $imagePath = null;
             }
-            // Lưu ảnh mới
-            $imagePath = $request->file('Image')->store('products', 'public');
-            $product->Image = $imagePath;
+
+            // 3. Cập nhật sản phẩm trong database
+            $product->update([
+                'name' => $validatedData['name'],
+                'description' => $validatedData['description'],
+                'price' => $validatedData['price'],
+                'stock_quantity' => $validatedData['stock_quantity'],
+                'category_id' => $validatedData['category_id'],
+                'image' => $imagePath,
+                // Laravel tự động quản lý `updated_at`
+            ]);
+
+            // 4. Trả về sản phẩm đã cập nhật dưới dạng JSON
+            return response()->json([
+                'message' => 'Product updated successfully.',
+                'product' => $product
+            ], 200);
+
+        } catch (ValidationException $e) {
+            // Xử lý lỗi xác thực
+            return response()->json(['errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            // Xử lý các lỗi không mong muốn khác
+            return response()->json(['message' => 'Error updating product.', 'error' => $e->getMessage()], 500);
         }
-
-        $product->CategoryID = $request->CategoryID;
-        $product->Name = $request->Name;
-        $product->Description = $request->Description;
-        $product->base_price = $request->base_price;
-        $product->Status = $request->Status ?? 0; // Đảm bảo Status được cập nhật
-        $product->Update_at = now(); // Cập nhật thời gian cập nhật
-
-        $product->save(); // Lưu thay đổi vào database
-
-        return redirect()->route('admin.products.index')->with('success', 'Sản phẩm đã được cập nhật thành công.');
     }
 
     /**
      * Remove the specified resource from storage.
-     * Xóa sản phẩm đã cho khỏi cơ sở dữ liệu.
+     * Xóa một sản phẩm cụ thể khỏi database và trả về JSON.
      *
-     * @param  \App\Models\Product  $product
-     * @return \Illuminate\Http\RedirectResponse
+     * DELETE /api/products/{product}
+     *
+     * @param  \App\Models\Product  $product (Sử dụng Route Model Binding)
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(Product $product)
     {
-        // Xóa ảnh liên quan nếu có
-        if ($product->Image) {
-            Storage::disk('public')->delete($product->Image);
+        try {
+            // 1. Xóa ảnh liên quan nếu tồn tại
+            if ($product->image && Storage::disk('public')->exists($product->image)) {
+                Storage::disk('public')->delete($product->image);
+            }
+
+            // 2. Xóa sản phẩm khỏi database
+            $product->delete();
+
+            // 3. Trả về thông báo thành công dưới dạng JSON
+            return response()->json(['message' => 'Product deleted successfully.'], 200);
+            // Hoặc: return response()->noContent(); // 204 No Content
+        } catch (\Exception $e) {
+            // Xử lý lỗi trong quá trình xóa (ví dụ: lỗi khóa ngoại)
+            return response()->json(['message' => 'Error deleting product.', 'error' => $e->getMessage()], 500);
         }
+    }
 
-        // Bạn có thể thêm logic kiểm tra xem có biến thể sản phẩm (productvariants)
-        // hoặc chi tiết đơn hàng (orderdetail) nào liên quan đến sản phẩm này không
-        // trước khi cho phép xóa để tránh lỗi khóa ngoại.
-        // Ví dụ: if ($product->productVariants()->count() > 0) { ... }
+    /**
+     * Search for products.
+     * Tìm kiếm sản phẩm dựa trên tên hoặc mô tả.
+     *
+     * GET /api/products/search?query=keyword
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function search(Request $request)
+    {
+        try {
+            $query = $request->query('query');
+            if (!$query) {
+                return response()->json(['message' => 'Vui lòng cung cấp từ khóa tìm kiếm.'], 400);
+            }
 
-        $product->delete(); // Xóa sản phẩm
+            $products = Product::where('name', 'LIKE', '%' . $query . '%')
+                               ->orWhere('description', 'LIKE', '%' . $query . '%')
+                               ->get();
 
-        return redirect()->route('admin.products.index')->with('success', 'Sản phẩm đã được xóa thành công.');
+            return response()->json($products, 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error during product search.', 'error' => $e->getMessage()], 500);
+        }
     }
 }
