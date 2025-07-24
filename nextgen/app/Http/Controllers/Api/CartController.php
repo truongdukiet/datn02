@@ -185,7 +185,7 @@ class CartController extends Controller // Khai báo lớp CartController, kế 
     public function updateCartItem(Request $request)
     {
         $request->validate([ // Xác thực dữ liệu đầu vào
-            'ProductVariantID' => 'required|integer|exists:product_variants,ProductVariantID', // ProductVariantID phải có, là số nguyên, và tồn tại
+            'ProductVariantID' => 'required|integer|exists:productvariants,ProductVariantID', // ProductVariantID phải có, là số nguyên, và tồn tại
             'Quantity' => 'required|integer|min:0', // Quantity phải có, là số nguyên, và tối thiểu là 0 (để cho phép xóa mục nếu Quantity là 0)
         ]);
 
@@ -232,7 +232,7 @@ class CartController extends Controller // Khai báo lớp CartController, kế 
     public function removeFromCart(Request $request)
     {
         $request->validate([ // Xác thực dữ liệu đầu vào
-            'ProductVariantID' => 'required|integer|exists:product_variants,ProductVariantID', // ProductVariantID phải có, là số nguyên, và tồn tại
+            'ProductVariantID' => 'required|integer|exists:productvariants,ProductVariantID', // ProductVariantID phải có, là số nguyên, và tồn tại
         ]);
 
         $productVariantId = $request->input('ProductVariantID'); // Lấy ProductVariantID từ request
