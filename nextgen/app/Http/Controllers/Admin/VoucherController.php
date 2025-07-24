@@ -8,6 +8,12 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule; // Import Rule for unique validation
 use Illuminate\Validation\ValidationException; // Import ValidationException for API error handling
 
+// Import các lớp Google API
+use Google\Client;
+use Google\Service\Sheets;
+use Google\Service\Sheets\ValueRange;
+// use Google\Service\Sheets\ClearValuesRequest; // Không cần import nếu không dùng clear()
+
 class VoucherController extends Controller
 {
     /**
@@ -154,7 +160,7 @@ class VoucherController extends Controller
             // Bạn có thể thêm logic kiểm tra xem voucher này có đang được sử dụng trong đơn hàng nào không
             // trước khi xóa để tránh lỗi khóa ngoại.
             // Ví dụ: if ($voucher->orders()->count() > 0) {
-            //     return response()->json(['message' => 'Cannot delete voucher with associated orders.'], 409); // 409 Conflict
+            //      return response()->json(['message' => 'Cannot delete voucher with associated orders.'], 409); // 409 Conflict
             // }
 
             $voucher->delete(); // Xóa voucher
@@ -207,6 +213,100 @@ class VoucherController extends Controller
             return response()->json(['message' => 'Voucher deactivated successfully.', 'voucher' => $voucher], 200);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Error deactivating voucher.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Export vouchers data to Google Sheet.
+     * Đẩy dữ liệu voucher hiện có lên Google Sheet.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function exportVouchersToSheet(Request $request)
+    {
+        try {
+            // 1. Khởi tạo Google Client với thông tin xác thực Service Account
+            $client = new Client();
+            $client->setAuthConfig(base_path(env('GOOGLE_SHEET_SERVICE_ACCOUNT_PATH')));
+            $client->addScope(Sheets::SPREADSHEETS);
+            $client->addScope(Sheets::DRIVE); // Cần nếu bạn muốn quản lý file trên Drive
+
+            $service = new Sheets($client);
+
+            // Lấy ID của Google Sheet dành cho voucher từ .env
+            $spreadsheetId = env('GOOGLE_VOUCHER_SHEET_ID');
+            $sheetName = 'Vouchers Data'; // Tên của sheet trong Google Sheet mà bạn muốn ghi vào
+            $range = $sheetName . '!A:Z'; // Phạm vi ghi dữ liệu
+
+            // 2. Lấy tất cả voucher từ database
+            $vouchers = Voucher::orderBy('Create_at', 'asc')->get();
+
+            // 3. Chuẩn bị dữ liệu để đẩy lên Google Sheet
+            $values = [];
+            // LƯU Ý: Dòng thêm hàng tiêu đề đã được BỎ ĐI để tránh lặp lại.
+            // Điều này giả định Google Sheet của bạn đã có sẵn hàng tiêu đề.
+            /*
+            $values[] = [
+                'Voucher ID', 'Code', 'Value', 'Quantity', 'Status',
+                'Description', 'Expiry Date', 'Created At', 'Updated At'
+            ];
+            */
+
+            // Duyệt qua từng voucher và thêm vào mảng $values
+            foreach ($vouchers as $voucher) {
+                $values[] = [
+                    $voucher->VoucherID,
+                    $voucher->Code,
+                    $voucher->Value,
+                    $voucher->Quantity,
+                    $voucher->Status ? 'Active' : 'Inactive', // Chuyển boolean sang chuỗi dễ đọc
+                    $voucher->Description,
+                    $voucher->Expiry_date ? $voucher->Expiry_date->format('Y-m-d H:i:s') : '',
+                    $voucher->Create_at ? $voucher->Create_at->format('Y-m-d H:i:s') : '',
+                    $voucher->Update_at ? $voucher->Update_at->format('Y-m-d H:i:s') : ''
+                ];
+            }
+
+            // Nếu không có dữ liệu nào để đẩy, có thể trả về thông báo
+            if (empty($values)) {
+                return response()->json([
+                    'status' => 'info',
+                    'message' => 'Không có dữ liệu voucher nào để đẩy lên Google Sheet.'
+                ], 200);
+            }
+
+            $body = new ValueRange([
+                'values' => $values
+            ]);
+
+            $params = [
+                'valueInputOption' => 'RAW' // Ghi dữ liệu nguyên bản
+            ];
+
+            // ĐOẠN CODE XÓA DỮ LIỆU CŨ ĐÃ ĐƯỢC BỎ ĐI HOẶC COMMENT ĐỂ ĐẢM BẢO DỮ LIỆU ĐƯỢC APPEND
+            // $clearBody = new ClearValuesRequest();
+            // $service->spreadsheets_values->clear($spreadsheetId, $sheetName, $clearBody);
+
+            // 5. Ghi dữ liệu vào Google Sheet
+            // append() sẽ thêm dữ liệu vào hàng trống đầu tiên sau dữ liệu hiện có.
+            $result = $service->spreadsheets_values->append($spreadsheetId, $range, $body, $params);
+
+            // 6. Trả về phản hồi JSON cho ReactJS
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Dữ liệu voucher đã được đẩy thành công vào Google Sheet!',
+                'updates' => $result->getUpdates()
+            ]);
+
+        } catch (\Exception $e) {
+            // Xử lý lỗi và trả về phản hồi lỗi cho ReactJS
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi đẩy dữ liệu voucher: ' . $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ], 500);
         }
     }
 
