@@ -5,188 +5,107 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category; // Import Model Category
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule; // Import Rule for unique validation
-use Illuminate\Validation\ValidationException; // Import ValidationException để bắt lỗi xác thực
+use Google\Client; // Import Google Client
+use Google\Service\Sheets; // Import Sheets Service
+use Google\Service\Sheets\ValueRange; // Import ValueRange
+// use Google\Service\Sheets\ClearValuesRequest; // Không cần import nếu không dùng clear()
 
 class CategoryController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     * Hiển thị danh sách các danh mục dưới dạng JSON.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function index()
-    {
-        // Lấy tất cả danh mục. Bạn có thể thêm phân trang nếu muốn,
-        // nhưng với API, thường frontend sẽ yêu cầu phân trang cụ thể.
-        // Ví dụ: $categories = Category::paginate(10);
-        $categories = Category::all();
-        return response()->json($categories); // Trả về danh sách danh mục dưới dạng JSON
-    }
+    // ... (Giữ nguyên các phương thức index, store, show, update, destroy của bạn) ...
 
     /**
-     * Show the form for creating a new resource.
-     * Phương thức này không cần thiết cho API. Frontend (ReactJS) sẽ tự tạo form.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function create()
-    {
-        // Trả về 404 hoặc thông báo rằng endpoint này không dùng cho API form
-        return response()->json(['message' => 'Endpoint này không được sử dụng để hiển thị form tạo danh mục cho API.'], 404);
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     * Lưu danh mục mới vào cơ sở dữ liệu và trả về JSON.
+     * Export categories data to Google Sheet.
+     * Đẩy dữ liệu danh mục hiện có lên Google Sheet.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request)
+    public function exportToSheet(Request $request)
     {
         try {
-            // Xác thực dữ liệu đầu vào từ request
-            $validatedData = $request->validate([
-                'Name' => 'required|string|max:255|unique:categories,Name', // Tên danh mục là bắt buộc và duy nhất
-                'Description' => 'nullable|string', // Mô tả có thể trống
+            // 1. Khởi tạo Google Client với thông tin xác thực Service Account
+            $client = new Client();
+            // setAuthConfig sẽ tự động đọc file JSON và thiết lập thông tin xác thực
+            $client->setAuthConfig(base_path(env('GOOGLE_SHEET_SERVICE_ACCOUNT_PATH')));
+            // Thêm các scope cần thiết để tương tác với Google Sheets và Google Drive
+            $client->addScope(Sheets::SPREADSHEETS);
+            $client->addScope(Sheets::DRIVE); // Cần nếu bạn muốn quản lý file trên Drive
+
+            $service = new Sheets($client); // Tạo service để tương tác với Sheets API
+
+            $spreadsheetId = env('GOOGLE_SHEET_ID'); // Lấy ID của Google Sheet từ .env
+            $sheetName = 'Categories Data'; // Tên của sheet trong Google Sheet mà bạn muốn ghi vào
+            $range = $sheetName . '!A:Z'; // Phạm vi ghi dữ liệu (từ cột A đến Z trên sheet đó)
+
+            // 2. Lấy tất cả danh mục từ database
+            $categories = Category::all();
+
+            // 3. Chuẩn bị dữ liệu để đẩy lên Google Sheet
+            $values = [];
+            // LƯU Ý QUAN TRỌNG: Dòng thêm hàng tiêu đề đã được BỎ ĐI.
+            // Điều này giả định Google Sheet của bạn đã có sẵn hàng tiêu đề.
+            // Nếu Sheet của bạn trống và bạn muốn thêm tiêu đề CHỈ MỘT LẦN,
+            // bạn có thể thêm logic kiểm tra hoặc thêm thủ công vào Sheet.
+            /*
+            $values[] = [
+                'Category ID',
+                'Name',
+                'Description',
+                'Created At',
+                'Updated At'
+            ];
+            */
+
+            // Duyệt qua từng danh mục và thêm vào mảng $values
+            foreach ($categories as $category) {
+                $values[] = [
+                    $category->CategoryID, // Giả sử cột khóa chính của bạn là CategoryID
+                    $category->Name,
+                    $category->Description,
+                    $category->Create_at ? $category->Create_at->format('Y-m-d H:i:s') : '', // Kiểm tra null và format ngày tháng
+                    $category->Update_at ? $category->Update_at->format('Y-m-d H:i:s') : '' // Tương tự
+                ];
+            }
+
+            // Nếu không có dữ liệu nào để đẩy, có thể trả về thông báo
+            if (empty($values)) {
+                return response()->json([
+                    'status' => 'info',
+                    'message' => 'Không có dữ liệu danh mục nào để đẩy lên Google Sheet.'
+                ], 200);
+            }
+
+            $body = new ValueRange([
+                'values' => $values
             ]);
 
-            // Tạo danh mục mới trong database
-            // Laravel tự động quản lý `created_at` và `updated_at` nếu bạn không tắt timestamps trong model.
-            $category = Category::create([
-                'Name' => $validatedData['Name'],
-                'Description' => $validatedData['Description'],
-                // 'Create_at' và 'Update_at' thường được Laravel tự động quản lý.
-                // Nếu tên cột của bạn là 'Create_at' và 'Update_at' thay vì 'created_at' và 'updated_at',
-                // bạn cần cấu hình trong Category Model hoặc gán thủ công như bạn đã làm.
-                // VD: protected $dates = ['Create_at', 'Update_at']; và $timestamps = false;
-                // Hoặc: 'Create_at' => now(), 'Update_at' => now(),
+            $params = [
+                'valueInputOption' => 'RAW' // Cách dữ liệu được hiểu: 'RAW' (ghi nguyên) hoặc 'USER_ENTERED' (như bạn nhập thủ công)
+            ];
+
+            // ĐOẠN CODE XÓA DỮ LIỆU CŨ ĐÃ ĐƯỢC BỎ ĐI HOẶC COMMENT ĐỂ ĐẢM BẢO DỮ LIỆU ĐƯỢC APPEND
+            // $clearBody = new ClearValuesRequest();
+            // $service->spreadsheets_values->clear($spreadsheetId, $sheetName, $clearBody);
+
+            // 5. Ghi dữ liệu vào Google Sheet
+            // append() sẽ thêm dữ liệu vào hàng trống đầu tiên sau dữ liệu hiện có.
+            $result = $service->spreadsheets_values->append($spreadsheetId, $range, $body, $params);
+
+            // 6. Trả về phản hồi JSON cho ReactJS
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Dữ liệu danh mục đã được đẩy thành công vào Google Sheet!',
+                'updates' => $result->getUpdates() // Thông tin về các cập nhật từ Google API
             ]);
 
-            // Trả về danh mục vừa tạo với mã trạng thái 201 Created
-            return response()->json([
-                'message' => 'Danh mục đã được tạo thành công.',
-                'category' => $category
-            ], 201);
-
-        } catch (ValidationException $e) {
-            // Bắt lỗi xác thực và trả về JSON với mã trạng thái 422 Unprocessable Entity
-            return response()->json([
-                'message' => 'Dữ liệu đầu vào không hợp lệ.',
-                'errors' => $e->errors()
-            ], 422);
         } catch (\Exception $e) {
-            // Bắt các lỗi khác và trả về JSON với mã trạng thái 500 Internal Server Error
+            // Xử lý lỗi và trả về phản hồi lỗi cho ReactJS
             return response()->json([
-                'message' => 'Đã xảy ra lỗi khi tạo danh mục.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Display the specified resource.
-     * Hiển thị một danh mục cụ thể dưới dạng JSON.
-     * Phương thức này thay thế vai trò của `edit` trong API.
-     *
-     * @param  \App\Models\Category  $category
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function show(Category $category)
-    {
-        // Laravel sẽ tự động tìm danh mục dựa trên CategoryID từ URL (Route Model Binding)
-        return response()->json($category); // Trả về thông tin danh mục dưới dạng JSON
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     * Tương tự như `create`, phương thức này không cần thiết cho API.
-     * Frontend (ReactJS) sẽ lấy dữ liệu bằng `show` và tự hiển thị form chỉnh sửa.
-     *
-     * @param  \App\Models\Category  $category
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function edit(Category $category)
-    {
-        // Trả về 404 hoặc thông báo rằng endpoint này không dùng cho API form
-        return response()->json(['message' => 'Endpoint này không được sử dụng để hiển thị form chỉnh sửa cho API. Hãy sử dụng GET /api/admin/categories/{id} để lấy dữ liệu.'], 404);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     * Cập nhật danh mục đã cho trong cơ sở dữ liệu và trả về JSON.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Category  $category
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function update(Request $request, Category $category)
-    {
-        try {
-            // Xác thực dữ liệu đầu vào
-            $validatedData = $request->validate([
-                // Tên danh mục duy nhất, bỏ qua chính danh mục đang chỉnh sửa
-                'Name' => ['required', 'string', 'max:255', Rule::unique('categories', 'Name')->ignore($category->CategoryID, 'CategoryID')],
-                'Description' => 'nullable|string',
-            ]);
-
-            // Cập nhật các trường thông tin
-            $category->Name = $validatedData['Name'];
-            $category->Description = $validatedData['Description'];
-            // Laravel tự động quản lý `updated_at` nếu bạn không tắt timestamps
-            // Nếu bạn muốn gán thủ công: $category->Update_at = now();
-
-            $category->save(); // Lưu thay đổi vào database
-
-            return response()->json([
-                'message' => 'Danh mục đã được cập nhật thành công.',
-                'category' => $category
-            ]);
-
-        } catch (ValidationException $e) {
-            // Bắt lỗi xác thực và trả về JSON với mã trạng thái 422 Unprocessable Entity
-            return response()->json([
-                'message' => 'Dữ liệu đầu vào không hợp lệ.',
-                'errors' => $e->errors()
-            ], 422);
-        } catch (\Exception $e) {
-            // Bắt các lỗi khác và trả về JSON với mã trạng thái 500 Internal Server Error
-            return response()->json([
-                'message' => 'Đã xảy ra lỗi khi cập nhật danh mục.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     * Xóa danh mục đã cho khỏi cơ sở dữ liệu và trả về JSON.
-     *
-     * @param  \App\Models\Category  $category
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function destroy(Category $category)
-    {
-        try {
-            // Bạn có thể thêm logic kiểm tra xem có sản phẩm nào thuộc danh mục này không
-            // trước khi cho phép xóa để tránh lỗi khóa ngoại.
-            // Ví dụ:
-            // if ($category->products()->count() > 0) {
-            //     return response()->json(['message' => 'Không thể xóa danh mục vì có sản phẩm liên quan.'], 409); // 409 Conflict
-            // }
-
-            $category->delete(); // Xóa danh mục
-
-            // Trả về mã trạng thái 200 OK với thông báo thành công
-            // Hoặc 204 No Content nếu không muốn trả về nội dung nào sau khi xóa thành công.
-            return response()->json(['message' => 'Danh mục đã được xóa thành công.'], 200);
-        } catch (\Exception $e) {
-            // Bắt các lỗi khác (ví dụ: lỗi khóa ngoại nếu không kiểm tra trước)
-            return response()->json([
-                'message' => 'Đã xảy ra lỗi khi xóa danh mục.',
-                'error' => $e->getMessage()
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi đẩy dữ liệu danh mục: ' . $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
             ], 500);
         }
     }

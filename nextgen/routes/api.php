@@ -8,22 +8,25 @@ use Illuminate\Auth\Events\Verified;
 
 // Import tất cả các Controller API từ namespace App\Http\Controllers\Api
 use App\Http\Controllers\Api\CategoryController;
-use App\Http\Controllers\Api\ProductController; // Đã sửa lỗi cú pháp
-use App\Http\Controllers\Api\ProductVariantController; // Đã sửa lỗi cú pháp
-use App\Http\Controllers\Api\AttributeController; // Đã sửa lỗi cú pháp
-use App\Http\Controllers\Api\OrderController; // Đã sửa lỗi cú pháp
-use App\Http\Controllers\Api\OrderDetailController; // Đã sửa lỗi cú pháp
-use App\Http\Controllers\Api\UserController; // Đã sửa lỗi cú pháp
-use App\Http\Controllers\Api\VoucherController; // Đã sửa lỗi cú pháp
-use App\Http\Controllers\Api\PaymentGatewayController; // Đã sửa lỗi cú pháp
-use App\Http\Controllers\Api\ReviewController; // Đã sửa lỗi cú pháp
-use App\Http\Controllers\Api\FavoriteProductController; // Đã sửa lỗi cú pháp
-use App\Http\Controllers\Api\CartController; // Đã sửa lỗi cú pháp
-use App\Http\Controllers\Api\VariantAttributeController; // Đã sửa lỗi cú pháp
-use App\Http\Controllers\Api\NewsApiController; // Giữ lại nếu bạn có NewsApiController riêng
+use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ProductVariantController;
+use App\Http\Controllers\Api\AttributeController;
+use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\OrderDetailController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\VoucherController;
+use App\Http\Controllers\Api\PaymentGatewayController;
+use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\FavoriteProductController;
+use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\VariantAttributeController;
+use App\Http\Controllers\Api\NewsApiController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PasswordResetController;
-use App\Http\Controllers\Api\DashboardController; // Import DashboardController
+use App\Http\Controllers\Api\DashboardController;
+
+// Import CategoryController từ namespace Admin (để dùng cho chức năng export)
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController; // Đặt alias để tránh trùng tên với Api\CategoryController
 use App\Http\Controllers\Admin\NewsController; // Import NewsController từ namespace Admin
 
 /*
@@ -41,14 +44,14 @@ use App\Http\Controllers\Admin\NewsController; // Import NewsController từ nam
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
-// Category routes
+// Category routes (API public)
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 Route::post('/categories', [CategoryController::class, 'store']);
 Route::put('/categories/{id}', [CategoryController::class, 'update']);
 Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 
-// Product routes
+// Product routes (API public)
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/search', [ProductController::class, 'search']);
 Route::get('/products/detail/{id}', [ProductController::class, 'show']);
@@ -56,7 +59,7 @@ Route::post('/products/add', [ProductController::class, 'store']);
 Route::put('/products/update/{id}', [ProductController::class, 'update']);
 Route::delete('/products/{id}', [ProductController::class, 'destroy']);
 
-// ProductVariant routes
+// ProductVariant routes (API public)
 Route::get('/variants', [ProductVariantController::class, 'index']);
 Route::get('/variants/{id}', [ProductVariantController::class, 'show']);
 Route::post('/variants', [ProductVariantController::class, 'store']);
@@ -89,11 +92,14 @@ Route::apiResource('reviews', ReviewController::class);
 Route::apiResource('variant-attributes', VariantAttributeController::class);
 
 // Cart routes (custom, không dùng apiResource)
-Route::get('/carts', [CartController::class, 'viewCart']);
-Route::post('/carts', [CartController::class, 'addToCart']);
-Route::put('/carts', [CartController::class, 'updateCartItem']);
-Route::delete('/carts/item', [CartController::class, 'removeFromCart']);
-Route::delete('/carts', [CartController::class, 'clearCart']);
+Route::prefix('carts')->group(function () {
+    Route::get('/', [CartController::class, 'viewCart']);
+    Route::post('/', [CartController::class, 'addToCart']);
+    Route::put('/', [CartController::class, 'updateCartItem']);
+    Route::delete('/item', [CartController::class, 'removeFromCart']);
+    Route::delete('/', [CartController::class, 'clearCart']);
+});
+
 
 // FavoriteProduct routes (custom, không dùng apiResource)
 Route::prefix('favorite-products')->group(function () {
@@ -125,9 +131,14 @@ Route::get('/verify-email/{userId}/{token}', [App\Http\Controllers\Api\AuthContr
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard-stats', [DashboardController::class, 'index']);
 
-    // Các route API cho Admin News (CRUD đầy đủ)
-    // Các route này sẽ có dạng /api/admin/news, /api/admin/news/{news}, v.v.
+    // Các route API cho Admin
     Route::prefix('admin')->group(function () {
+        // Các route API cho Admin News (CRUD đầy đủ)
+        // Các route này sẽ có dạng /api/admin/news, /api/admin/news/{news}, v.v.
         Route::apiResource('news', NewsController::class);
+
+        // THÊM ROUTE ĐỂ ĐẨY DANH MỤC LÊN GOOGLE SHEET TẠI ĐÂY
+        // Route này sẽ có dạng /api/admin/categories/export-to-sheet
+        Route::post('categories/export-to-sheet', [AdminCategoryController::class, 'exportToSheet']);
     });
 });
