@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import ClientHeader from "../../../layouts/MainLayout/ClientHeader";
 import ProductItem from "../../../components/ProductItem/ProductItem";
@@ -13,8 +13,6 @@ const Home = () => {
       return response.data;
     },
   });
-
-  const [news, setNews] = useState([]);
 
   useEffect(() => {
     // Initialize AOS (Animate On Scroll)
@@ -47,10 +45,6 @@ const Home = () => {
         },
       });
     }
-
-    fetch("http://localhost:8000/api/news")
-      .then(res => res.json())
-      .then(data => setNews(data.data || data)); // tuỳ response
   }, []);
 
   return (
@@ -498,31 +492,59 @@ const Home = () => {
             </div>
           </div>
           <div className="row mb-5">
-            {news.slice(0, 3).map((item) => (
-              <div className="col-lg-4 col-md-6 mb-4 mb-lg-0 post-entry" key={item.id}>
-                <Link to={`/news/${item.slug}`} className="d-block figure">
-                  <img
-                    src={item.image || "/images/img_1.jpg"}
-                    alt={item.title}
-                    className="img-fluid"
-                  />
-                </Link>
-                <span className="text-muted d-block mb-2">
-                  {item.published_at
-                    ? new Date(item.published_at).toLocaleDateString()
-                    : ""}
-                </span>
-                <h3>
-                  <Link to={`/news/${item.slug}`}>{item.title}</Link>
-                </h3>
-              </div>
-            ))}
+            <div className="col-lg-4 col-md-6 mb-4 mb-lg-0 post-entry">
+              <a href="#" className="d-block figure">
+                <img
+                  src="/images/img_1.jpg"
+                  alt="Image"
+                  className="img-fluid"
+                />
+              </a>
+              <span className="text-muted d-block mb-2">23, January 2019</span>
+              <h3>
+                <a href="#">
+                  Architecture is ready to take the world to the next level
+                </a>
+              </h3>
+            </div>
+            <div className="col-lg-4 col-md-6 mb-4 mb-lg-0 post-entry">
+              <a href="#" className="d-block figure">
+                <img
+                  src="/images/img_2.jpg"
+                  alt="Image"
+                  className="img-fluid"
+                />
+              </a>
+              <span className="text-muted d-block mb-2">23, January 2019</span>
+              <h3>
+                <a href="#">
+                  Architecture is ready to take the world to the next level
+                </a>
+              </h3>
+            </div>
+            <div className="col-lg-4 col-md-6 mb-4 mb-lg-0 post-entry">
+              <a href="#" className="d-block figure">
+                <img
+                  src="/images/img_3.jpg"
+                  alt="Image"
+                  className="img-fluid"
+                />
+              </a>
+              <span className="text-muted d-block mb-2">23, January 2019</span>
+              <h3>
+                <a href="#">
+                  Architecture is ready to take the world to the next level
+                </a>
+              </h3>
+            </div>
           </div>
           <div className="row mt-5 text-center">
             <div className="col-12">
-              <Link to="/news" className="btn btn-primary btn-lg rounded-0">
-                View All Posts
-              </Link>
+              <p>
+                <a href="#" className="btn btn-primary btn-lg rounded-0">
+                  View All Posts
+                </a>
+              </p>
             </div>
           </div>
         </div>
