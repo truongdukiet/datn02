@@ -10,6 +10,12 @@ use Illuminate\Validation\Rule; // Để xác thực duy nhất
 use Illuminate\Validation\ValidationException; // Để bắt lỗi xác thực
 use Illuminate\Support\Facades\Storage; // Để quản lý file ảnh
 
+// Import các lớp Google API
+use Google\Client;
+use Google\Service\Sheets;
+use Google\Service\Sheets\ValueRange;
+// use Google\Service\Sheets\ClearValuesRequest; // Không cần import nếu không dùng clear()
+
 class ProductController extends Controller
 {
     /**
@@ -226,6 +232,103 @@ class ProductController extends Controller
             return response()->json($products, 200);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Error during product search.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Export products data to Google Sheet.
+     * Đẩy dữ liệu sản phẩm hiện có lên Google Sheet.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function exportProductsToSheet(Request $request)
+    {
+        try {
+            // 1. Khởi tạo Google Client với thông tin xác thực Service Account
+            $client = new Client();
+            $client->setAuthConfig(base_path(env('GOOGLE_SHEET_SERVICE_ACCOUNT_PATH')));
+            $client->addScope(Sheets::SPREADSHEETS);
+            $client->addScope(Sheets::DRIVE); // Cần nếu bạn muốn quản lý file trên Drive
+
+            $service = new Sheets($client);
+
+            // Lấy ID của Google Sheet dành cho sản phẩm từ .env
+            $spreadsheetId = env('GOOGLE_PRODUCT_SHEET_ID');
+            $sheetName = 'Products Data'; // Tên của sheet trong Google Sheet mà bạn muốn ghi vào
+            $range = $sheetName . '!A:Z'; // Phạm vi ghi dữ liệu
+
+            // 2. Lấy tất cả sản phẩm từ database và eager load category
+            $products = Product::with('category')
+                                ->orderBy('created_at', 'asc')
+                                ->get();
+
+            // 3. Chuẩn bị dữ liệu để đẩy lên Google Sheet
+            $values = [];
+            // LƯU Ý: Dòng thêm hàng tiêu đề đã được BỎ ĐI để tránh lặp lại.
+            // Điều này giả định Google Sheet của bạn đã có sẵn hàng tiêu đề.
+            /*
+            $values[] = [
+                'Product ID', 'Name', 'Description', 'Price', 'Stock Quantity',
+                'Category ID', 'Category Name', 'Image Path', 'Created At', 'Updated At'
+            ];
+            */
+
+            // Duyệt qua từng sản phẩm và thêm vào mảng $values
+            foreach ($products as $product) {
+                $values[] = [
+                    $product->id,
+                    $product->name,
+                    $product->description,
+                    $product->price,
+                    $product->stock_quantity,
+                    $product->category_id,
+                    $product->category->Name ?? 'N/A', // Lấy tên danh mục nếu có eager load và quan hệ đúng
+                    $product->image,
+                    $product->created_at ? $product->created_at->format('Y-m-d H:i:s') : '',
+                    $product->updated_at ? $product->updated_at->format('Y-m-d H:i:s') : ''
+                ];
+            }
+
+            // Nếu không có dữ liệu nào để đẩy, có thể trả về thông báo
+            if (empty($values)) {
+                return response()->json([
+                    'status' => 'info',
+                    'message' => 'Không có dữ liệu sản phẩm nào để đẩy lên Google Sheet.'
+                ], 200);
+            }
+
+            $body = new ValueRange([
+                'values' => $values
+            ]);
+
+            $params = [
+                'valueInputOption' => 'RAW' // Ghi dữ liệu nguyên bản
+            ];
+
+            // ĐOẠN CODE XÓA DỮ LIỆU CŨ ĐÃ ĐƯỢC BỎ ĐI HOẶC COMMENT ĐỂ ĐẢM BẢO DỮ LIỆU ĐƯỢC APPEND
+            // $clearBody = new ClearValuesRequest();
+            // $service->spreadsheets_values->clear($spreadsheetId, $sheetName, $clearBody);
+
+            // 5. Ghi dữ liệu vào Google Sheet
+            // append() sẽ thêm dữ liệu vào hàng trống đầu tiên sau dữ liệu hiện có.
+            $result = $service->spreadsheets_values->append($spreadsheetId, $range, $body, $params);
+
+            // 6. Trả về phản hồi JSON cho ReactJS
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Dữ liệu sản phẩm đã được đẩy thành công vào Google Sheet!',
+                'updates' => $result->getUpdates()
+            ]);
+
+        } catch (\Exception $e) {
+            // Xử lý lỗi và trả về phản hồi lỗi cho ReactJS
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi đẩy dữ liệu sản phẩm: ' . $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ], 500);
         }
     }
 }

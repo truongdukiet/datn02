@@ -11,6 +11,12 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException; // Import ValidationException để bắt lỗi xác thực
 
+// Import các lớp Google API
+use Google\Client;
+use Google\Service\Sheets;
+use Google\Service\Sheets\ValueRange;
+// use Google\Service\Sheets\ClearValuesRequest; // Không cần import nếu không dùng clear()
+
 class OrderController extends Controller
 {
     /**
@@ -202,6 +208,122 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             // Xử lý lỗi trong quá trình xóa (ví dụ: lỗi khóa ngoại)
             return response()->json(['message' => 'Đã xảy ra lỗi khi xóa đơn hàng.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Export orders data to Google Sheet.
+     * Đẩy dữ liệu đơn hàng hiện có lên Google Sheet.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function exportOrdersToSheet(Request $request)
+    {
+        try {
+            // 1. Khởi tạo Google Client với thông tin xác thực Service Account
+            $client = new Client();
+            $client->setAuthConfig(base_path(env('GOOGLE_SHEET_SERVICE_ACCOUNT_PATH')));
+            $client->addScope(Sheets::SPREADSHEETS);
+            $client->addScope(Sheets::DRIVE); // Cần nếu bạn muốn quản lý file trên Drive
+
+            $service = new Sheets($client);
+
+            // Lấy ID của Google Sheet dành cho đơn hàng từ .env
+            $spreadsheetId = env('GOOGLE_ORDER_SHEET_ID');
+            $sheetName = 'Orders Data'; // Tên của sheet trong Google Sheet mà bạn muốn ghi vào
+            $range = $sheetName . '!A:Z'; // Phạm vi ghi dữ liệu
+
+            // 2. Lấy tất cả đơn hàng từ database và eager load các mối quan hệ
+            $orders = Order::with(['user', 'voucher', 'paymentGateway', 'orderDetails.productVariant.product'])
+                            ->orderBy('created_at', 'asc')
+                            ->get();
+
+            // 3. Chuẩn bị dữ liệu để đẩy lên Google Sheet
+            $values = [];
+            // LƯU Ý: Dòng thêm hàng tiêu đề đã được BỎ ĐI để tránh lặp lại.
+            // Điều này giả định Google Sheet của bạn đã có sẵn hàng tiêu đề.
+            /*
+            $values[] = [
+                'Order ID', 'Invoice Code', 'User ID', 'User Name', 'User Email',
+                'Voucher ID', 'Payment ID', 'Status', 'Total Amount',
+                'Receiver Name', 'Receiver Phone', 'Shipping Address',
+                'Created At', 'Updated At',
+                'Product Details' // Cột này sẽ chứa thông tin chi tiết sản phẩm
+            ];
+            */
+
+            // Duyệt qua từng đơn hàng và thêm vào mảng $values
+            foreach ($orders as $order) {
+                $productDetails = [];
+                foreach ($order->orderDetails as $detail) {
+                    $productDetails[] = sprintf(
+                        "%s (Variant: %s) x%d @%.2f",
+                        $detail->productVariant->product->ProductName ?? 'N/A',
+                        $detail->productVariant->VariantName ?? 'N/A',
+                        $detail->Quantity,
+                        $detail->Price
+                    );
+                }
+
+                $values[] = [
+                    $order->OrderID,
+                    $order->InvoiceCode,
+                    $order->UserID,
+                    $order->user->name ?? 'N/A', // Lấy tên người dùng nếu có quan hệ
+                    $order->user->email ?? 'N/A', // Lấy email người dùng nếu có quan hệ
+                    $order->VoucherID,
+                    $order->PaymentID,
+                    $order->Status,
+                    $order->Total_amount,
+                    $order->Receiver_name,
+                    $order->Receiver_phone,
+                    $order->Shipping_address,
+                    $order->created_at ? $order->created_at->format('Y-m-d H:i:s') : '',
+                    $order->updated_at ? $order->updated_at->format('Y-m-d H:i:s') : '',
+                    implode('; ', $productDetails) // Nối các chi tiết sản phẩm thành một chuỗi
+                ];
+            }
+
+            // Nếu không có dữ liệu nào để đẩy, có thể trả về thông báo
+            if (empty($values)) {
+                return response()->json([
+                    'status' => 'info',
+                    'message' => 'Không có dữ liệu đơn hàng nào để đẩy lên Google Sheet.'
+                ], 200);
+            }
+
+            $body = new ValueRange([
+                'values' => $values
+            ]);
+
+            $params = [
+                'valueInputOption' => 'RAW' // Ghi dữ liệu nguyên bản
+            ];
+
+            // ĐOẠN CODE XÓA DỮ LIỆU CŨ ĐÃ ĐƯỢC BỎ ĐI HOẶC COMMENT ĐỂ ĐẢM BẢO DỮ LIỆU ĐƯỢC APPEND
+            // $clearBody = new ClearValuesRequest();
+            // $service->spreadsheets_values->clear($spreadsheetId, $sheetName, $clearBody);
+
+            // 5. Ghi dữ liệu vào Google Sheet
+            // append() sẽ thêm dữ liệu vào hàng trống đầu tiên sau dữ liệu hiện có.
+            $result = $service->spreadsheets_values->append($spreadsheetId, $range, $body, $params);
+
+            // 6. Trả về phản hồi JSON cho ReactJS
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Dữ liệu đơn hàng đã được đẩy thành công vào Google Sheet!',
+                'updates' => $result->getUpdates()
+            ]);
+
+        } catch (\Exception $e) {
+            // Xử lý lỗi và trả về phản hồi lỗi cho ReactJS
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi đẩy dữ liệu đơn hàng: ' . $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ], 500);
         }
     }
 }

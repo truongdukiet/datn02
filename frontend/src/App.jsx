@@ -19,7 +19,6 @@ import ThankYou from "./pages/client/ThankYou/ThankYou";
 import VerifyEmail from "./pages/client/VerifyEmail/VerifyEmail";
 import ForgotPassword from "./pages/client/ForgotPassword/ForgotPassword";
 import ResetPassword from "./pages/client/ResetPassword/ResetPassword";
-import NewsDetail from "./pages/client/News/NewsDetail.jsx";
 
 const App = () => {
   const router = createBrowserRouter([
@@ -95,10 +94,6 @@ const App = () => {
             {
               path: "thank-you",
               element: <ThankYou />,
-            },
-            {
-              path: "news/:slug",
-              element: <NewsDetail />,
             },
           ],
         },
