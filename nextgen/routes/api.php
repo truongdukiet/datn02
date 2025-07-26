@@ -25,9 +25,14 @@ use App\Http\Controllers\Api\AuthController; // Đã sửa lỗi cú pháp
 use App\Http\Controllers\Api\PasswordResetController; // Đã sửa lỗi cú pháp
 use App\Http\Controllers\Api\DashboardController; // Đã sửa lỗi cú pháp
 
-// Import CategoryController từ namespace Admin (để dùng cho chức năng export)
+// Import các Controller từ namespace Admin (để dùng cho chức năng export)
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController; // Import AdminCategoryController với alias
-use App\Http\Controllers\Admin\NewsController; // Đã sửa lỗi cú pháp
+use App\Http\Controllers\Admin\NewsController as AdminNewsController; // Import AdminNewsController với alias để tránh nhầm lẫn
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController; // Import AdminDashboardController
+use App\Http\Controllers\Admin\OrderController as AdminOrderController; // Import AdminOrderController
+use App\Http\Controllers\Admin\ProductController as AdminProductController; // Import AdminProductController
+use App\Http\Controllers\Admin\UserController as AdminUserController; // Import AdminUserController
+use App\Http\Controllers\Admin\VoucherController as AdminVoucherController; // Import AdminVoucherController
 
 /*
 |--------------------------------------------------------------------------
@@ -129,36 +134,41 @@ Route::get('/verify-email/{userId}/{token}', [App\Http\Controllers\Api\AuthContr
 // Thêm route cho DashboardController và NewsController (Admin API)
 // ========================================================================
 Route::middleware('auth:sanctum')->group(function () { // Nhóm các tuyến đường yêu cầu xác thực Sanctum
-    Route::get('/dashboard-stats', [DashboardController::class, 'index']); // Lấy số liệu thống kê dashboard
+    // Sửa lỗi báo đỏ: Sử dụng AdminDashboardController cho route dashboard-stats
+    Route::get('/dashboard-stats', [AdminDashboardController::class, 'index']); // Lấy số liệu thống kê dashboard
 
     // Các route API cho Admin
     Route::prefix('admin')->group(function () { // Nhóm các tuyến đường dành cho khu vực quản trị (admin)
         // Các route API cho Admin News (CRUD đầy đủ)
         // Các route này sẽ có dạng /api/admin/news, /api/admin/news/{news}, v.v.
-        Route::apiResource('news', NewsController::class); // Tuyến đường RESTful cho quản lý tin tức (admin)
+        Route::apiResource('news', AdminNewsController::class); // Tuyến đường RESTful cho quản lý tin tức (admin)
 
         // THÊM ROUTE ĐỂ ĐẨY DANH MỤC LÊN GOOGLE SHEET TẠI ĐÂY
         // Route này sẽ có dạng /api/admin/categories/export-to-sheet
-        Route::post('categories/export-to-sheet', [AdminCategoryController::class, 'exportToSheet']); // Đẩy dữ liệu danh mục lên Google Sheet
+        Route::post('categories/export-to-sheet', [AdminCategoryController::class, 'exportCategoriesToSheet']); // Đẩy dữ liệu danh mục lên Google Sheet
 
         // THÊM ROUTE ĐỂ ĐẨY SỐ LIỆU DASHBOARD LÊN GOOGLE SHEET TẠI ĐÂY
         // Route này sẽ có dạng /api/admin/dashboard/export-to-sheet
-        Route::post('dashboard/export-to-sheet', [DashboardController::class, 'exportStatsToSheet']); // Đẩy số liệu dashboard lên Google Sheet
+        Route::post('dashboard/export-to-sheet', [AdminDashboardController::class, 'exportDashboardStatsToSheet']); // Đẩy số liệu dashboard lên Google Sheet
 
         // THÊM ROUTE ĐỂ ĐẨY DỮ LIỆU TIN TỨC LÊN GOOGLE SHEET TẠI ĐÂY
         // Route này sẽ có dạng /api/admin/news/export-to-sheet
-        Route::post('news/export-to-sheet', [NewsController::class, 'exportNewsToSheet']); // Đẩy dữ liệu tin tức lên Google Sheet
+        Route::post('news/export-to-sheet', [AdminNewsController::class, 'exportNewsToSheet']); // Đẩy dữ liệu tin tức lên Google Sheet
 
-        // THÊM ROUTE ĐỂ ĐẨY DỮ LIỆU ĐƠN HÀNG LÊN GOOGLE SHEET TẠI ĐÂY
+        // THÊM ROUTE ĐỂ ĐẨY DỮ LIỆU ĐƠN HÀNG LÊN GOOGLE SHEET TẠY ĐÂY
         // Route này sẽ có dạng /api/admin/orders/export-to-sheet
-        Route::post('orders/export-to-sheet', [OrderController::class, 'exportOrdersToSheet']); // Đẩy dữ liệu đơn hàng lên Google Sheet
+        Route::post('orders/export-to-sheet', [AdminOrderController::class, 'exportOrdersToSheet']); // Đẩy dữ liệu đơn hàng lên Google Sheet
 
         // THÊM ROUTE ĐỂ ĐẨY DỮ LIỆU SẢN PHẨM LÊN GOOGLE SHEET TẠI ĐÂY
         // Route này sẽ có dạng /api/admin/products/export-to-sheet
-        Route::post('products/export-to-sheet', [ProductController::class, 'exportProductsToSheet']); // Đẩy dữ liệu sản phẩm lên Google Sheet
+        Route::post('products/export-to-sheet', [AdminProductController::class, 'exportProductsToSheet']); // Đẩy dữ liệu sản phẩm lên Google Sheet
 
-        // THÊM ROUTE ĐỂ ĐẨY DỮ LIỆU VOUCHER LÊN GOOGLE SHEET TẠI ĐÂY
+        // THÊM ROUTE ĐỂ ĐẨY DỮ LIỆU VOUCHER LÊN GOOGLE SHEET TẠY ĐÂY
         // Route này sẽ có dạng /api/admin/vouchers/export-to-sheet
-        Route::post('vouchers/export-to-sheet', [\App\Http\Controllers\Admin\VoucherController::class, 'exportVouchersToSheet']); // Đẩy dữ liệu voucher lên Google Sheet
+        Route::post('vouchers/export-to-sheet', [AdminVoucherController::class, 'exportVouchersToSheet']); // Đẩy dữ liệu voucher lên Google Sheet
+
+        // THÊM ROUTE ĐỂ ĐẨY DỮ LIỆU NGƯỜI DÙNG LÊN GOOGLE SHEET TẠI ĐÂY
+        // Route này sẽ có dạng /api/admin/users/export-to-sheet
+        Route::post('users/export-to-sheet', [AdminUserController::class, 'exportUsersToSheet']); // Đẩy dữ liệu người dùng lên Google Sheet
     });
 });

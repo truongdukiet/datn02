@@ -3,110 +3,100 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category; // Import Model Category
+use App\Models\Category; // Import model Category của bạn
 use Illuminate\Http\Request;
-use Google\Client; // Import Google Client
-use Google\Service\Sheets; // Import Sheets Service
-use Google\Service\Sheets\ValueRange; // Import ValueRange
-// use Google\Service\Sheets\ClearValuesRequest; // Không cần import nếu không dùng clear()
+use Google\Client;
+use Google\Service\Sheets;
 
 class CategoryController extends Controller
 {
-    // ... (Giữ nguyên các phương thức index, store, show, update, destroy của bạn) ...
-
     /**
-     * Export categories data to Google Sheet.
-     * Đẩy dữ liệu danh mục hiện có lên Google Sheet.
+     * Xuất dữ liệu danh mục ra Google Sheet.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * Đây là API được gọi từ ReactJS để đẩy dữ liệu danh mục lên một Google Sheet đã cấu hình.
+     *
+     * @param  \Illuminate\Http\Request  $request Không cần dữ liệu trong body request POST này.
+     * @return \Illuminate\Http\JsonResponse Trả về JSON với trạng thái thành công/thất bại và chi tiết.
      */
-    public function exportToSheet(Request $request)
+    public function exportCategoriesToSheet(Request $request)
     {
         try {
-            // 1. Khởi tạo Google Client với thông tin xác thực Service Account
-            $client = new Client();
-            // setAuthConfig sẽ tự động đọc file JSON và thiết lập thông tin xác thực
-            $client->setAuthConfig(base_path(env('GOOGLE_SHEET_SERVICE_ACCOUNT_PATH')));
-            // Thêm các scope cần thiết để tương tác với Google Sheets và Google Drive
-            $client->addScope(Sheets::SPREADSHEETS);
-            $client->addScope(Sheets::DRIVE); // Cần nếu bạn muốn quản lý file trên Drive
+            // Bước 1: Lấy tất cả dữ liệu danh mục từ cơ sở dữ liệu
+            $categories = Category::all(); // Lấy tất cả các bản ghi từ bảng 'categories'
 
-            $service = new Sheets($client); // Tạo service để tương tác với Sheets API
+            if ($categories->isEmpty()) {
+                // Nếu không có danh mục nào, trả về lỗi 404
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Không có dữ liệu danh mục để xuất.'
+                ], 404);
+            }
 
-            $spreadsheetId = env('GOOGLE_SHEET_ID'); // Lấy ID của Google Sheet từ .env
-            $sheetName = 'Categories Data'; // Tên của sheet trong Google Sheet mà bạn muốn ghi vào
-            $range = $sheetName . '!A:Z'; // Phạm vi ghi dữ liệu (từ cột A đến Z trên sheet đó)
+            // Bước 2: Chuẩn bị dữ liệu để ghi vào Google Sheet
+            // Hàng đầu tiên (header) sẽ là tên các cột trong Google Sheet
+            $header = ['ID', 'Tên Danh Mục', 'Slug', 'Mô Tả', 'Ngày Tạo', 'Ngày Cập Nhật'];
+            $data = [$header]; // Bắt đầu mảng dữ liệu với hàng tiêu đề
 
-            // 2. Lấy tất cả danh mục từ database
-            $categories = Category::all();
-
-            // 3. Chuẩn bị dữ liệu để đẩy lên Google Sheet
-            $values = [];
-            // LƯU Ý QUAN TRỌNG: Dòng thêm hàng tiêu đề đã được BỎ ĐI.
-            // Điều này giả định Google Sheet của bạn đã có sẵn hàng tiêu đề.
-            // Nếu Sheet của bạn trống và bạn muốn thêm tiêu đề CHỈ MỘT LẦN,
-            // bạn có thể thêm logic kiểm tra hoặc thêm thủ công vào Sheet.
-            /*
-            $values[] = [
-                'Category ID',
-                'Name',
-                'Description',
-                'Created At',
-                'Updated At'
-            ];
-            */
-
-            // Duyệt qua từng danh mục và thêm vào mảng $values
+            // Duyệt qua từng danh mục và thêm dữ liệu vào mảng
             foreach ($categories as $category) {
-                $values[] = [
-                    $category->CategoryID, // Giả sử cột khóa chính của bạn là CategoryID
-                    $category->Name,
-                    $category->Description,
-                    $category->Create_at ? $category->Create_at->format('Y-m-d H:i:s') : '', // Kiểm tra null và format ngày tháng
-                    $category->Update_at ? $category->Update_at->format('Y-m-d H:i:s') : '' // Tương tự
+                $data[] = [
+                    $category->id,
+                    $category->name,
+                    $category->slug,
+                    $category->description,
+                    // Định dạng ngày tháng cho dễ đọc trong Google Sheet
+                    $category->created_at ? $category->created_at->format('Y-m-d H:i:s') : '',
+                    $category->updated_at ? $category->updated_at->format('Y-m-d H:i:s') : ''
                 ];
             }
 
-            // Nếu không có dữ liệu nào để đẩy, có thể trả về thông báo
-            if (empty($values)) {
-                return response()->json([
-                    'status' => 'info',
-                    'message' => 'Không có dữ liệu danh mục nào để đẩy lên Google Sheet.'
-                ], 200);
-            }
+            // Bước 3: Khởi tạo Google Client và kết nối với Google Sheets API
+            $client = new Client();
+            $client->setApplicationName('Your Admin Dashboard App'); // Tên ứng dụng của bạn
+            $client->setScopes([Sheets::SPREADSHEETS]); // Chỉ định quyền truy cập Google Sheets
 
-            $body = new ValueRange([
-                'values' => $values
+            // Đặt đường dẫn đến file credentials của Service Account
+            $client->setAuthConfig(storage_path('app/' . env('GOOGLE_SERVICE_ACCOUNT_CREDENTIALS')));
+
+            $service = new Sheets($client);
+
+            // Lấy ID của Google Sheet dành cho Categories từ biến môi trường
+            $spreadsheetId = env('GOOGLE_SHEET_CATEGORIES_ID');
+            $range = 'Sheet1!A1'; // Phạm vi ghi dữ liệu, bắt đầu từ ô A1 của Sheet1
+
+            // Tạo đối tượng ValueRange chứa dữ liệu của bạn
+            $body = new Sheets\ValueRange([
+                'values' => $data // Mảng dữ liệu đã chuẩn bị
             ]);
 
             $params = [
-                'valueInputOption' => 'RAW' // Cách dữ liệu được hiểu: 'RAW' (ghi nguyên) hoặc 'USER_ENTERED' (như bạn nhập thủ công)
+                'valueInputOption' => 'RAW' // Giữ nguyên định dạng dữ liệu (text, số)
             ];
 
-            // ĐOẠN CODE XÓA DỮ LIỆU CŨ ĐÃ ĐƯỢC BỎ ĐI HOẶC COMMENT ĐỂ ĐẢM BẢO DỮ LIỆU ĐƯỢC APPEND
-            // $clearBody = new ClearValuesRequest();
-            // $service->spreadsheets_values->clear($spreadsheetId, $sheetName, $clearBody);
+            // Ghi dữ liệu vào Google Sheet
+            $response = $service->spreadsheets_values->update($spreadsheetId, $range, $body, $params);
 
-            // 5. Ghi dữ liệu vào Google Sheet
-            // append() sẽ thêm dữ liệu vào hàng trống đầu tiên sau dữ liệu hiện có.
-            $result = $service->spreadsheets_values->append($spreadsheetId, $range, $body, $params);
-
-            // 6. Trả về phản hồi JSON cho ReactJS
+            // Bước 4: Trả về phản hồi thành công cho ReactJS
             return response()->json([
                 'status' => 'success',
                 'message' => 'Dữ liệu danh mục đã được đẩy thành công vào Google Sheet!',
-                'updates' => $result->getUpdates() // Thông tin về các cập nhật từ Google API
+                'updates' => [
+                    'spreadsheetId' => $response->getSpreadsheetId(),
+                    'updatedRange' => $response->getUpdatedRange(),
+                    'updatedRows' => $response->getUpdatedRows(),
+                    'updatedColumns' => $response->getUpdatedColumns(),
+                    'updatedCells' => $response->getUpdatedCells(),
+                ]
             ]);
 
         } catch (\Exception $e) {
-            // Xử lý lỗi và trả về phản hồi lỗi cho ReactJS
+            // Bước 4: Trả về phản hồi lỗi nếu có bất kỳ vấn đề gì xảy ra
             return response()->json([
                 'status' => 'error',
                 'message' => 'Có lỗi xảy ra khi đẩy dữ liệu danh mục: ' . $e->getMessage(),
-                'line' => $e->getLine(),
-                'file' => $e->getFile()
-            ], 500);
+                'line' => $e->getLine(), // Dòng code gây lỗi trong file hiện tại
+                'file' => basename($e->getFile()) // Tên file gây lỗi (ví dụ: CategoryController.php)
+            ], 500); // Mã HTTP 500: Lỗi máy chủ nội bộ
         }
     }
 }
