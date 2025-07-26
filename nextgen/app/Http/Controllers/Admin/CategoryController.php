@@ -1,102 +1,130 @@
 <?php
+// app/Http/Controllers/Admin/CategoryController.php
+// Đây là tệp điều khiển (Controller) chính cho việc quản lý danh mục trong khu vực Admin.
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin; // Dòng này định nghĩa namespace cho Controller.
+                                     // Nó phải khớp với đường dẫn thư mục của tệp (Admin/CategoryController.php).
 
-use App\Http\Controllers\Controller;
-use App\Models\Category; // Import model Category của bạn
-use Illuminate\Http\Request;
-use Google\Client;
-use Google\Service\Sheets;
+use App\Http\Controllers\Controller; // Import Controller cơ sở của Laravel. Mọi Controller đều kế thừa từ đây.
+use App\Models\Category; // Import model Category để có thể tương tác với bảng 'categories' trong cơ sở dữ liệu.
+use Illuminate\Http\Request; // Import class Request để lấy dữ liệu từ các yêu cầu HTTP (POST, PUT, PATCH).
+use Illuminate\Support\Facades\Validator; // Import Validator để xác thực dữ liệu đầu vào từ người dùng.
 
-class CategoryController extends Controller
+class CategoryController extends Controller // Định nghĩa class Controller của chúng ta, kế thừa từ Controller cơ sở.
 {
     /**
-     * Xuất dữ liệu danh mục ra Google Sheet.
+     * Lấy tất cả danh mục.
+     * Xử lý yêu cầu GET đến /api/admin/categories
      *
-     * Đây là API được gọi từ ReactJS để đẩy dữ liệu danh mục lên một Google Sheet đã cấu hình.
-     *
-     * @param  \Illuminate\Http\Request  $request Không cần dữ liệu trong body request POST này.
-     * @return \Illuminate\Http\JsonResponse Trả về JSON với trạng thái thành công/thất bại và chi tiết.
+     * @return \Illuminate\Http\JsonResponse Trả về danh sách danh mục dưới dạng JSON.
      */
-    public function exportCategoriesToSheet(Request $request)
+    public function index() // Phương thức này xử lý việc lấy tất cả danh mục.
     {
-        try {
-            // Bước 1: Lấy tất cả dữ liệu danh mục từ cơ sở dữ liệu
-            $categories = Category::all(); // Lấy tất cả các bản ghi từ bảng 'categories'
+        $categories = Category::all(); // Lấy tất cả các bản ghi từ bảng 'categories' thông qua Model Category.
+        return response()->json($categories); // Trả về dữ liệu danh mục dưới dạng phản hồi JSON.
+    }
 
-            if ($categories->isEmpty()) {
-                // Nếu không có danh mục nào, trả về lỗi 404
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Không có dữ liệu danh mục để xuất.'
-                ], 404);
-            }
+    /**
+     * Lưu trữ một danh mục mới.
+     * Xử lý yêu cầu POST đến /api/admin/categories
+     *
+     * @param  \Illuminate\Http\Request  $request Dữ liệu yêu cầu từ client (ví dụ: tên danh mục mới).
+     * @return \Illuminate\Http\JsonResponse Trả về JSON với thông báo thành công và dữ liệu danh mục mới.
+     */
+    public function store(Request $request) // Phương thức này xử lý việc thêm danh mục mới.
+    {
+        // Định nghĩa các quy tắc xác thực cho dữ liệu đầu vào từ $request.
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255|unique:categories,name', // Tên bắt buộc, là chuỗi, tối đa 255 ký tự, và phải là duy nhất trong cột 'name' của bảng 'categories'.
+        ], [
+            // Các thông báo lỗi tùy chỉnh nếu quy tắc xác thực không được đáp ứng.
+            'name.required' => 'Tên danh mục là bắt buộc.',
+            'name.unique' => 'Tên danh mục này đã tồn tại.',
+        ]);
 
-            // Bước 2: Chuẩn bị dữ liệu để ghi vào Google Sheet
-            // Hàng đầu tiên (header) sẽ là tên các cột trong Google Sheet
-            $header = ['ID', 'Tên Danh Mục', 'Slug', 'Mô Tả', 'Ngày Tạo', 'Ngày Cập Nhật'];
-            $data = [$header]; // Bắt đầu mảng dữ liệu với hàng tiêu đề
-
-            // Duyệt qua từng danh mục và thêm dữ liệu vào mảng
-            foreach ($categories as $category) {
-                $data[] = [
-                    $category->id,
-                    $category->name,
-                    $category->slug,
-                    $category->description,
-                    // Định dạng ngày tháng cho dễ đọc trong Google Sheet
-                    $category->created_at ? $category->created_at->format('Y-m-d H:i:s') : '',
-                    $category->updated_at ? $category->updated_at->format('Y-m-d H:i:s') : ''
-                ];
-            }
-
-            // Bước 3: Khởi tạo Google Client và kết nối với Google Sheets API
-            $client = new Client();
-            $client->setApplicationName('Your Admin Dashboard App'); // Tên ứng dụng của bạn
-            $client->setScopes([Sheets::SPREADSHEETS]); // Chỉ định quyền truy cập Google Sheets
-
-            // Đặt đường dẫn đến file credentials của Service Account
-            $client->setAuthConfig(storage_path('app/' . env('GOOGLE_SERVICE_ACCOUNT_CREDENTIALS')));
-
-            $service = new Sheets($client);
-
-            // Lấy ID của Google Sheet dành cho Categories từ biến môi trường
-            $spreadsheetId = env('GOOGLE_SHEET_CATEGORIES_ID');
-            $range = 'Sheet1!A1'; // Phạm vi ghi dữ liệu, bắt đầu từ ô A1 của Sheet1
-
-            // Tạo đối tượng ValueRange chứa dữ liệu của bạn
-            $body = new Sheets\ValueRange([
-                'values' => $data // Mảng dữ liệu đã chuẩn bị
-            ]);
-
-            $params = [
-                'valueInputOption' => 'RAW' // Giữ nguyên định dạng dữ liệu (text, số)
-            ];
-
-            // Ghi dữ liệu vào Google Sheet
-            $response = $service->spreadsheets_values->update($spreadsheetId, $range, $body, $params);
-
-            // Bước 4: Trả về phản hồi thành công cho ReactJS
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Dữ liệu danh mục đã được đẩy thành công vào Google Sheet!',
-                'updates' => [
-                    'spreadsheetId' => $response->getSpreadsheetId(),
-                    'updatedRange' => $response->getUpdatedRange(),
-                    'updatedRows' => $response->getUpdatedRows(),
-                    'updatedColumns' => $response->getUpdatedColumns(),
-                    'updatedCells' => $response->getUpdatedCells(),
-                ]
-            ]);
-
-        } catch (\Exception $e) {
-            // Bước 4: Trả về phản hồi lỗi nếu có bất kỳ vấn đề gì xảy ra
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Có lỗi xảy ra khi đẩy dữ liệu danh mục: ' . $e->getMessage(),
-                'line' => $e->getLine(), // Dòng code gây lỗi trong file hiện tại
-                'file' => basename($e->getFile()) // Tên file gây lỗi (ví dụ: CategoryController.php)
-            ], 500); // Mã HTTP 500: Lỗi máy chủ nội bộ
+        if ($validator->fails()) { // Kiểm tra nếu quá trình xác thực thất bại.
+            return response()->json(['errors' => $validator->errors()], 422); // Trả về các lỗi xác thực với mã HTTP 422 (Unprocessable Entity).
         }
+
+        // Tạo một bản ghi danh mục mới trong cơ sở dữ liệu.
+        $category = Category::create([
+            'name' => $request->name, // Lấy giá trị 'name' từ yêu cầu và gán vào cột 'name'.
+        ]);
+
+        // Trả về phản hồi JSON thông báo danh mục đã được tạo thành công với mã HTTP 201 (Created).
+        return response()->json(['message' => 'Danh mục đã được tạo thành công.', 'category' => $category], 201);
+    }
+
+    /**
+     * Hiển thị một danh mục cụ thể.
+     * Xử lý yêu cầu GET đến /api/admin/categories/{id}
+     *
+     * @param  int  $id ID của danh mục cần hiển thị.
+     * @return \Illuminate\Http\JsonResponse Trả về dữ liệu danh mục cụ thể.
+     */
+    public function show($id) // Phương thức này xử lý việc lấy một danh mục theo ID.
+    {
+        $category = Category::find($id); // Tìm danh mục trong cơ sở dữ liệu bằng ID.
+
+        if (!$category) { // Nếu không tìm thấy danh mục.
+            return response()->json(['message' => 'Không tìm thấy danh mục.'], 404); // Trả về lỗi 404 (Not Found).
+        }
+
+        return response()->json($category); // Trả về dữ liệu danh mục dưới dạng JSON.
+    }
+
+    /**
+     * Cập nhật một danh mục hiện có.
+     * Xử lý yêu cầu PUT/PATCH đến /api/admin/categories/{id}
+     *
+     * @param  \Illuminate\Http\Request  $request Dữ liệu yêu cầu từ client.
+     * @param  int  $id ID của danh mục cần cập nhật.
+     * @return \Illuminate\Http\JsonResponse Trả về thông báo thành công và dữ liệu danh mục đã cập nhật.
+     */
+    public function update(Request $request, $id) // Phương thức này xử lý việc cập nhật danh mục.
+    {
+        $category = Category::find($id); // Tìm danh mục cần cập nhật bằng ID.
+
+        if (!$category) { // Nếu không tìm thấy danh mục.
+            return response()->json(['message' => 'Không tìm thấy danh mục.'], 404); // Trả về lỗi 404.
+        }
+
+        // Xác thực dữ liệu đầu vào tương tự như phương thức 'store', nhưng bỏ qua tính duy nhất của chính bản ghi hiện tại.
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255|unique:categories,name,' . $id, // 'unique:categories,name,' . $id đảm bảo tên duy nhất ngoại trừ bản ghi có ID này.
+        ], [
+            'name.required' => 'Tên danh mục là bắt buộc.',
+            'name.unique' => 'Tên danh mục này đã tồn tại.',
+        ]);
+
+        if ($validator->fails()) { // Kiểm tra nếu xác thực thất bại.
+            return response()->json(['errors' => $validator->errors()], 422); // Trả về lỗi xác thực.
+        }
+
+        $category->name = $request->name; // Cập nhật thuộc tính 'name' của danh mục.
+        $category->save(); // Lưu các thay đổi vào cơ sở dữ liệu.
+
+        // Trả về phản hồi JSON thông báo cập nhật thành công.
+        return response()->json(['message' => 'Danh mục đã được cập nhật thành công.', 'category' => $category]);
+    }
+
+    /**
+     * Xóa một danh mục.
+     * Xử lý yêu cầu DELETE đến /api/admin/categories/{id}
+     *
+     * @param  int  $id ID của danh mục cần xóa.
+     * @return \Illuminate\Http\JsonResponse Trả về thông báo thành công.
+     */
+    public function destroy($id) // Phương thức này xử lý việc xóa danh mục.
+    {
+        $category = Category::find($id); // Tìm danh mục cần xóa bằng ID.
+
+        if (!$category) { // Nếu không tìm thấy danh mục.
+            return response()->json(['message' => 'Không tìm thấy danh mục.'], 404); // Trả về lỗi 404.
+        }
+
+        $category->delete(); // Xóa bản ghi danh mục khỏi cơ sở dữ liệu.
+
+        return response()->json(['message' => 'Danh mục đã được xóa thành công.'], 200); // Trả về thông báo thành công với mã HTTP 200 (OK).
     }
 }

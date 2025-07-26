@@ -16,16 +16,16 @@ use App\Http\Controllers\Api\OrderDetailController; // Import OrderDetailControl
 use App\Http\Controllers\Api\UserController; // Import UserController
 use App\Http\Controllers\Api\VoucherController; // Import VoucherController
 use App\Http\Controllers\Api\PaymentGatewayController; // Import PaymentGatewayController
-use App\Http\Controllers\Api\ReviewController; // Đã sửa lỗi cú pháp
-use App\Http\Controllers\Api\FavoriteProductController; // Đã sửa lỗi cú pháp
-use App\Http\Controllers\Api\CartController; // Đã sửa lỗi cú pháp
-use App\Http\Controllers\Api\VariantAttributeController; // Đã sửa lỗi cú pháp
-use App\Http\Controllers\Api\NewsApiController; // Đã sửa lỗi cú pháp
-use App\Http\Controllers\Api\AuthController; // Đã sửa lỗi cú pháp
-use App\Http\Controllers\Api\PasswordResetController; // Đã sửa lỗi cú pháp
-use App\Http\Controllers\Api\DashboardController; // Đã sửa lỗi cú pháp
+use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\FavoriteProductController;
+use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\VariantAttributeController;
+use App\Http\Controllers\Api\NewsApiController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\DashboardController; // Đây là DashboardController public nếu có
 
-// Import các Controller từ namespace Admin (để dùng cho chức năng export)
+// Import các Controller từ namespace Admin (để dùng cho chức năng export và admin CRUD)
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController; // Import AdminCategoryController với alias
 use App\Http\Controllers\Admin\NewsController as AdminNewsController; // Import AdminNewsController với alias để tránh nhầm lẫn
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController; // Import AdminDashboardController
@@ -46,38 +46,39 @@ use App\Http\Controllers\Admin\VoucherController as AdminVoucherController; // I
 */
 
 // Route cho người dùng đã xác thực (thường dùng với Laravel Sanctum)
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) { // Định nghĩa route được bảo vệ bởi middleware Sanctum
-    return $request->user(); // Trả về thông tin người dùng hiện tại
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
 });
-// Category routes (API public)
-Route::get('/categories', [CategoryController::class, 'index']); // Lấy tất cả danh mục
-Route::get('/categories/{id}', [CategoryController::class, 'show']); // Lấy chi tiết danh mục theo ID
-Route::post('/categories', [CategoryController::class, 'store']); // Tạo danh mục mới
-Route::put('/categories/{id}', [CategoryController::class, 'update']); // Cập nhật danh mục theo ID
-Route::delete('/categories/{id}', [CategoryController::class, 'destroy']); // Xóa danh mục theo ID
 
-// Product routes (API public)
-Route::get('/products', [ProductController::class, 'index']); // Lấy tất cả sản phẩm
-Route::get('/products/search', [ProductController::class, 'search']); // Tìm kiếm sản phẩm
-Route::get('/products/detail/{id}', [ProductController::class, 'show']); // Lấy chi tiết sản phẩm theo ID
-Route::post('/products/add', [ProductController::class, 'store']); // Thêm sản phẩm mới
-Route::put('/products/update/{id}', [ProductController::class, 'update']); // Cập nhật sản phẩm theo ID
-Route::delete('/products/{id}', [ProductController::class, 'destroy']); // Xóa sản phẩm theo ID
+// Category routes (API public) - Cần xem xét lại nếu bạn đã dùng apiResource cho categories ở dưới
+Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/categories/{id}', [CategoryController::class, 'show']);
+Route::post('/categories', [CategoryController::class, 'store']);
+Route::put('/categories/{id}', [CategoryController::class, 'update']);
+Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
+
+// Product routes (API public) - Cần xem xét lại nếu bạn đã dùng apiResource cho products ở dưới
+Route::get('/products', [ProductController::class, 'index']);
+Route::get('/products/search', [ProductController::class, 'search']);
+Route::get('/products/detail/{id}', [ProductController::class, 'show']);
+Route::post('/products/add', [ProductController::class, 'store']);
+Route::put('/products/update/{id}', [ProductController::class, 'update']);
+Route::delete('/products/{id}', [ProductController::class, 'destroy']);
 
 // ProductVariant routes (API public)
-Route::get('/variants', [ProductVariantController::class, 'index']); // Lấy tất cả biến thể sản phẩm
-Route::get('/variants/{id}', [ProductVariantController::class, 'show']); // Lấy chi tiết biến thể sản phẩm theo ID
-Route::post('/variants', [ProductVariantController::class, 'store']); // Tạo biến thể sản phẩm mới
-Route::put('/variants/{id}', [ProductVariantController::class, 'update']); // Cập nhật biến thể sản phẩm theo ID
-Route::delete('/variants/{id}', [ProductVariantController::class, 'destroy']); // Xóa biến thể sản phẩm theo ID
+Route::get('/variants', [ProductVariantController::class, 'index']);
+Route::get('/variants/{id}', [ProductVariantController::class, 'show']);
+Route::post('/variants', [ProductVariantController::class, 'store']);
+Route::put('/variants/{id}', [ProductVariantController::class, 'update']);
+Route::delete('/variants/{id}', [ProductVariantController::class, 'destroy']);
 
-
-Route::get('/users', [UserController::class, 'index']); // Lấy tất cả người dùng
-Route::get('/users/{id}', [UserController::class, 'show']); // Lấy chi tiết người dùng theo ID
-Route::post('/users/register', [UserController::class, 'register']); // Đăng ký người dùng mới
-Route::post('/users/login', [UserController::class, 'login']); // Đăng nhập người dùng
-Route::put('/users/{id}', [UserController::class, 'update']); // Cập nhật thông tin người dùng theo ID
-Route::delete('/users/{id}', [UserController::class, 'destroy']); // Xóa người dùng theo ID
+// User routes (API public) - Cần xem xét lại nếu bạn đã dùng apiResource cho users ở dưới
+Route::get('/users', [UserController::class, 'index']);
+Route::get('/users/{id}', [UserController::class, 'show']);
+Route::post('/users/register', [UserController::class, 'register']);
+Route::post('/users/login', [UserController::class, 'login']);
+Route::put('/users/{id}', [UserController::class, 'update']);
+Route::delete('/users/{id}', [UserController::class, 'destroy']);
 
 
 // Product routes - chỉ dùng apiResource, không dùng prefix group
@@ -97,78 +98,60 @@ Route::apiResource('reviews', ReviewController::class); // Tuyến đường RES
 Route::apiResource('variant-attributes', VariantAttributeController::class); // Tuyến đường RESTful cho thuộc tính biến thể
 
 // Cart routes (custom, không dùng apiResource)
-Route::prefix('carts')->group(function () { // Nhóm các tuyến đường liên quan đến giỏ hàng
-    Route::get('/', [CartController::class, 'viewCart']); // Xem giỏ hàng
-    Route::post('/', [CartController::class, 'addToCart']); // Thêm sản phẩm vào giỏ hàng
-    Route::put('/', [CartController::class, 'updateCartItem']); // Cập nhật số lượng sản phẩm trong giỏ hàng
-    Route::delete('/item', [CartController::class, 'removeFromCart']); // Xóa một sản phẩm khỏi giỏ hàng
-    Route::delete('/', [CartController::class, 'clearCart']); // Xóa toàn bộ giỏ hàng
+Route::prefix('carts')->group(function () {
+    Route::get('/', [CartController::class, 'viewCart']);
+    Route::post('/', [CartController::class, 'addToCart']);
+    Route::put('/', [CartController::class, 'updateCartItem']);
+    Route::delete('/item', [CartController::class, 'removeFromCart']);
+    Route::delete('/', [CartController::class, 'clearCart']);
 });
 
 
 // FavoriteProduct routes (custom, không dùng apiResource)
-Route::prefix('favorite-products')->group(function () { // Nhóm các tuyến đường liên quan đến sản phẩm yêu thích
-    Route::get('/{userId}', [FavoriteProductController::class, 'index']); // Lấy danh sách sản phẩm yêu thích của người dùng
-    Route::post('/', [FavoriteProductController::class, 'store']); // Thêm sản phẩm vào danh sách yêu thích
-    Route::delete('/', [FavoriteProductController::class, 'destroy']); // Xóa sản phẩm khỏi danh sách yêu thích
+Route::prefix('favorite-products')->group(function () {
+    Route::get('/{userId}', [FavoriteProductController::class, 'index']);
+    Route::post('/', [FavoriteProductController::class, 'store']);
+    Route::delete('/', [FavoriteProductController::class, 'destroy']);
 });
 
 // News routes (nếu chỉ GET, giữ lại như sau)
-Route::get('/news', [NewsApiController::class, 'index']); // Lấy tất cả tin tức
-Route::get('/news/{slug}', [NewsApiController::class, 'show']); // Lấy chi tiết tin tức theo slug
+Route::get('/news', [NewsApiController::class, 'index']);
+Route::get('/news/{slug}', [NewsApiController::class, 'show']);
 
 // Nếu muốn CRUD đầy đủ cho news, dùng:
-// Route::apiResource('news', NewsApiController::class); // Tuyến đường RESTful cho tin tức
+// Route::apiResource('news', NewsApiController::class);
 
-Route::post('/register', [AuthController::class, 'register']); // Tuyến đường đăng ký (public)
-Route::post('/login', [AuthController::class, 'login']); // Tuyến đường đăng nhập (public)
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
 
 // Password reset routes
-Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLinkEmail']); // Gửi link reset mật khẩu
-Route::get('/reset-password', [PasswordResetController::class, 'redirectToWebForm']); // Chuyển hướng đến form reset mật khẩu
-Route::post('/reset-password', [PasswordResetController::class, 'reset']); // Reset mật khẩu
+Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLinkEmail']);
+Route::get('/reset-password', [PasswordResetController::class, 'redirectToWebForm']);
+Route::post('/reset-password', [PasswordResetController::class, 'reset']);
 
-Route::get('/verify-email/{userId}/{token}', [App\Http\Controllers\Api\AuthController::class, 'verifyEmail']); // Xác minh email người dùng
+Route::get('/verify-email/{userId}/{token}', [App\Http\Controllers\Api\AuthController::class, 'verifyEmail']);
 
 // ========================================================================
-// Thêm route cho DashboardController và NewsController (Admin API)
+// Các route API cho Admin (yêu cầu xác thực Sanctum)
 // ========================================================================
-Route::middleware('auth:sanctum')->group(function () { // Nhóm các tuyến đường yêu cầu xác thực Sanctum
-    // Sửa lỗi báo đỏ: Sử dụng AdminDashboardController cho route dashboard-stats
-    Route::get('/dashboard-stats', [AdminDashboardController::class, 'index']); // Lấy số liệu thống kê dashboard
+Route::middleware('auth:sanctum')->group(function () {
+    // Nhóm các tuyến đường dành cho khu vực quản trị (admin)
+    Route::prefix('admin')->group(function () {
+        // Các route API cho Admin Dashboard
+        Route::get('/dashboard-stats', [AdminDashboardController::class, 'getStats']); // Lấy số liệu thống kê dashboard
+        Route::get('/dashboard/recent-activities', [AdminDashboardController::class, 'getRecentActivities']); // Lấy dữ liệu hoạt động gần đây
+        Route::get('/dashboard/category-stats', [AdminDashboardController::class, 'getCategoryStats']); // Lấy dữ liệu thống kê sản phẩm theo loại
 
-    // Các route API cho Admin
-    Route::prefix('admin')->group(function () { // Nhóm các tuyến đường dành cho khu vực quản trị (admin)
         // Các route API cho Admin News (CRUD đầy đủ)
-        // Các route này sẽ có dạng /api/admin/news, /api/admin/news/{news}, v.v.
         Route::apiResource('news', AdminNewsController::class); // Tuyến đường RESTful cho quản lý tin tức (admin)
 
-        // THÊM ROUTE ĐỂ ĐẨY DANH MỤC LÊN GOOGLE SHEET TẠI ĐÂY
-        // Route này sẽ có dạng /api/admin/categories/export-to-sheet
-        Route::post('categories/export-to-sheet', [AdminCategoryController::class, 'exportCategoriesToSheet']); // Đẩy dữ liệu danh mục lên Google Sheet
-
-        // THÊM ROUTE ĐỂ ĐẨY SỐ LIỆU DASHBOARD LÊN GOOGLE SHEET TẠI ĐÂY
-        // Route này sẽ có dạng /api/admin/dashboard/export-to-sheet
-        Route::post('dashboard/export-to-sheet', [AdminDashboardController::class, 'exportDashboardStatsToSheet']); // Đẩy số liệu dashboard lên Google Sheet
-
-        // THÊM ROUTE ĐỂ ĐẨY DỮ LIỆU TIN TỨC LÊN GOOGLE SHEET TẠI ĐÂY
-        // Route này sẽ có dạng /api/admin/news/export-to-sheet
-        Route::post('news/export-to-sheet', [AdminNewsController::class, 'exportNewsToSheet']); // Đẩy dữ liệu tin tức lên Google Sheet
-
-        // THÊM ROUTE ĐỂ ĐẨY DỮ LIỆU ĐƠN HÀNG LÊN GOOGLE SHEET TẠY ĐÂY
-        // Route này sẽ có dạng /api/admin/orders/export-to-sheet
-        Route::post('orders/export-to-sheet', [AdminOrderController::class, 'exportOrdersToSheet']); // Đẩy dữ liệu đơn hàng lên Google Sheet
-
-        // THÊM ROUTE ĐỂ ĐẨY DỮ LIỆU SẢN PHẨM LÊN GOOGLE SHEET TẠI ĐÂY
-        // Route này sẽ có dạng /api/admin/products/export-to-sheet
-        Route::post('products/export-to-sheet', [AdminProductController::class, 'exportProductsToSheet']); // Đẩy dữ liệu sản phẩm lên Google Sheet
-
-        // THÊM ROUTE ĐỂ ĐẨY DỮ LIỆU VOUCHER LÊN GOOGLE SHEET TẠY ĐÂY
-        // Route này sẽ có dạng /api/admin/vouchers/export-to-sheet
-        Route::post('vouchers/export-to-sheet', [AdminVoucherController::class, 'exportVouchersToSheet']); // Đẩy dữ liệu voucher lên Google Sheet
-
-        // THÊM ROUTE ĐỂ ĐẨY DỮ LIỆU NGƯỜI DÙNG LÊN GOOGLE SHEET TẠI ĐÂY
-        // Route này sẽ có dạng /api/admin/users/export-to-sheet
-        Route::post('users/export-to-sheet', [AdminUserController::class, 'exportUsersToSheet']); // Đẩy dữ liệu người dùng lên Google Sheet
+        // THÊM CÁC ROUTE QUẢN LÝ DANH MỤC ADMIN TẠI ĐÂY
+        // Các route này sẽ có dạng /api/admin/categories, /api/admin/categories/{id}, v.v.
+        Route::get('/categories', [AdminCategoryController::class, 'index']); // Lấy tất cả danh mục admin
+        Route::post('/categories', [AdminCategoryController::class, 'store']); // Tạo danh mục admin mới
+        Route::get('/categories/{id}', [AdminCategoryController::class, 'show']); // Lấy chi tiết danh mục admin theo ID
+        Route::put('/categories/{id}', [AdminCategoryController::class, 'update']); // Cập nhật danh mục admin theo ID
+        Route::patch('/categories/{id}', [AdminCategoryController::class, 'update']); // Cập nhật danh mục admin theo ID
+        Route::delete('/categories/{id}', [AdminCategoryController::class, 'destroy']); // Xóa danh mục admin theo ID
     });
 });
