@@ -4,107 +4,91 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB; // Có thể cần để truy vấn database
+use Google\Client;
+use Google\Service\Sheets;
+// Giả sử bạn có một số Model để lấy dữ liệu thống kê, ví dụ:
+use App\Models\Order;
+use App\Models\User;
+use App\Models\Product;
 
 class DashboardController extends Controller
 {
     /**
-     * Lấy dữ liệu thống kê chung cho Dashboard.
-     * Đây là API được gọi từ Vue.js để hiển thị các thẻ thống kê.
+     * Xuất dữ liệu thống kê Dashboard ra Google Sheet.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getStats()
+    public function exportDashboardStatsToSheet(Request $request)
     {
-        // Trong ứng dụng thực tế, bạn sẽ lấy dữ liệu từ database ở đây.
-        // Ví dụ:
-        // $totalProducts = Product::count();
-        // $newOrders = Order::where('created_at', '>=', now()->subDays(7))->count();
-        // $revenue = Order::sum('total_amount');
-        // $customers = User::where('role', 'customer')->count();
+        try {
+            // Bước 1: Lấy dữ liệu thống kê từ database
+            // Đây là ví dụ, bạn cần thay thế bằng logic lấy thống kê thực tế của mình.
+            // Có thể bạn sẽ tính toán các số liệu từ nhiều bảng hoặc có một bảng riêng cho thống kê.
+            $totalUsers = 1234; // User::count();
+            $totalOrders = 567; // Order::count();
+            $totalProducts = 890; // Product::count();
+            $totalRevenue = 123456789.50; // Order::sum('total_amount');
+            $latestUpdate = now()->format('Y-m-d H:i:s'); // Thời gian cập nhật gần nhất
 
-        // Dữ liệu mẫu (demo) để khớp với frontend Vue.js của bạn
-        $data = [
-            'totalProducts' => 150, // Ví dụ: 150 sản phẩm
-            'newOrders' => 25,      // Ví dụ: 25 đơn hàng mới
-            'revenue' => '₫125,000,000', // Ví dụ: 125 triệu VND
-            'customers' => 78       // Ví dụ: 78 khách hàng
-        ];
+            // Kiểm tra nếu không có dữ liệu để xuất (tùy theo logic thống kê của bạn)
+            if ($totalUsers === 0 && $totalOrders === 0) { // Ví dụ kiểm tra
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Không có dữ liệu thống kê dashboard để xuất.'
+                ], 404);
+            }
 
-        return response()->json($data);
-    }
+            // Bước 2: Chuẩn bị dữ liệu cho Google Sheet
+            $header = ['Metric', 'Value', 'Last Updated'];
+            $data = [$header];
 
-    /**
-     * Lấy dữ liệu hoạt động gần đây.
-     * Đây là API được gọi từ Vue.js để hiển thị bảng hoạt động.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function getRecentActivities()
-    {
-        // Trong ứng dụng thực tế, bạn sẽ lấy dữ liệu từ database ở đây.
-        // Ví dụ: Lấy 5 hoạt động gần nhất từ bảng logs hoặc order history.
-        // $activities = ActivityLog::orderBy('created_at', 'desc')->take(5)->get();
+            $data[] = ['Total Users', $totalUsers, $latestUpdate];
+            $data[] = ['Total Orders', $totalOrders, $latestUpdate];
+            $data[] = ['Total Products', $totalProducts, $latestUpdate];
+            $data[] = ['Total Revenue', $totalRevenue, $latestUpdate];
+            // Thêm các số liệu thống kê khác nếu có
 
-        // Dữ liệu mẫu (demo) để khớp với frontend Vue.js của bạn
-        $data = [
-            [
-                'customer' => 'Nguyễn Văn A',
-                'action' => 'Đặt hàng mới',
-                'date' => '2024-07-20',
-                'statusText' => 'Hoàn tất',
-                'statusClass' => 'done'
-            ],
-            [
-                'customer' => 'Trần Thị B',
-                'action' => 'Thêm sản phẩm vào giỏ',
-                'date' => '2024-07-19',
-                'statusText' => 'Chưa xử lý',
-                'statusClass' => 'pending'
-            ],
-            [
-                'customer' => 'Lê Văn C',
-                'action' => 'Đăng ký tài khoản',
-                'date' => '2024-07-18',
-                'statusText' => 'Kích hoạt',
-                'statusClass' => 'active'
-            ],
-            [
-                'customer' => 'Phạm Thị D',
-                'action' => 'Hủy đơn hàng',
-                'date' => '2024-07-17',
-                'statusText' => 'Hoàn tất', // Trạng thái của hành động hủy
-                'statusClass' => 'done'
-            ],
-        ];
+            // Bước 3: Khởi tạo Google Client và kết nối với Google Sheets API
+            $client = new Client();
+            $client->setApplicationName('Your Admin Dashboard App');
+            $client->setScopes([Sheets::SPREADSHEETS]);
+            $client->setAuthConfig(storage_path('app/' . env('GOOGLE_SERVICE_ACCOUNT_CREDENTIALS')));
+            $service = new Sheets($client);
 
-        return response()->json($data);
-    }
+            $spreadsheetId = env('GOOGLE_SHEET_DASHBOARD_ID');
+            $range = 'Sheet1!A1';
 
-    /**
-     * Lấy dữ liệu thống kê sản phẩm theo loại cho biểu đồ.
-     * Đây là API được gọi từ Vue.js để vẽ biểu đồ bánh.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function getCategoryStats()
-    {
-        // Trong ứng dụng thực tế, bạn sẽ truy vấn database để lấy số lượng sản phẩm theo từng danh mục.
-        // Ví dụ:
-        // $categoryCounts = DB::table('products')
-        //     ->join('categories', 'products.category_id', '=', 'categories.id')
-        //     ->select('categories.name as label', DB::raw('count(products.id) as data'))
-        //     ->groupBy('categories.name')
-        //     ->get();
-        // $labels = $categoryCounts->pluck('label')->toArray();
-        // $data = $categoryCounts->pluck('data')->toArray();
+            $body = new Sheets\ValueRange([
+                'values' => $data
+            ]);
+            $params = [
+                'valueInputOption' => 'RAW'
+            ];
 
-        // Dữ liệu mẫu (demo) để khớp với frontend Vue.js của bạn
-        $data = [
-            'labels' => ['Ghế sofa', 'Bàn ăn', 'Tủ quần áo', 'Bàn làm việc'],
-            'data' => [25, 35, 20, 20] // Số liệu ví dụ
-        ];
+            $response = $service->spreadsheets_values->update($spreadsheetId, $range, $body, $params);
 
-        return response()->json($data);
+            // Bước 4: Trả về phản hồi thành công
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Dữ liệu thống kê dashboard đã được đẩy thành công vào Google Sheet!',
+                'updates' => [
+                    'spreadsheetId' => $response->getSpreadsheetId(),
+                    'updatedRange' => $response->getUpdatedRange(),
+                    'updatedRows' => $response->getUpdatedRows(),
+                    'updatedColumns' => $response->getUpdatedColumns(),
+                    'updatedCells' => $response->getUpdatedCells(),
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            // Bước 4: Trả về phản hồi lỗi
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Có lỗi xảy ra khi đẩy dữ liệu thống kê dashboard: ' . $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => basename($e->getFile())
+            ], 500);
+        }
     }
 }
