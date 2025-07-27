@@ -42,33 +42,37 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'Name' => 'required|string|max:255|unique:categories,Name',
             'Description' => 'nullable|string',
-            'Image' => 'nullable', // Có thể là file hoặc string
+            'Image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
-        // Xử lý upload file ảnh nếu có
+        // Xử lý ảnh upload
         if ($request->hasFile('Image')) {
             $imagePath = $request->file('Image')->store('categories', 'public');
             $validated['Image'] = $imagePath;
-        } elseif ($request->has('Image')) {
-            // Nếu là chuỗi (đường dẫn ảnh)
-            $validated['Image'] = $request->input('Image');
-        } else {
-            $validated['Image'] = null;
+        } 
+        // Xử lý ảnh mặc định (nếu gửi từ frontend)
+        elseif ($request->has('Image')) {
+            $imageName = basename($request->input('Image'));
+            if (in_array($imageName, $this->getDefaultImages())) {
+                $validated['Image'] = 'default/' . $imageName;
+            }
         }
-        $validated['Create_at'] = now();
-        $validated['Update_at'] = now();
+
         $category = Category::create($validated);
+        
         return response()->json([
             'success' => true,
-            'data' => [
-                'CategoryID' => $category->CategoryID,
-                'Name' => $category->Name,
-                'Description' => $category->Description,
-                'Image' => $category->Image,
-                'Create_at' => $category->Create_at,
-                'Update_at' => $category->Update_at,
-            ]
+            'data' => $category
         ], 201);
+    }
+
+    protected function getDefaultImages()
+    {
+        return [
+            'default1.jpg',
+            'default2.jpg',
+            'default3.jpg'
+        ];
     }
 
     /**

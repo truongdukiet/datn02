@@ -97,7 +97,7 @@ Route::apiResource('reviews', ReviewController::class); // Tuyến đường RES
 Route::apiResource('variant-attributes', VariantAttributeController::class); // Tuyến đường RESTful cho thuộc tính biến thể
 
 // Cart routes (custom, không dùng apiResource)
-Route::prefix('carts')->group(function () { // Nhóm các tuyến đường liên quan đến giỏ hàng
+Route::middleware('auth:sanctum')->prefix('carts')->group(function () { // Nhóm các tuyến đường liên quan đến giỏ hàng
     Route::get('/', [CartController::class, 'viewCart']); // Xem giỏ hàng
     Route::post('/', [CartController::class, 'addToCart']); // Thêm sản phẩm vào giỏ hàng
     Route::put('/', [CartController::class, 'updateCartItem']); // Cập nhật số lượng sản phẩm trong giỏ hàng
