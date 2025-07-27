@@ -37,43 +37,35 @@ class CategoryController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'Name' => 'required|string|max:255|unique:categories,Name',
-            'Description' => 'nullable|string',
-            'Image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
-        ]);
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'Name' => 'required|string|max:255|unique:categories,Name',
+        'Description' => 'nullable|string',
+        'Image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validate image
+    ]);
 
-        // Xử lý ảnh upload
-        if ($request->hasFile('Image')) {
-            $imagePath = $request->file('Image')->store('categories', 'public');
-            $validated['Image'] = $imagePath;
-        } 
-        // Xử lý ảnh mặc định (nếu gửi từ frontend)
-        elseif ($request->has('Image')) {
-            $imageName = basename($request->input('Image'));
-            if (in_array($imageName, $this->getDefaultImages())) {
-                $validated['Image'] = 'default/' . $imageName;
-            }
-        }
-
-        $category = Category::create($validated);
-        
-        return response()->json([
-            'success' => true,
-            'data' => $category
-        ], 201);
+    // Handle image upload if provided
+    if ($request->hasFile('Image')) {
+        $validated['Image'] = $request->file('Image')->store('categories', 'public');
+    } else {
+        $validated['Image'] = null; // Set to null if no image is provided
     }
 
-    protected function getDefaultImages()
-    {
-        return [
-            'default1.jpg',
-            'default2.jpg',
-            'default3.jpg'
-        ];
-    }
+    $category = Category::create($validated);
+
+    return response()->json([
+        'success' => true,
+        'data' => [
+            'CategoryID' => $category->CategoryID,
+            'Name' => $category->Name,
+            'Description' => $category->Description,
+            'Image' => $category->Image,
+            'Create_at' => $category->created_at,
+            'Update_at' => $category->updated_at,
+        ]
+    ], 201);
+}
 
     /**
      * Display the specified resource.
