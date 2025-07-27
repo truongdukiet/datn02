@@ -7,8 +7,6 @@ import Projects from "./pages/client/Projects/Projects";
 import News from "./pages/client/News/News";
 import Services from "./pages/client/Services/Services";
 import Contact from "./pages/client/Contact/Contact";
-import AdminLayout from "./layouts/AdminLayout/AdminLayout";
-import Dashboard from "./pages/admin/Dashboard/Dashboard";
 import Login from "./pages/client/Login/Login";
 import Register from "./pages/client/Register/Register";
 import Products from "./pages/client/Products/Products";
@@ -20,6 +18,12 @@ import VerifyEmail from "./pages/client/VerifyEmail/VerifyEmail";
 import ForgotPassword from "./pages/client/ForgotPassword/ForgotPassword";
 import ResetPassword from "./pages/client/ResetPassword/ResetPassword";
 
+
+import AdminLayout from "./layouts/AdminLayout/AdminLayout";
+import Dashboard from "./pages/admin/Dashboard/AdminDashboard";
+import AdminUser from "./pages/admin/AdminUsers"; // Placeholder for user management page
+import AdminOrder from "./pages/admin/AdminOrders"; // Placeholder for order management page
+import AdminProduct from "./pages/admin/AdminProducts"; // Placeholder for product management page
 const App = () => {
   const router = createBrowserRouter([
     {
@@ -106,6 +110,18 @@ const App = () => {
             {
               path: "",
               element: <Dashboard />,
+            },
+            {
+              path: "users",
+              element: <AdminUser />,
+            },
+            {
+              path: "orders",
+              element: <AdminOrder />,
+            },
+            {
+              path: "products",
+              element: <AdminProduct />,
             },
           ],
         },
