@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import AppLayout from "./layouts/AppLayout/AppLayout";
 import MainLayout from "./layouts/MainLayout/MainLayout";
 import Home from "./pages/client/Home/Home";
@@ -18,19 +18,26 @@ import VerifyEmail from "./pages/client/VerifyEmail/VerifyEmail";
 import ForgotPassword from "./pages/client/ForgotPassword/ForgotPassword";
 import ResetPassword from "./pages/client/ResetPassword/ResetPassword";
 
-
 import AdminLayout from "./layouts/AdminLayout/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard/AdminDashboard";
-import AdminUser from "./pages/admin/AdminUsers"; // Placeholder for user management page
-import AdminOrder from "./pages/admin/AdminOrders"; // Placeholder for order management page
-import AdminProduct from "./pages/admin/AdminProducts"; // Placeholder for product management page
+import AdminUser from "./pages/admin/AdminUsers"; 
+import AdminOrder from "./pages/admin/AdminOrders"; 
+import AdminProduct from "./pages/admin/AdminProducts"; 
+
 const App = () => {
+  const user = JSON.parse(localStorage.getItem("user"));
+  const isAdmin = user && user.Role == 1; // Kiểm tra xem người dùng có phải là admin không
+
+  const ProtectedRoute = ({ children }) => {
+    return isAdmin ? children : <Navigate to="/" />;
+  };
+
   const router = createBrowserRouter([
     {
       path: "",
       element: <AppLayout />,
       children: [
-        // client
+        // client routes
         {
           path: "",
           element: <MainLayout />,
@@ -102,26 +109,42 @@ const App = () => {
           ],
         },
 
-        // admin
+        // admin routes
         {
           path: "admin",
           element: <AdminLayout />,
           children: [
             {
               path: "",
-              element: <Dashboard />,
+              element: (
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              ),
             },
             {
               path: "users",
-              element: <AdminUser />,
+              element: (
+                <ProtectedRoute>
+                  <AdminUser />
+                </ProtectedRoute>
+              ),
             },
             {
               path: "orders",
-              element: <AdminOrder />,
+              element: (
+                <ProtectedRoute>
+                  <AdminOrder />
+                </ProtectedRoute>
+              ),
             },
             {
               path: "products",
-              element: <AdminProduct />,
+              element: (
+                <ProtectedRoute>
+                  <AdminProduct />
+                </ProtectedRoute>
+              ),
             },
           ],
         },

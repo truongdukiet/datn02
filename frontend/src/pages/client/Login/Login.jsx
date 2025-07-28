@@ -21,7 +21,14 @@ const Login = () => {
       localStorage.setItem("user", JSON.stringify(response.data.user));
 
       message.success("Đăng nhập thành công");
-      navigate("/");
+
+      // Kiểm tra vai trò và điều hướng đến trang admin nếu là admin
+      const user = response.data.user;
+      if (user.Role == 1) {
+        navigate("/admin/"); // Điều hướng đến trang admin
+      } else {
+        navigate("/"); // Điều hướng đến trang chủ
+      }
     },
     onError: (error) => {
       message.error(
