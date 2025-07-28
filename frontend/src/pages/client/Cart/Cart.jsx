@@ -82,7 +82,7 @@ const Cart = () => {
                     <section key={item.CartItemID} className="tw-rounded tw-border tw-border-solid tw-border-[#EEEEEE] tw-p-4 tw-flex tw-items-center tw-gap-4">
                       <Checkbox />
                       <img
-                        src={item.product_variant?.product?.Image ? `http://localhost:8000/${item.product_variant.product.Image}` : "default_image.jpg"}
+                        src={item.product_variant?.product?.Image ? `http://localhost:8000/storage/${item.product_variant.product.Image}` : "default_image.jpg"}
                         alt={item.product_variant?.product?.Name || "Không có tên"}
                         className="tw-size-28 tw-object-cover tw-rounded"
                       />
