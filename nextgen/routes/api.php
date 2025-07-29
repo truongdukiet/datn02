@@ -115,9 +115,7 @@ Route::prefix('favorite-products')->group(function () {
     Route::delete('/', [FavoriteProductController::class, 'destroy']);
 });
 
-// News routes (nếu chỉ GET, giữ lại như sau)
-Route::get('/news', [NewsApiController::class, 'index']);
-Route::get('/news/{slug}', [NewsApiController::class, 'show']);
+
 
 // Nếu muốn CRUD đầy đủ cho news, dùng:
 // Route::apiResource('news', NewsApiController::class);

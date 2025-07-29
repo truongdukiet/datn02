@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
@@ -7,40 +8,32 @@ const AdminProducts = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
-  // Dữ liệu mẫu
-  const mockProducts = [
-    {
-      id: 1,
-      name: "Sản phẩm 1",
-      description: "Mô tả sản phẩm 1",
-      price: 100000,
-      stock: 50,
-      category: "Điện tử",
-      status: "active",
-      image: "https://via.placeholder.com/100",
-    },
-    {
-      id: 2,
-      name: "Sản phẩm 2",
-      description: "Mô tả sản phẩm 2",
-      price: 200000,
-      stock: 30,
-      category: "Thời trang",
-      status: "active",
-      image: "https://via.placeholder.com/100",
-    },
-  ];
+  // API Base URL
+  const API_BASE_URL = 'http://localhost:8000/api';
 
   useEffect(() => {
-    setTimeout(() => {
-      setProducts(mockProducts);
-      setLoading(false);
-    }, 1000);
+    fetchProducts();
   }, []);
 
-  const handleDeleteProduct = (productId) => {
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/products`);
+      setProducts(response.data.data || []); // Ensure products is always an array
+      setLoading(false);
+    } catch (err) {
+      setError("Error fetching products");
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteProduct = async (productId) => {
     if (window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) {
-      setProducts(products.filter(product => product.id !== productId));
+      try {
+        await axios.delete(`${API_BASE_URL}/products/${productId}`);
+        setProducts(products.filter(product => product.ProductID !== productId));
+      } catch (err) {
+        setError("Error deleting product");
+      }
     }
   };
 
@@ -49,23 +42,29 @@ const AdminProducts = () => {
     setShowAddForm(true);
   };
 
-  const handleSaveProduct = (productData) => {
-    if (editingProduct) {
-      // Cập nhật sản phẩm
-      setProducts(products.map(p => 
-        p.id === editingProduct.id ? { ...p, ...productData } : p
-      ));
+  const handleSaveProduct = async (productData) => {
+    try {
+      if (editingProduct) {
+        // Update existing product
+        await axios.put(`${API_BASE_URL}/products/${editingProduct.ProductID}`, productData, {
+          headers: {
+            'Content-Type': 'multipart/form-data' // Set the content type for FormData
+          }
+        });
+      } else {
+        // Add new product
+        await axios.post(`${API_BASE_URL}/products`, productData, {
+          headers: {
+            'Content-Type': 'multipart/form-data' // Set the content type for FormData
+          }
+        });
+      }
+      fetchProducts(); // Refresh the product list
+      setShowAddForm(false);
       setEditingProduct(null);
-    } else {
-      // Thêm sản phẩm mới
-      const newProduct = {
-        id: Date.now(),
-        ...productData,
-        status: "active",
-      };
-      setProducts([...products, newProduct]);
+    } catch (err) {
+      setError("Error saving product");
     }
-    setShowAddForm(false);
   };
 
   if (loading) return <div>Đang tải...</div>;
@@ -77,14 +76,7 @@ const AdminProducts = () => {
         <h2>Quản lý sản phẩm</h2>
         <button
           onClick={() => setShowAddForm(true)}
-          style={{
-            padding: "10px 20px",
-            background: "#28a745",
-            color: "white",
-            border: "none",
-            borderRadius: 4,
-            cursor: "pointer",
-          }}
+          style={{ padding: "10px 20px", background: "#28a745", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
         >
           Thêm sản phẩm
         </button>
@@ -114,64 +106,46 @@ const AdminProducts = () => {
           </tr>
         </thead>
         <tbody>
-          {products.map((product) => (
-            <tr key={product.id} style={{ borderBottom: "1px solid #eee" }}>
-              <td style={{ padding: 12 }}>
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  style={{ width: 50, height: 50, objectFit: "cover" }}
-                />
-              </td>
-              <td style={{ padding: 12 }}>{product.name}</td>
-              <td style={{ padding: 12 }}>
-                {product.price.toLocaleString("vi-VN")} VNĐ
-              </td>
-              <td style={{ padding: 12 }}>{product.stock}</td>
-              <td style={{ padding: 12 }}>{product.category}</td>
-              <td style={{ padding: 12 }}>
-                <span
-                  style={{
-                    padding: "4px 8px",
-                    borderRadius: 4,
-                    background: product.status === "active" ? "#d4edda" : "#f8d7da",
-                    color: product.status === "active" ? "#155724" : "#721c24",
-                  }}
-                >
-                  {product.status === "active" ? "Hoạt động" : "Không hoạt động"}
-                </span>
-              </td>
-              <td style={{ padding: 12 }}>
-                <button
-                  onClick={() => handleEditProduct(product)}
-                  style={{
-                    marginRight: 8,
-                    padding: "4px 8px",
-                    background: "#ffc107",
-                    color: "black",
-                    border: "none",
-                    borderRadius: 4,
-                    cursor: "pointer",
-                  }}
-                >
-                  Sửa
-                </button>
-                <button
-                  onClick={() => handleDeleteProduct(product.id)}
-                  style={{
-                    padding: "4px 8px",
-                    background: "#dc3545",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 4,
-                    cursor: "pointer",
-                  }}
-                >
-                  Xóa
-                </button>
-              </td>
+          {products.length > 0 ? (
+            products.map((product) => (
+              <tr key={product.ProductID} style={{ borderBottom: "1px solid #eee" }}>
+                <td style={{ padding: 12 }}>
+                  <img 
+                    src={product.Image ? `http://localhost:8000/storage/${product.Image}` : "https://via.placeholder.com/100"} 
+                    alt={product.Name} 
+                    style={{ width: 50, height: 50, objectFit: "cover" }}
+                  />
+                </td>
+                <td style={{ padding: 12 }}>{product.Name}</td>
+                <td style={{ padding: 12 }}>{parseInt(product.base_price).toLocaleString("vi-VN")} VNĐ</td>
+                <td style={{ padding: 12 }}>{product.variants.reduce((total, variant) => total + variant.Stock, 0)}</td>
+                <td style={{ padding: 12 }}>{product.category?.Name}</td>
+                <td style={{ padding: 12 }}>
+                  <span style={{ padding: "4px 8px", borderRadius: 4, background: product.Status ? "#d4edda" : "#f8d7da", color: product.Status ? "#155724" : "#721c24" }}>
+                    {product.Status ? "Hoạt động" : "Không hoạt động"}
+                  </span>
+                </td>
+                <td style={{ padding: 12 }}>
+                  <button
+                    onClick={() => handleEditProduct(product)}
+                    style={{ marginRight: 8, padding: "4px 8px", background: "#ffc107", color: "black", border: "none", borderRadius: 4, cursor: "pointer" }}
+                  >
+                    Sửa
+                  </button>
+                  <button
+                    onClick={() => handleDeleteProduct(product.ProductID)}
+                    style={{ padding: "4px 8px", background: "#dc3545", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
+                  >
+                    Xóa
+                  </button>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="7" style={{ textAlign: "center" }}>Không có sản phẩm nào.</td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>
@@ -181,17 +155,37 @@ const AdminProducts = () => {
 // Component form để thêm/sửa sản phẩm
 const ProductForm = ({ product, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
-    name: product?.name || "",
-    description: product?.description || "",
-    price: product?.price || "",
-    stock: product?.stock || "",
-    category: product?.category || "",
-    image: product?.image || "",
+    Name: product?.Name || "",
+    Description: product?.Description || "",
+    base_price: product?.base_price || "",
+    Stock: product?.variants?.[0]?.Stock || "", // Assume first variant for simplicity
+    CategoryID: product?.CategoryID || "",
+    Image: product?.Image || "",
   });
+  
+  const [imageFile, setImageFile] = useState(null); // State for the image file
 
-  const handleSubmit = (e) => {
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    setImageFile(file); // Save the file in state
+    setFormData({ ...formData, Image: file.name }); // Optional: Store file name (not necessary)
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave(formData);
+    const formDataToSubmit = new FormData();
+    
+    // Append form data
+    Object.keys(formData).forEach(key => {
+      formDataToSubmit.append(key, formData[key]);
+    });
+
+    // Append the image file if selected
+    if (imageFile) {
+      formDataToSubmit.append('image_file', imageFile); // Ensure this key matches your backend
+    }
+
+    await onSave(formDataToSubmit); // Send FormData to the save function
   };
 
   return (
@@ -202,84 +196,59 @@ const ProductForm = ({ product, onSave, onCancel }) => {
           <input
             type="text"
             placeholder="Tên sản phẩm"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            value={formData.Name}
+            onChange={(e) => setFormData({ ...formData, Name: e.target.value })}
             style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
             required
           />
           <input
             type="number"
             placeholder="Giá"
-            value={formData.price}
-            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+            value={formData.base_price}
+            onChange={(e) => setFormData({ ...formData, base_price: e.target.value })}
             style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
             required
           />
           <input
             type="number"
             placeholder="Tồn kho"
-            value={formData.stock}
-            onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+            value={formData.Stock}
+            onChange={(e) => setFormData({ ...formData, Stock: e.target.value })}
             style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
             required
           />
           <input
             type="text"
-            placeholder="Danh mục"
-            value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            placeholder="Danh mục ID"
+            value={formData.CategoryID}
+            onChange={(e) => setFormData({ ...formData, CategoryID: e.target.value })}
             style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
             required
           />
           <input
-            type="url"
-            placeholder="URL hình ảnh"
-            value={formData.image}
-            onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+            type="file"
+            onChange={handleFileChange}
             style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
-            required
           />
         </div>
         <textarea
           placeholder="Mô tả sản phẩm"
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          style={{ 
-            width: "100%", 
-            padding: 8, 
-            marginTop: 10,
-            borderRadius: 4, 
-            border: "1px solid #ddd",
-            minHeight: 100 
-          }}
+          value={formData.Description}
+          onChange={(e) => setFormData({ ...formData, Description: e.target.value })}
+          style={{ width: "100%", padding: 8, marginTop: 10, borderRadius: 4, border: "1px solid #ddd", minHeight: 100 }}
           required
         />
         <div style={{ marginTop: 10 }}>
           <button
             type="submit"
-            style={{
-              marginRight: 10,
-              padding: "8px 16px",
-              background: "#28a745",
-              color: "white",
-              border: "none",
-              borderRadius: 4,
-              cursor: "pointer",
-            }}
+            style={{ marginRight: 10, padding: "8px 16px", background: "#28a745", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
           >
             {product ? "Cập nhật" : "Thêm"}
           </button>
           <button
             type="button"
             onClick={onCancel}
-            style={{
-              padding: "8px 16px",
-              background: "#6c757d",
-              color: "white",
-              border: "none",
-              borderRadius: 4,
-              cursor: "pointer",
-            }}
+            style={{ padding: "8px 16px", background: "#6c757d", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
           >
             Hủy
           </button>

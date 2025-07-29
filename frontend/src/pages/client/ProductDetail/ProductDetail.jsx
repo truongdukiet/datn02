@@ -169,7 +169,7 @@ const ProductDetail = () => {
           <div className="tw-col-span-1">
             <div className="tw-relative tw-pt-[100%]">
               <img
-                src={getProductImageUrl(product.Image)}
+                src={`http://localhost:8000/storage/images/${getProductImageUrl(product.Image)}`}
                 alt={product.Name}
                 className="tw-w-full tw-h-full tw-object-cover tw-block tw-absolute tw-top-0 tw-left-0 tw-right-0 tw-bottom-0"
               />

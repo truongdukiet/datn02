@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from "react";
 import { getProducts, addToCart } from '../../../api/api';
 import './ProductList.css';
 
@@ -50,7 +50,11 @@ const ProductList = () => {
           <div key={product.id} className="product-card">
             <div className="product-image">
               {product.image && (
-                <img src={product.image} alt={product.name} />
+                <img 
+                  src={product.image ? `http://localhost:8000/storage/${product.image}` : "default_image.jpg"}
+                  alt={product.name || "Không có tên"}
+                  className="tw-w-full tw-h-full tw-object-cover tw-absolute tw-top-0 tw-left-0"
+                />
               )}
             </div>
             <div className="product-info">
@@ -71,4 +75,4 @@ const ProductList = () => {
   );
 };
 
-export default ProductList; 
+export default ProductList;

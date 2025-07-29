@@ -14,6 +14,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log; // Import Log facade để debug
 
 class AuthController extends Controller
 {
@@ -57,8 +58,10 @@ class AuthController extends Controller
         );
 
         // Tạo link xác thực với ID và token ngẫu nhiên
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:8080');
-        $verificationUrl = $frontendUrl . '/verify-email?userId=' . $user->UserID . '&token=' . $verificationToken;
+        // Đảm bảo biến môi trường FRONTEND_URL được cấu hình đúng trong .env
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+        // SỬA ĐỔI TẠI ĐÂY: Tạo URL với path parameters thay vì query parameters
+        $verificationUrl = $frontendUrl . '/verify-email/' . $user->id . '/' . $verificationToken;
 
         // Gửi mail xác thực thủ công
         Mail::raw(
@@ -78,9 +81,17 @@ class AuthController extends Controller
     // Đăng nhập
     public function login(Request $request)
     {
+        // Debug: Ghi log dữ liệu request nhận được
+        // BỎ COMMENT DÒNG DƯỚI ĐỂ XEM DỮ LIỆU MÀ LARAVEL NHẬN ĐƯỢC TỪ REACT
+        // dd($request->all()); // Tạm thời dừng và hiển thị dữ liệu request để debug
+
+        // Validate incoming request data
+        // Validator này linh hoạt hơn, chấp nhận cả chữ thường và chữ hoa cho các trường
         $validator = Validator::make($request->all(), [
-            'login' => 'required|string',
-            'Password' => 'required|string',
+            'login' => 'sometimes|string',    // Có thể là 'login' (chữ thường)
+            'Login' => 'sometimes|string',    // Hoặc 'Login' (chữ hoa)
+            'password' => 'sometimes|string', // Có thể là 'password' (chữ thường)
+            'Password' => 'sometimes|string', // Hoặc 'Password' (chữ hoa)
         ]);
 
         if ($validator->fails()) {
@@ -91,19 +102,51 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $login = $request->login;
+        // Kiểm tra xem ít nhất một trường định danh (login/Login) có được gửi không
+        if (!$request->has('login') && !$request->has('Login')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng cung cấp tên đăng nhập hoặc email.',
+                'errors' => ['login' => ['Tên đăng nhập hoặc email là bắt buộc.']]
+            ], 422);
+        }
+
+        // Kiểm tra xem ít nhất một trường mật khẩu (password/Password) có được gửi không
+        if (!$request->has('password') && !$request->has('Password')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng cung cấp mật khẩu.',
+                'errors' => ['password' => ['Mật khẩu là bắt buộc.']]
+            ], 422);
+        }
+
+        // Xác định giá trị thực của trường đăng nhập và mật khẩu, ưu tiên chữ thường
+        $login = $request->input('login') ?? $request->input('Login');
+        $password = $request->input('password') ?? $request->input('Password');
+
+        // Tiếp tục logic đăng nhập
         $user = filter_var($login, FILTER_VALIDATE_EMAIL)
             ? User::where('Email', $login)->first()
             : User::where('Username', $login)->first();
 
-        if (!$user || !Hash::check($request->Password, $user->Password)) {
+        // Debug: Ghi log thông tin user tìm được
+        // Log::info('User found:', ['user_email' => $user ? $user->Email : 'Not found']);
+        // dd($user); // Tạm thời dừng và hiển thị thông tin user để debug
+
+        // Đảm bảo cột mật khẩu trong DB là 'password' (chữ thường)
+        if (!$user || !Hash::check($password, $user->password)) { // Sử dụng biến $password đã xác định
+            // Log lỗi đăng nhập
+            // Log::warning('Login failed: Invalid credentials', ['login_attempt' => $login]);
             return response()->json([
                 'success' => false,
                 'message' => 'Tài khoản hoặc mật khẩu không đúng.'
             ], 401);
         }
 
+        // Đảm bảo cột email_verified_at khớp chính xác với database của bạn
         if (is_null($user->email_verified_at)) {
+            // Log lỗi tài khoản chưa kích hoạt
+            // Log::warning('Login failed: Account not verified', ['user_email' => $user->Email]);
             return response()->json([
                 'success' => false,
                 'message' => 'Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email.'
@@ -116,11 +159,13 @@ class AuthController extends Controller
             'success' => true,
             'token' => $token,
             'user' => [
-                'UserID' => $user->UserID,
+                'UserID' => $user->id, // Laravel mặc định dùng 'id' làm khóa chính
+                                       // Nếu khóa chính của bạn là 'UserID', bạn cần khai báo trong User model:
+                                       // protected $primaryKey = 'UserID';
                 'Fullname' => $user->Fullname,
                 'Username' => $user->Username,
                 'Email' => $user->Email,
-                'Role' => $user->Role // Đúng chữ hoa
+                'Role' => $user->Role // Đảm bảo tên cột 'Role' khớp với database (có thể là 'role' chữ thường)
             ]
         ]);
     }

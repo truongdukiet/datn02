@@ -47,20 +47,15 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         try {
-            // Validate dữ liệu đầu vào
+            // Validate input data
             $validator = Validator::make($request->all(), [
                 'CategoryID' => 'required|integer|exists:categories,CategoryID',
                 'Name' => 'required|string|max:255',
                 'Description' => 'nullable|string',
-                'Image' => 'nullable|string|max:500',
                 'base_price' => 'required|numeric|min:0',
                 'Status' => 'nullable|boolean',
-                'variants' => 'nullable|array',
-                'variants.*.price' => 'required_with:variants|numeric|min:0',
-                'variants.*.stock' => 'required_with:variants|integer|min:0',
-                'variants.*.attributes' => 'nullable|array',
-                'variants.*.attributes.*.attribute_id' => 'required_with:variants.*.attributes|integer|exists:attributes,AttributeID',
-                'variants.*.attributes.*.value' => 'required_with:variants.*.attributes|string|max:255',
+                'Stock' => 'nullable|integer|min:0',
+                'Image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validate image file
             ]);
 
             if ($validator->fails()) {
@@ -71,45 +66,22 @@ class ProductController extends Controller
                 ], 422);
             }
 
-            // Tạo sản phẩm mới
+            // Create new product data
             $productData = $validator->validated();
             $productData['Create_at'] = now();
             $productData['Update_at'] = now();
-            
-            // Xử lý upload ảnh nếu có
+
+            // Handle image upload if present
             if ($request->hasFile('image_file')) {
                 $imagePath = $request->file('image_file')->store('products', 'public');
-                $productData['Image'] = $imagePath;
+                $productData['Image'] = $imagePath; // Save the image path
+            } else {
+                $productData['Image'] = null; // Ensure Image key exists
             }
 
             $product = Product::create($productData);
 
-            // Xử lý variants nếu có
-            if ($request->has('variants') && is_array($request->variants)) {
-                foreach ($request->variants as $variantData) {
-                    $variant = $product->variants()->create([
-                        'ProductID' => $product->ProductID,
-                        'Sku' => $variantData['sku'] ?? uniqid('SKU-'),
-                        'Price' => $variantData['price'],
-                        'Stock' => $variantData['stock'] ?? 0,
-                        'Create_at' => now(),
-                        'Update_at' => now()
-                    ]);
-
-                    // Xử lý attributes cho variant
-                    if (isset($variantData['attributes']) && is_array($variantData['attributes'])) {
-                        foreach ($variantData['attributes'] as $attrData) {
-                            $variant->attributes()->create([
-                                'ProductVariantID' => $variant->ProductVariantID,
-                                'AttributeID' => $attrData['attribute_id'],
-                                'value' => $attrData['value']
-                            ]);
-                        }
-                    }
-                }
-            }
-
-            // Load lại product với relationships
+            // Load product with relationships
             $product->load(['category', 'variants.attributes.attribute']);
 
             return response()->json([
@@ -117,7 +89,6 @@ class ProductController extends Controller
                 'data' => $product,
                 'message' => 'Product created successfully'
             ], 201);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -187,9 +158,9 @@ class ProductController extends Controller
                 'base_price' => 'sometimes|numeric|min:0',
                 'Status' => 'nullable|boolean',
                 'variants' => 'nullable|array',
-                'variants.*.id' => 'nullable|integer|exists:product_variants,ProductVariantID',
-                'variants.*.price' => 'required_with:variants|numeric|min:0',
-                'variants.*.stock' => 'required_with:variants|integer|min:0',
+                'variants.*.ProductID' => 'nullable|integer|exists:product_variants,ProductVariantID',
+                'variants.*.Price' => 'required_with:variants|numeric|min:0',
+                'variants.*.Stock' => 'required_with:variants|integer|min:0',
                 'variants.*.attributes' => 'nullable|array',
                 'variants.*.attributes.*.attribute_id' => 'required_with:variants.*.attributes|integer|exists:attributes,AttributeID',
                 'variants.*.attributes.*.value' => 'required_with:variants.*.attributes|string|max:255',
@@ -229,9 +200,9 @@ class ProductController extends Controller
                 foreach ($request->variants as $variantData) {
                     $variant = $product->variants()->create([
                         'ProductID' => $product->ProductID,
-                        'Sku' => $variantData['sku'] ?? uniqid('SKU-'),
-                        'Price' => $variantData['price'],
-                        'Stock' => $variantData['stock'] ?? 0,
+                        'Sku' => $variantData['Sku'] ?? uniqid('SKU-'),
+                        'Price' => $variantData['Price'],
+                        'Stock' => $variantData['Stock'] ?? 0,
                         'Create_at' => now(),
                         'Update_at' => now()
                     ]);
