@@ -1,10 +1,13 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+<<<<<<< HEAD
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
@@ -15,27 +18,21 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log; // Import Log facade để debug
+=======
+>>>>>>> 9fafedae1209f6840e5017e438b1a31e8fd3e950
 
-class AuthController extends Controller
+class AuthenticatedSessionController extends Controller
 {
-    // Đăng ký
-    public function register(Request $request)
+    /**
+     * Handle an incoming authentication request.
+     */
+    public function store(LoginRequest $request): Response
     {
-        $validator = Validator::make($request->all(), [
-            'Fullname' => 'required|string|max:255',
-            'Username' => 'required|string|max:255|unique:users,Username',
-            'Email' => 'required|email|unique:users,Email',
-            'Password' => 'required|string|min:6|confirmed',
-        ]);
+        $request->authenticate();
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Dữ liệu không hợp lệ',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+        $request->session()->regenerate();
 
+<<<<<<< HEAD
         $user = User::create([
             'Fullname' => $request->Fullname,
             'Username' => $request->Username,
@@ -76,11 +73,17 @@ class AuthController extends Controller
             'success' => true,
             'message' => 'Đăng ký thành công. Vui lòng kiểm tra email để kích hoạt tài khoản.'
         ]);
+=======
+        return response()->noContent();
+>>>>>>> 9fafedae1209f6840e5017e438b1a31e8fd3e950
     }
 
-    // Đăng nhập
-    public function login(Request $request)
+    /**
+     * Destroy an authenticated session.
+     */
+    public function destroy(Request $request): Response
     {
+<<<<<<< HEAD
         // Debug: Ghi log dữ liệu request nhận được
         // BỎ COMMENT DÒNG DƯỚI ĐỂ XEM DỮ LIỆU MÀ LARAVEL NHẬN ĐƯỢC TỪ REACT
         // dd($request->all()); // Tạm thời dừng và hiển thị dữ liệu request để debug
@@ -93,15 +96,13 @@ class AuthController extends Controller
             'password' => 'sometimes|string', // Có thể là 'password' (chữ thường)
             'Password' => 'sometimes|string', // Hoặc 'Password' (chữ hoa)
         ]);
+=======
+        Auth::guard('web')->logout();
+>>>>>>> 9fafedae1209f6840e5017e438b1a31e8fd3e950
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Dữ liệu không hợp lệ',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+        $request->session()->invalidate();
 
+<<<<<<< HEAD
         // Kiểm tra xem ít nhất một trường định danh (login/Login) có được gửi không
         if (!$request->has('login') && !$request->has('Login')) {
             return response()->json([
@@ -201,5 +202,10 @@ class AuthController extends Controller
             'success' => true,
             'message' => 'Xác thực email thành công!'
         ]);
+=======
+        $request->session()->regenerateToken();
+
+        return response()->noContent();
+>>>>>>> 9fafedae1209f6840e5017e438b1a31e8fd3e950
     }
 }
