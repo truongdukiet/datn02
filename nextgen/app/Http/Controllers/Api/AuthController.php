@@ -1,13 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\Auth;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
-<<<<<<< HEAD
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
@@ -17,22 +14,27 @@ use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log; // Import Log facade để debug
-=======
->>>>>>> 9fafedae1209f6840e5017e438b1a31e8fd3e950
 
-class AuthenticatedSessionController extends Controller
+class AuthController extends Controller
 {
-    /**
-     * Handle an incoming authentication request.
-     */
-    public function store(LoginRequest $request): Response
+    // Đăng ký
+    public function register(Request $request)
     {
-        $request->authenticate();
+        $validator = Validator::make($request->all(), [
+            'Fullname' => 'required|string|max:255',
+            'Username' => 'required|string|max:255|unique:users,Username',
+            'Email' => 'required|email|unique:users,Email',
+            'Password' => 'required|string|min:6|confirmed',
+        ]);
 
-        $request->session()->regenerate();
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Dữ liệu không hợp lệ',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
-<<<<<<< HEAD
         $user = User::create([
             'Fullname' => $request->Fullname,
             'Username' => $request->Username,
@@ -55,10 +57,8 @@ class AuthenticatedSessionController extends Controller
         );
 
         // Tạo link xác thực với ID và token ngẫu nhiên
-        // Đảm bảo biến môi trường FRONTEND_URL được cấu hình đúng trong .env
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
-        // SỬA ĐỔI TẠI ĐÂY: Tạo URL với path parameters thay vì query parameters
-        $verificationUrl = $frontendUrl . '/verify-email/' . $user->id . '/' . $verificationToken;
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:8080');
+        $verificationUrl = $frontendUrl . '/verify-email?userId=' . $user->UserID . '&token=' . $verificationToken;
 
         // Gửi mail xác thực thủ công
         Mail::raw(
@@ -73,81 +73,37 @@ class AuthenticatedSessionController extends Controller
             'success' => true,
             'message' => 'Đăng ký thành công. Vui lòng kiểm tra email để kích hoạt tài khoản.'
         ]);
-=======
-        return response()->noContent();
->>>>>>> 9fafedae1209f6840e5017e438b1a31e8fd3e950
     }
 
-    /**
-     * Destroy an authenticated session.
-     */
-    public function destroy(Request $request): Response
+    // Đăng nhập
+    public function login(Request $request)
     {
-<<<<<<< HEAD
-        // Debug: Ghi log dữ liệu request nhận được
-        // BỎ COMMENT DÒNG DƯỚI ĐỂ XEM DỮ LIỆU MÀ LARAVEL NHẬN ĐƯỢC TỪ REACT
-        // dd($request->all()); // Tạm thời dừng và hiển thị dữ liệu request để debug
-
-        // Validate incoming request data
-        // Validator này linh hoạt hơn, chấp nhận cả chữ thường và chữ hoa cho các trường
         $validator = Validator::make($request->all(), [
-            'login' => 'sometimes|string',    // Có thể là 'login' (chữ thường)
-            'Login' => 'sometimes|string',    // Hoặc 'Login' (chữ hoa)
-            'password' => 'sometimes|string', // Có thể là 'password' (chữ thường)
-            'Password' => 'sometimes|string', // Hoặc 'Password' (chữ hoa)
+            'login' => 'required|string',
+            'Password' => 'required|string',
         ]);
-=======
-        Auth::guard('web')->logout();
->>>>>>> 9fafedae1209f6840e5017e438b1a31e8fd3e950
 
-        $request->session()->invalidate();
-
-<<<<<<< HEAD
-        // Kiểm tra xem ít nhất một trường định danh (login/Login) có được gửi không
-        if (!$request->has('login') && !$request->has('Login')) {
+        if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Vui lòng cung cấp tên đăng nhập hoặc email.',
-                'errors' => ['login' => ['Tên đăng nhập hoặc email là bắt buộc.']]
+                'message' => 'Dữ liệu không hợp lệ',
+                'errors' => $validator->errors()
             ], 422);
         }
 
-        // Kiểm tra xem ít nhất một trường mật khẩu (password/Password) có được gửi không
-        if (!$request->has('password') && !$request->has('Password')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Vui lòng cung cấp mật khẩu.',
-                'errors' => ['password' => ['Mật khẩu là bắt buộc.']]
-            ], 422);
-        }
-
-        // Xác định giá trị thực của trường đăng nhập và mật khẩu, ưu tiên chữ thường
-        $login = $request->input('login') ?? $request->input('Login');
-        $password = $request->input('password') ?? $request->input('Password');
-
-        // Tiếp tục logic đăng nhập
+        $login = $request->login;
         $user = filter_var($login, FILTER_VALIDATE_EMAIL)
             ? User::where('Email', $login)->first()
             : User::where('Username', $login)->first();
 
-        // Debug: Ghi log thông tin user tìm được
-        // Log::info('User found:', ['user_email' => $user ? $user->Email : 'Not found']);
-        // dd($user); // Tạm thời dừng và hiển thị thông tin user để debug
-
-        // Đảm bảo cột mật khẩu trong DB là 'password' (chữ thường)
-        if (!$user || !Hash::check($password, $user->password)) { // Sử dụng biến $password đã xác định
-            // Log lỗi đăng nhập
-            // Log::warning('Login failed: Invalid credentials', ['login_attempt' => $login]);
+        if (!$user || !Hash::check($request->Password, $user->Password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Tài khoản hoặc mật khẩu không đúng.'
             ], 401);
         }
 
-        // Đảm bảo cột email_verified_at khớp chính xác với database của bạn
         if (is_null($user->email_verified_at)) {
-            // Log lỗi tài khoản chưa kích hoạt
-            // Log::warning('Login failed: Account not verified', ['user_email' => $user->Email]);
             return response()->json([
                 'success' => false,
                 'message' => 'Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email.'
@@ -160,13 +116,11 @@ class AuthenticatedSessionController extends Controller
             'success' => true,
             'token' => $token,
             'user' => [
-                'UserID' => $user->id, // Laravel mặc định dùng 'id' làm khóa chính
-                                       // Nếu khóa chính của bạn là 'UserID', bạn cần khai báo trong User model:
-                                       // protected $primaryKey = 'UserID';
+                'UserID' => $user->UserID,
                 'Fullname' => $user->Fullname,
                 'Username' => $user->Username,
                 'Email' => $user->Email,
-                'Role' => $user->Role // Đảm bảo tên cột 'Role' khớp với database (có thể là 'role' chữ thường)
+                'Role' => $user->Role // Đúng chữ hoa
             ]
         ]);
     }
@@ -202,10 +156,5 @@ class AuthenticatedSessionController extends Controller
             'success' => true,
             'message' => 'Xác thực email thành công!'
         ]);
-=======
-        $request->session()->regenerateToken();
-
-        return response()->noContent();
->>>>>>> 9fafedae1209f6840e5017e438b1a31e8fd3e950
     }
 }
