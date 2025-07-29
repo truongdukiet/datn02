@@ -21,7 +21,7 @@ const ClientHeader = ({ lightMode = true }) => {
       try {
         setUser(JSON.parse(storedUser));
       } catch (error) {
-        console.error("Error parsing user data:", error);
+        console.error("Lỗi khi phân tích dữ liệu người dùng:", error);
       }
     }
 
@@ -90,7 +90,7 @@ const ClientHeader = ({ lightMode = true }) => {
             >
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Tìm kiếm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={classNames(
@@ -127,27 +127,27 @@ const ClientHeader = ({ lightMode = true }) => {
             >
               <li>
                 <NavLink className="!tw-text-[inherit]" to="/products">
-                  Products
+                  Sản phẩm
                 </NavLink>
               </li>
               <li>
                 <NavLink className="!tw-text-[inherit]" to="/about">
-                  About Us
+                  Về chúng tôi
                 </NavLink>
               </li>
               <li>
                 <NavLink className="!tw-text-[inherit]" to="/projects">
-                  Projects
+                  Dự án
                 </NavLink>
               </li>
               <li>
                 <NavLink className="!tw-text-[inherit]" to="/news">
-                  News
+                  Tin tức
                 </NavLink>
               </li>
               <li>
                 <NavLink className="!tw-text-[inherit]" to="/contact">
-                  Contact
+                  Liên hệ
                 </NavLink>
               </li>
             </ul>
