@@ -18,11 +18,14 @@ import VerifyEmail from "./pages/client/VerifyEmail/VerifyEmail";
 import ForgotPassword from "./pages/client/ForgotPassword/ForgotPassword";
 import ResetPassword from "./pages/client/ResetPassword/ResetPassword";
 
+// ✅ Thêm import trang Favorites
+import Favorites from "./pages/client/Favorites/Favorites";
+
 import AdminLayout from "./layouts/AdminLayout/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard/AdminDashboard";
-import AdminUser from "./pages/admin/AdminUsers"; 
-import AdminOrder from "./pages/admin/AdminOrders"; 
-import AdminProduct from "./pages/admin/AdminProducts"; 
+import AdminUser from "./pages/admin/AdminUsers";
+import AdminOrder from "./pages/admin/AdminOrders";
+import AdminProduct from "./pages/admin/AdminProducts";
 
 const App = () => {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -42,70 +45,25 @@ const App = () => {
           path: "",
           element: <MainLayout />,
           children: [
-            {
-              path: "",
-              element: <Home />,
-            },
-            {
-              path: "about",
-              element: <About />,
-            },
-            {
-              path: "projects",
-              element: <Projects />,
-            },
-            {
-              path: "news",
-              element: <News />,
-            },
-            {
-              path: "services",
-              element: <Services />,
-            },
-            {
-              path: "contact",
-              element: <Contact />,
-            },
-            {
-              path: "login",
-              element: <Login />,
-            },
-            {
-              path: "register",
-              element: <Register />,
-            },
-            {
-              path: "verify-email",
-              element: <VerifyEmail />,
-            },
-            {
-              path: "forgot-password",
-              element: <ForgotPassword />,
-            },
-            {
-              path: "reset-password",
-              element: <ResetPassword />,
-            },
-            {
-              path: "products",
-              element: <Products />,
-            },
-            {
-              path: "products/:id",
-              element: <ProductDetail />,
-            },
-            {
-              path: "cart",
-              element: <Cart />,
-            },
-            {
-              path: "checkout",
-              element: <Checkout />,
-            },
-            {
-              path: "thank-you",
-              element: <ThankYou />,
-            },
+            { path: "", element: <Home /> },
+            { path: "about", element: <About /> },
+            { path: "projects", element: <Projects /> },
+            { path: "news", element: <News /> },
+            { path: "services", element: <Services /> },
+            { path: "contact", element: <Contact /> },
+            { path: "login", element: <Login /> },
+            { path: "register", element: <Register /> },
+            { path: "verify-email", element: <VerifyEmail /> },
+            { path: "forgot-password", element: <ForgotPassword /> },
+            { path: "reset-password", element: <ResetPassword /> },
+            { path: "products", element: <Products /> },
+            { path: "products/:id", element: <ProductDetail /> },
+            { path: "cart", element: <Cart /> },
+            { path: "checkout", element: <Checkout /> },
+            { path: "thank-you", element: <ThankYou /> },
+
+            // ✅ Thêm route mới cho Sản phẩm yêu thích
+            { path: "favorites", element: <Favorites /> },
           ],
         },
 

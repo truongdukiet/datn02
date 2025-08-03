@@ -7,28 +7,37 @@ return [
     | Cross-Origin Resource Sharing (CORS) Configuration
     |--------------------------------------------------------------------------
     |
-    | Here you may configure your settings for cross-origin resource sharing
-    | or "CORS". This determines what cross-origin operations may execute
-    | in web browsers. You are free to adjust these settings as needed.
-    |
-    | To learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+    | Cấu hình này cho phép API của bạn nhận yêu cầu từ các domain khác.
+    | Điều này đặc biệt quan trọng khi frontend và backend chạy khác cổng.
     |
     */
 
+    // Áp dụng cho tất cả endpoint trong API và CSRF cookie của Sanctum
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
+    // ✅ Cho phép tất cả HTTP methods (GET, POST, PUT, PATCH, DELETE, OPTIONS)
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:5173')],
+    // ✅ Danh sách domain được phép truy cập API
+    'allowed_origins' => [
+        env('FRONTEND_URL', 'http://localhost:5173'), // React (Vite)
+        'http://127.0.0.1:5173', // Localhost IP
+        'http://localhost:3000', // Next.js hoặc React (CRA)
+        'https://your-production-domain.com' // Domain production thật
+    ],
 
+    // ✅ Không cần pattern bổ sung
     'allowed_origins_patterns' => [],
 
+    // ✅ Cho phép tất cả headers để không bị lỗi khi gửi Authorization hoặc X-Requested-With
     'allowed_headers' => ['*'],
 
+    // ✅ Không expose headers nào đặc biệt
     'exposed_headers' => [],
 
-    'max_age' => 0,
+    // ✅ Thời gian cache của preflight request (OPTIONS) = 1 ngày
+    'max_age' => 86400,
 
+    // ✅ Cho phép gửi cookie + Authorization token
     'supports_credentials' => true,
-
 ];

@@ -34,7 +34,7 @@ class ProductController extends Controller
         ]);
 
         if (!isset($validatedData['Status'])) {
-            $validatedData['Status'] = 0; 
+            $validatedData['Status'] = 0;
         }
 
         $product = Product::create($validatedData);
@@ -56,7 +56,7 @@ class ProductController extends Controller
             'CategoryID' => 'nullable|integer|exists:categories,CategoryID',
             'Name' => 'required|string|max:255',
             'Description' => 'nullable|string',
-            'Image' => 'nullable|url', 
+            'Image' => 'nullable|url',
             'base_price' => 'required|numeric|min:0',
             'Status' => 'nullable|boolean',
             'Create_at' => 'nullable|date',
@@ -103,7 +103,7 @@ class ProductController extends Controller
         if (!$product)
             return response()->json(['message' => 'Không tìm thấy sản phẩm'], 404);
 
-        $product->delete(); 
+        $product->delete();
 
         return response()->json(['message' => 'Sản phẩm đã được xóa (ẩn mềm).']);
     }

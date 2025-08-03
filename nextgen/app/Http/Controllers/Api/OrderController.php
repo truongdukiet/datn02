@@ -63,7 +63,7 @@ class OrderController extends Controller
             $order = Order::find($id);
             if (!$order) {
                 return response()->json([
-                    'success' => false, 
+                    'success' => false,
                     'message' => 'Order not found'
                 ], 404);
             }
@@ -87,7 +87,7 @@ class OrderController extends Controller
             // Cập nhật thông tin order chính
             $orderData = $validated;
             unset($orderData['order_details']);
-            
+
             if (!empty($orderData)) {
                 $order->update($orderData);
             }
@@ -96,7 +96,7 @@ class OrderController extends Controller
             if (isset($validated['order_details'])) {
                 // Xóa order details cũ
                 $order->orderDetails()->delete();
-                
+
                 // Tạo order details mới
                 foreach ($validated['order_details'] as $detail) {
                     $detail['OrderID'] = $order->OrderID;
@@ -112,7 +112,7 @@ class OrderController extends Controller
             $order->load(['user', 'voucher', 'paymentGateway', 'orderDetails.productVariant.product']);
 
             return response()->json([
-                'success' => true, 
+                'success' => true,
                 'message' => 'Order updated successfully',
                 'data' => $order
             ]);

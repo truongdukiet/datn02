@@ -58,7 +58,7 @@ class PaymentGatewayController extends Controller
             }
 
             $gateway = PaymentGateway::create($request->all());
-            
+
             return response()->json([
                 'success' => true,
                 'data' => $gateway,
@@ -84,7 +84,7 @@ class PaymentGatewayController extends Controller
     {
         try {
             $gateway = PaymentGateway::with('orders')->find($id);
-            
+
             if (!$gateway) {
                 return response()->json([
                     'success' => false,
@@ -118,7 +118,7 @@ class PaymentGatewayController extends Controller
     {
         try {
             $gateway = PaymentGateway::find($id);
-            
+
             if (!$gateway) {
                 return response()->json([
                     'success' => false,
@@ -165,7 +165,7 @@ class PaymentGatewayController extends Controller
     {
         try {
             $gateway = PaymentGateway::find($id);
-            
+
             if (!$gateway) {
                 return response()->json([
                     'success' => false,

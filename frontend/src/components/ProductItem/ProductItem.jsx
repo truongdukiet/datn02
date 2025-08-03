@@ -15,7 +15,8 @@ const addToCartFn = async ({ variantId, quantity }) => {
   return response.data;
 };
 
-const ProductItem = ({ product }) => {
+// ✅ Nhận thêm prop onToggleFavorite và isFavorite
+const ProductItem = ({ product, onToggleFavorite, isFavorite }) => {
   const { ProductID, Name, base_price, Image, variants = [] } = product;
 
   const defaultVariant = variants && variants.length > 0 ? variants[0] : null;
@@ -54,7 +55,16 @@ const ProductItem = ({ product }) => {
   };
 
   return (
-    <div className="tw-mb-4">
+    <div className="tw-mb-4 tw-relative">
+      {/* ✅ Icon Yêu thích (không đổi layout cũ) */}
+      <button
+        onClick={() => onToggleFavorite && onToggleFavorite(product)}
+        className="tw-absolute tw-top-2 tw-right-2 tw-z-10 tw-bg-white tw-rounded-full tw-p-2 tw-shadow hover:tw-bg-gray-100"
+        style={{ fontSize: "18px", color: isFavorite ? "#ff4d4f" : "#999" }}
+      >
+        <i className="fa-solid fa-heart"></i>
+      </button>
+
       <div className="tw-relative tw-pt-[100%]">
         <img
           src={getProductImageUrl(Image)}

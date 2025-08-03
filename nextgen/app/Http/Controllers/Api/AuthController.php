@@ -43,10 +43,8 @@ class AuthController extends Controller
             'email_verified_at' => null,
         ]);
 
-        // Tạo token xác thực ngẫu nhiên và lưu vào database
         $verificationToken = Str::random(64);
 
-        // Lưu token vào bảng password_reset_tokens (tái sử dụng bảng này cho email verification)
         DB::table('password_reset_tokens')->updateOrInsert(
             ['email' => $user->Email],
             [
@@ -56,11 +54,9 @@ class AuthController extends Controller
             ]
         );
 
-        // Tạo link xác thực với ID và token ngẫu nhiên
         $frontendUrl = env('FRONTEND_URL', 'http://localhost:8080');
         $verificationUrl = $frontendUrl . '/verify-email?userId=' . $user->UserID . '&token=' . $verificationToken;
 
-        // Gửi mail xác thực thủ công
         Mail::raw(
             "Chào {$user->Fullname},\n\nVui lòng nhấn vào link sau để xác thực tài khoản:\n$verificationUrl\n\nSau khi xác thực thành công, bạn sẽ được chuyển đến trang đăng nhập.",
             function ($message) use ($user) {
@@ -120,15 +116,16 @@ class AuthController extends Controller
                 'Fullname' => $user->Fullname,
                 'Username' => $user->Username,
                 'Email' => $user->Email,
-                'Role' => $user->Role // Đúng chữ hoa
+                'Phone' => $user->Phone,
+                'Address' => $user->Address,
+                'Role' => $user->Role
             ]
         ]);
     }
 
     public function verifyEmail($userId, $token)
     {
-        // Tìm user theo ID
-        $user = \App\Models\User::find($userId);
+        $user = User::find($userId);
         if (!$user) {
             return response()->json([
                 'success' => false,
@@ -136,8 +133,7 @@ class AuthController extends Controller
             ], 404);
         }
 
-        // Lấy token từ bảng password_reset_tokens
-        $row = \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $user->Email)->first();
+        $row = DB::table('password_reset_tokens')->where('email', $user->Email)->first();
         if (!$row || $row->token !== $token) {
             return response()->json([
                 'success' => false,
@@ -145,16 +141,45 @@ class AuthController extends Controller
             ], 400);
         }
 
-        // Đánh dấu email đã xác thực
         $user->email_verified_at = now();
         $user->save();
 
-        // Xoá token sau khi xác thực thành công
-        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $user->Email)->delete();
+        DB::table('password_reset_tokens')->where('email', $user->Email)->delete();
 
         return response()->json([
             'success' => true,
             'message' => 'Xác thực email thành công!'
+        ]);
+    }
+
+    // ✅ Cập nhật thông tin tài khoản
+    public function updateProfile(Request $request, $id)
+    {
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Người dùng không tồn tại'], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'Fullname' => 'nullable|string|max:255',
+            'Phone' => 'nullable|string|max:20',
+            'Address' => 'nullable|string|max:255'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => 'Dữ liệu không hợp lệ', 'errors' => $validator->errors()], 422);
+        }
+
+        $user->Fullname = $request->Fullname ?? $user->Fullname;
+        $user->Phone = $request->Phone ?? $user->Phone;
+        $user->Address = $request->Address ?? $user->Address;
+        $user->Updated_at = now();
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật thông tin thành công',
+            'data' => $user
         ]);
     }
 }
