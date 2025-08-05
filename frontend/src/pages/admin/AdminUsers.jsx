@@ -26,27 +26,27 @@ const AdminUsers = () => {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
-    
+
     if (includeAuth) {
       const token = localStorage.getItem('auth_token');
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
     }
-    
+
     return headers;
   };
 
   // Hàm xử lý response
   const handleResponse = async (response) => {
     const data = await response.json();
-    
+
     if (!response.ok) {
       const error = new Error(data.message || 'Có lỗi xảy ra');
       if (data.errors) error.errors = data.errors;
       throw error;
     }
-    
+
     return data;
   };
 
@@ -58,7 +58,7 @@ const AdminUsers = () => {
         headers: getHeaders(),
         credentials: 'include'
       });
-      
+
       const data = await handleResponse(response);
       if (data.success) {
         setUsers(data.data);
@@ -86,7 +86,7 @@ const AdminUsers = () => {
         credentials: 'include',
         body: JSON.stringify(userData)
       });
-      
+
       const data = await response.json();
       if (response.ok && data.success) {
         // Refresh danh sách sau khi thêm thành công
@@ -113,7 +113,7 @@ const AdminUsers = () => {
         credentials: 'include',
         body: JSON.stringify(userData)
       });
-      
+
       const data = await response.json();
       if (response.ok && data.success) {
         // Refresh danh sách sau khi cập nhật thành công
@@ -132,34 +132,6 @@ const AdminUsers = () => {
     }
   };
 
-  // Xóa người dùng
-  const handleDeleteUser = async (userId) => {
-    if (window.confirm("Bạn có chắc muốn xóa người dùng này?")) {
-      try {
-        const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-          method: 'DELETE',
-          headers: getHeaders(),
-          credentials: 'include'
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok && data.success) {
-          // Cập nhật danh sách sau khi xóa thành công
-          setUsers(users.filter(user => user.UserID !== userId));
-          alert('Xóa người dùng thành công!');
-        } else {
-          // Hiển thị lỗi từ server
-          const errorMessage = data.message || 'Lỗi khi xóa người dùng';
-          alert(errorMessage);
-        }
-      } catch (err) {
-        console.error('Lỗi khi xóa người dùng:', err);
-        alert('Lỗi kết nối server khi xóa người dùng');
-      }
-    }
-  };
-
   // Cập nhật trạng thái người dùng
   const handleToggleStatus = async (userId, currentStatus) => {
     const newStatus = currentStatus === 1 ? 0 : 1;
@@ -172,12 +144,12 @@ const AdminUsers = () => {
           Status: newStatus
         })
       });
-      
+
       const data = await response.json();
       if (response.ok && data.success) {
         // Cập nhật danh sách sau khi thay đổi trạng thái thành công
-        setUsers(users.map(user => 
-          user.UserID === userId 
+        setUsers(users.map(user =>
+          user.UserID === userId
             ? { ...user, Status: newStatus }
             : user
         ));
@@ -232,7 +204,7 @@ const AdminUsers = () => {
   // Xử lý submit form
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     // Validate form
     if (!formData.Username || !formData.Email) {
       alert('Vui lòng điền đầy đủ thông tin bắt buộc!');
@@ -301,8 +273,9 @@ const AdminUsers = () => {
             overflowY: 'auto'
           }}>
             <h3>{editingUser ? 'Sửa người dùng' : 'Thêm người dùng mới'}</h3>
-            
+
             <form onSubmit={handleSubmit}>
+              {/* Username */}
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Tên đăng nhập *</label>
                 <input
@@ -314,6 +287,7 @@ const AdminUsers = () => {
                 />
               </div>
 
+              {/* Email */}
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Email *</label>
                 <input
@@ -325,6 +299,7 @@ const AdminUsers = () => {
                 />
               </div>
 
+              {/* Fullname */}
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Họ tên</label>
                 <input
@@ -335,6 +310,7 @@ const AdminUsers = () => {
                 />
               </div>
 
+              {/* Phone */}
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Số điện thoại</label>
                 <input
@@ -345,6 +321,7 @@ const AdminUsers = () => {
                 />
               </div>
 
+              {/* Address */}
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Địa chỉ</label>
                 <textarea
@@ -354,6 +331,7 @@ const AdminUsers = () => {
                 />
               </div>
 
+              {/* Password */}
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px' }}>
                   Mật khẩu {editingUser ? '(để trống nếu không thay đổi)' : '*'}
@@ -367,6 +345,7 @@ const AdminUsers = () => {
                 />
               </div>
 
+              {/* Role */}
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Vai trò</label>
                 <select
@@ -379,6 +358,7 @@ const AdminUsers = () => {
                 </select>
               </div>
 
+              {/* Status */}
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Trạng thái</label>
                 <select
@@ -490,7 +470,6 @@ const AdminUsers = () => {
                 <button
                   onClick={() => handleToggleStatus(user.UserID, user.Status)}
                   style={{
-                    marginRight: 8,
                     padding: "4px 8px",
                     background: "#007bff",
                     color: "white",
@@ -500,19 +479,6 @@ const AdminUsers = () => {
                   }}
                 >
                   {user.Status === 1 ? "Vô hiệu" : "Kích hoạt"}
-                </button>
-                <button
-                  onClick={() => handleDeleteUser(user.UserID)}
-                  style={{
-                    padding: "4px 8px",
-                    background: "#dc3545",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 4,
-                    cursor: "pointer",
-                  }}
-                >
-                  Xóa
                 </button>
               </td>
             </tr>
