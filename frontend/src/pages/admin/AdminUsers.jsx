@@ -17,10 +17,8 @@ const AdminUsers = () => {
     Status: 1
   });
 
-  // API Base URL
   const API_BASE_URL = 'http://localhost:8000/api';
 
-  // Hàm tạo headers cho API calls
   const getHeaders = (includeAuth = false) => {
     const headers = {
       'Accept': 'application/json',
@@ -37,7 +35,6 @@ const AdminUsers = () => {
     return headers;
   };
 
-  // Hàm xử lý response
   const handleResponse = async (response) => {
     const data = await response.json();
 
@@ -50,7 +47,6 @@ const AdminUsers = () => {
     return data;
   };
 
-  // Lấy danh sách người dùng từ API
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -77,7 +73,6 @@ const AdminUsers = () => {
     fetchUsers();
   }, []);
 
-  // Thêm người dùng mới
   const handleAddUser = async (userData) => {
     try {
       const response = await fetch(`${API_BASE_URL}/users`, {
@@ -89,7 +84,6 @@ const AdminUsers = () => {
 
       const data = await response.json();
       if (response.ok && data.success) {
-        // Refresh danh sách sau khi thêm thành công
         await fetchUsers();
         alert('Thêm người dùng thành công!');
         setShowModal(false);
@@ -104,7 +98,6 @@ const AdminUsers = () => {
     }
   };
 
-  // Cập nhật người dùng
   const handleUpdateUser = async (userId, userData) => {
     try {
       const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
@@ -116,7 +109,6 @@ const AdminUsers = () => {
 
       const data = await response.json();
       if (response.ok && data.success) {
-        // Refresh danh sách sau khi cập nhật thành công
         await fetchUsers();
         alert('Cập nhật người dùng thành công!');
         setShowModal(false);
@@ -132,7 +124,6 @@ const AdminUsers = () => {
     }
   };
 
-  // Cập nhật trạng thái người dùng
   const handleToggleStatus = async (userId, currentStatus) => {
     const newStatus = currentStatus === 1 ? 0 : 1;
     try {
@@ -147,7 +138,6 @@ const AdminUsers = () => {
 
       const data = await response.json();
       if (response.ok && data.success) {
-        // Cập nhật danh sách sau khi thay đổi trạng thái thành công
         setUsers(users.map(user =>
           user.UserID === userId
             ? { ...user, Status: newStatus }
@@ -164,14 +154,12 @@ const AdminUsers = () => {
     }
   };
 
-  // Mở modal để thêm người dùng mới
   const openAddModal = () => {
     setEditingUser(null);
     resetForm();
     setShowModal(true);
   };
 
-  // Mở modal để sửa người dùng
   const openEditModal = (user) => {
     setEditingUser(user);
     setFormData({
@@ -180,14 +168,13 @@ const AdminUsers = () => {
       Fullname: user.Fullname || '',
       Phone: user.Phone || '',
       Address: user.Address || '',
-      Password: '', // Không hiển thị mật khẩu cũ
+      Password: '',
       Role: user.Role,
       Status: user.Status
     });
     setShowModal(true);
   };
 
-  // Reset form
   const resetForm = () => {
     setFormData({
       Username: '',
@@ -201,25 +188,21 @@ const AdminUsers = () => {
     });
   };
 
-  // Xử lý submit form
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validate form
     if (!formData.Username || !formData.Email) {
       alert('Vui lòng điền đầy đủ thông tin bắt buộc!');
       return;
     }
 
     if (editingUser) {
-      // Cập nhật người dùng
       const updateData = { ...formData };
       if (!updateData.Password) {
-        delete updateData.Password; // Không gửi password nếu không thay đổi
+        delete updateData.Password;
       }
       handleUpdateUser(editingUser.UserID, updateData);
     } else {
-      // Thêm người dùng mới
       if (!formData.Password) {
         alert('Vui lòng nhập mật khẩu!');
         return;
@@ -250,7 +233,6 @@ const AdminUsers = () => {
         </button>
       </div>
 
-      {/* Modal Form */}
       {showModal && (
         <div style={{
           position: 'fixed',
@@ -275,26 +257,42 @@ const AdminUsers = () => {
             <h3>{editingUser ? 'Sửa người dùng' : 'Thêm người dùng mới'}</h3>
 
             <form onSubmit={handleSubmit}>
-              {/* Username */}
+              {/* Username (ReadOnly khi sửa) */}
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Tên đăng nhập *</label>
                 <input
                   type="text"
                   value={formData.Username}
-                  onChange={(e) => setFormData({...formData, Username: e.target.value})}
-                  style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                  onChange={(e) => setFormData({ ...formData, Username: e.target.value })}
+                  readOnly={!!editingUser}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    borderRadius: '4px',
+                    border: '1px solid #ddd',
+                    backgroundColor: editingUser ? '#e9ecef' : 'white',
+                    cursor: editingUser ? 'not-allowed' : 'text'
+                  }}
                   required
                 />
               </div>
 
-              {/* Email */}
+              {/* Email (ReadOnly khi sửa) */}
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Email *</label>
                 <input
                   type="email"
                   value={formData.Email}
-                  onChange={(e) => setFormData({...formData, Email: e.target.value})}
-                  style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                  onChange={(e) => setFormData({ ...formData, Email: e.target.value })}
+                  readOnly={!!editingUser}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    borderRadius: '4px',
+                    border: '1px solid #ddd',
+                    backgroundColor: editingUser ? '#e9ecef' : 'white',
+                    cursor: editingUser ? 'not-allowed' : 'text'
+                  }}
                   required
                 />
               </div>
@@ -305,7 +303,7 @@ const AdminUsers = () => {
                 <input
                   type="text"
                   value={formData.Fullname}
-                  onChange={(e) => setFormData({...formData, Fullname: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, Fullname: e.target.value })}
                   style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
                 />
               </div>
@@ -316,7 +314,7 @@ const AdminUsers = () => {
                 <input
                   type="text"
                   value={formData.Phone}
-                  onChange={(e) => setFormData({...formData, Phone: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, Phone: e.target.value })}
                   style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
                 />
               </div>
@@ -326,7 +324,7 @@ const AdminUsers = () => {
                 <label style={{ display: 'block', marginBottom: '5px' }}>Địa chỉ</label>
                 <textarea
                   value={formData.Address}
-                  onChange={(e) => setFormData({...formData, Address: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, Address: e.target.value })}
                   style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd', minHeight: '60px' }}
                 />
               </div>
@@ -336,13 +334,20 @@ const AdminUsers = () => {
                 <label style={{ display: 'block', marginBottom: '5px' }}>
                   Mật khẩu {editingUser ? '(để trống nếu không thay đổi)' : '*'}
                 </label>
-                <input
-                  type="password"
-                  value={formData.Password}
-                  onChange={(e) => setFormData({...formData, Password: e.target.value})}
-                  style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
-                  required={!editingUser}
-                />
+                {!editingUser && (
+                  <input
+                    type="password"
+                    value={formData.Password}
+                    onChange={(e) => setFormData({ ...formData, Password: e.target.value })}
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                    required
+                  />
+                )}
+                {editingUser && (
+                  <div style={{ fontStyle: 'italic', color: '#6c757d' }}>
+                    Không thể xem mật khẩu. Để trống nếu không thay đổi.
+                  </div>
+                )}
               </div>
 
               {/* Role */}
@@ -350,7 +355,7 @@ const AdminUsers = () => {
                 <label style={{ display: 'block', marginBottom: '5px' }}>Vai trò</label>
                 <select
                   value={formData.Role}
-                  onChange={(e) => setFormData({...formData, Role: parseInt(e.target.value)})}
+                  onChange={(e) => setFormData({ ...formData, Role: parseInt(e.target.value) })}
                   style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
                 >
                   <option value={0}>User</option>
@@ -363,7 +368,7 @@ const AdminUsers = () => {
                 <label style={{ display: 'block', marginBottom: '5px' }}>Trạng thái</label>
                 <select
                   value={formData.Status}
-                  onChange={(e) => setFormData({...formData, Status: parseInt(e.target.value)})}
+                  onChange={(e) => setFormData({ ...formData, Status: parseInt(e.target.value) })}
                   style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
                 >
                   <option value={1}>Hoạt động</option>
@@ -409,7 +414,6 @@ const AdminUsers = () => {
         </div>
       )}
 
-      {/* Bảng danh sách người dùng */}
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr style={{ background: "#f5f5f5" }}>
