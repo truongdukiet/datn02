@@ -10,25 +10,35 @@ const EditCategory = () => {
     const [formData, setFormData] = useState({
         Name: '',
         Description: '',
-        Image: '', // Chỉ lưu đường dẫn hình ảnh
+        Image: '',
     });
     const navigate = useNavigate();
 
     useEffect(() => {
         const loadCategory = async () => {
-            const response = await fetchCategories();
-            const cat = response.data.data.find((c) => c.CategoryID === parseInt(id));
-            if (cat) {
-                setCategory(cat);
-                setFormData({
-                    Name: cat.Name,
-                    Description: cat.Description,
-                    Image: cat.Image || '', // Đường dẫn hình ảnh hiện tại
-                });
+            try {
+                // ✅ Lấy toàn bộ danh mục
+                const response = await fetchCategories();
+                const allCategories = response.data.data || [];
+                const cat = allCategories.find(c => c.CategoryID === parseInt(id));
+
+                if (cat) {
+                    setCategory(cat);
+                    setFormData({
+                        Name: cat.Name,
+                        Description: cat.Description,
+                        Image: cat.Image || '',
+                    });
+                } else {
+                    alert('Không tìm thấy danh mục!');
+                    navigate('/admin/categories');
+                }
+            } catch (error) {
+                console.error("Error loading category:", error);
             }
         };
         loadCategory();
-    }, [id]);
+    }, [id, navigate]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -38,8 +48,8 @@ const EditCategory = () => {
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            const filePath = `categories/${file.name}`; // Hoặc đường dẫn mà bạn muốn
-            setFormData(prev => ({ ...prev, Image: filePath })); // Lưu tên tệp với tiền tố đường dẫn
+            const filePath = `categories/${file.name}`;
+            setFormData(prev => ({ ...prev, Image: filePath }));
         }
     };
 
@@ -49,21 +59,16 @@ const EditCategory = () => {
         const data = {
             Name: formData.Name,
             Description: formData.Description,
-            Image: formData.Image || category.Image, // Giữ lại đường dẫn hình ảnh cũ nếu không có tệp mới
-        };
-
-        const config = {
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            Image: formData.Image || category.Image,
         };
 
         try {
-            await axios.put(`http://localhost:8000/api/categories/${id}`, data, config);
+            await axios.put(`http://localhost:8000/api/categories/${id}`, data);
+            alert('Cập nhật danh mục thành công!');
             navigate('/admin/categories');
         } catch (error) {
             console.error("Error updating category:", error.response?.data || error.message);
-            alert(error.response?.data?.message || 'An error occurred');
+            alert(error.response?.data?.message || 'Có lỗi xảy ra');
         }
     };
 
@@ -71,7 +76,7 @@ const EditCategory = () => {
 
     return (
         <form className="edit-category-form" onSubmit={handleSubmit}>
-            <h2 className="form-title">sửa</h2>
+            <h2 className="form-title">Sửa Danh Mục</h2>
             <input
                 className="form-input"
                 name="Name"
@@ -95,11 +100,15 @@ const EditCategory = () => {
             />
             {category.Image && (
                 <div className="current-image">
-                    <img src={`http://localhost:8000/storage/${category.Image}`} alt={category.Name} className="image-preview" />
-                    <p>hình ảnh</p>
+                    <img
+                        src={`http://localhost:8000/storage/${category.Image}`}
+                        alt={category.Name}
+                        className="image-preview"
+                    />
+                    <p>Hình ảnh hiện tại</p>
                 </div>
             )}
-            <button type="submit" className="form-button">cập nhật danh mục</button>
+            <button type="submit" className="form-button">Cập nhật danh mục</button>
         </form>
     );
 };

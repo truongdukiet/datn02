@@ -33,6 +33,7 @@ import AdminProduct from "./pages/admin/AdminProducts";
 import AdminCategory from "./pages/admin/categories/AdminCategory";
 import AdminVoucher from "./pages/admin/vouchers/AdminVoucher";
 import AdminNews from "./pages/admin/news/AdminNews";
+import EditCategory from "./pages/admin/categories/EditCategory";
 
 const App = () => {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -143,6 +144,13 @@ const App = () => {
                 </ProtectedAdminRoute>
               ),
             },
+          {  path: "edit-category/:id", // ✅ Route mới cho EditCategory
+      element: (
+        <ProtectedAdminRoute>
+          <EditCategory />
+        </ProtectedAdminRoute>
+      ),
+    },
             {
               path: "vouchers",
               element: (

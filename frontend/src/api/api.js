@@ -36,27 +36,26 @@ apiClient.interceptors.response.use(
 );
 
 // 4. Định nghĩa các phương thức API
-export const fetchCategories = () => apiClient.get('/categories');
+// ✅ API cho Category (sửa endpoint thêm /api)
+export const fetchCategories = () => apiClient.get('/api/categories');
 
-// API cho Category
 export const addCategory = (formData) => {
-  // Với FormData, axios sẽ tự động đặt Content-Type là multipart/form-data
-  return apiClient.post('/categories', formData);
+  return apiClient.post('/api/categories', formData);
 };
 
 export const updateCategory = (id, data) => {
-  return apiClient.post(`/categories/${id}?_method=PUT`, data);
+  return apiClient.post(`/api/categories/${id}?_method=PUT`, data);
 };
 
-export const deleteCategory = (id) => apiClient.delete(`/categories/${id}`);
+export const deleteCategory = (id) => apiClient.delete(`/api/categories/${id}`);
 
-// API cho Vouchers
-export const getVouchers = () => apiClient.get('/vouchers');
-export const addVoucher = (data) => apiClient.post('/vouchers', data);
-export const updateVoucher = (data) => apiClient.put(`/vouchers/${data.id}`, data);
-export const deleteVoucher = (id) => apiClient.delete(`/vouchers/${id}`);
+// ✅ API cho Vouchers (sửa endpoint thêm /api)
+export const getVouchers = () => apiClient.get('/api/vouchers');
+export const addVoucher = (data) => apiClient.post('/api/vouchers', data);
+export const updateVoucher = (data) => apiClient.put(`/api/vouchers/${data.id}`, data);
+export const deleteVoucher = (id) => apiClient.delete(`/api/vouchers/${id}`);
 
-// API cho News
+// ✅ API cho News (giữ nguyên vì đã đúng)
 export const getNews = () => apiClient.get('/api/news');
 export const addNews = (data) => apiClient.post('/api/news', data);
 export const updateNews = (data) => apiClient.put(`/api/news/${data.id}`, data);
@@ -80,6 +79,7 @@ export const getOrderById = (id) => apiClient.get(`/api/orders/${id}`);
 export const updateOrder = (id, data) => apiClient.put(`/api/orders/${id}`, data);
 export const deleteOrder = (id) => apiClient.delete(`/api/orders/${id}`);
 
+// ✅ Hàm kiểm tra UserID
 export const validateUserId = async (userId) => {
     try {
         const response = await axios.get(`http://localhost:8000/api/users/${userId}`);
@@ -89,7 +89,7 @@ export const validateUserId = async (userId) => {
     }
 };
 
-// Hàm kiểm tra PaymentID
+// ✅ Hàm kiểm tra PaymentID
 export const validatePaymentId = async (paymentId) => {
     try {
         const response = await axios.get(`http://localhost:8000/api/payment-gateways/${paymentId}`);
@@ -98,5 +98,6 @@ export const validatePaymentId = async (paymentId) => {
         return false; // Nếu có lỗi, trả về false
     }
 };
+
 // 5. Export default cho apiClient
 export default apiClient;
