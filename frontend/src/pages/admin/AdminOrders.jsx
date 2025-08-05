@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { updateOrder, deleteOrder, getOrders, validateUserId, validatePaymentId } from '../../api/api'; // Giả sử bạn đã định nghĩa validateUserId và validatePaymentId
+import { updateOrder, getOrders } from '../../api/api';
 
 const AdminOrder = () => {
     const [orders, setOrders] = useState([]);
@@ -7,18 +7,31 @@ const AdminOrder = () => {
     const [error, setError] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [editingOrder, setEditingOrder] = useState(null);
-    const [formData, setFormData] = useState({
-        UserID: '',
-        VoucherID: '',
-        PaymentID: '',
-        Status: 'pending',
-        Total_amount: '',
-        Receiver_name: '',
-        Receiver_phone: '',
-        Shipping_address: '',
-        order_details: [],
-    });
-    const [formErrors, setFormErrors] = useState({}); // Trạng thái lưu lỗi
+    const [status, setStatus] = useState('pending');
+
+    // ✅ Hàm dịch trạng thái sang tiếng Việt
+    const translateStatus = (status) => {
+        switch (status) {
+            case 'pending': return 'Chờ xử lý';
+            case 'processing': return 'Đang xử lý';
+            case 'completed': return 'Đã hoàn thành';
+            case 'cancelled': return 'Đã hủy';
+            case 'shipped': return 'Đã giao hàng';
+            default: return status;
+        }
+    };
+
+    // ✅ Hàm chọn màu cho trạng thái
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'pending': return '#ffc107'; // vàng
+            case 'processing': return '#17a2b8'; // xanh nhạt
+            case 'completed': return '#28a745'; // xanh lá
+            case 'cancelled': return '#dc3545'; // đỏ
+            case 'shipped': return '#007bff'; // xanh đậm
+            default: return '#ffffffff'; // xám
+        }
+    };
 
     const fetchOrders = async () => {
         try {
@@ -40,125 +53,27 @@ const AdminOrder = () => {
         fetchOrders();
     }, []);
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-        setFormErrors(prev => ({ ...prev, [name]: '' })); // Xóa lỗi khi người dùng nhập
-    };
-
-    const validateForm = async () => {
-        const errors = {};
-        if (!formData.UserID) errors.UserID = 'ID người dùng là bắt buộc.';
-        if (!formData.Total_amount) errors.Total_amount = 'Tổng số tiền là bắt buộc.';
-        if (!formData.Receiver_name) errors.Receiver_name = 'Tên người nhận là bắt buộc.';
-        if (!formData.Receiver_phone) errors.Receiver_phone = 'Số điện thoại là bắt buộc.';
-        if (!formData.Shipping_address) errors.Shipping_address = 'Địa chỉ giao hàng là bắt buộc.';
-
-        // Kiểm tra UserID
-        if (formData.UserID) {
-            const userValid = await validateUserId(formData.UserID);
-            if (!userValid) {
-                errors.UserID = 'ID người dùng không hợp lệ.';
-            }
-        }
-
-        // Kiểm tra PaymentID
-        if (formData.PaymentID) {
-            const paymentValid = await validatePaymentId(formData.PaymentID);
-            if (!paymentValid) {
-                errors.PaymentID = 'ID phương thức thanh toán không hợp lệ.';
-            }
-        }
-
-        return errors;
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(null);
-
-        const validationErrors = await validateForm();
-        if (Object.keys(validationErrors).length > 0) {
-            setFormErrors(validationErrors); // Cập nhật lỗi nếu có
-            return; // Dừng nếu có lỗi
-        }
+        if (!editingOrder) return;
 
         try {
-            let response;
-            if (editingOrder) {
-                response = await updateOrder(editingOrder.OrderID, formData);
-
+            const response = await updateOrder(editingOrder.OrderID, { Status: status });
+            if (response.data.success) {
+                setShowModal(false);
+                fetchOrders();
+            } else {
+                alert('Cập nhật thất bại');
             }
-
-            if (!response.data.success) {
-                // Nếu có lỗi từ server, cập nhật formErrors
-                setFormErrors(response.data.errors);
-                return; // Dừng nếu có lỗi
-            }
-
-            // Reset form nếu không có lỗi
-            setFormData({
-                UserID: '',
-                VoucherID: '',
-                PaymentID: '',
-                Status: 'pending',
-                Total_amount: '',
-                Receiver_name: '',
-                Receiver_phone: '',
-                Shipping_address: '',
-                order_details: [],
-            });
-            setEditingOrder(null);
-            setShowModal(false);
-            fetchOrders();
         } catch (err) {
-            setError('Lỗi: ' + (err.response.data.message || 'Có gì đó không ổn'));
+            alert('Có lỗi khi cập nhật trạng thái');
         }
-    };
-
-    const openAddModal = () => {
-        setEditingOrder(null);
-        setFormData({
-            UserID: '',
-            VoucherID: '',
-            PaymentID: '',
-            Status: 'pending',
-            Total_amount: '',
-            Receiver_name: '',
-            Receiver_phone: '',
-            Shipping_address: '',
-            order_details: [],
-        });
-        setFormErrors({}); // Reset lỗi
-        setShowModal(true);
     };
 
     const openEditModal = (orderItem) => {
         setEditingOrder(orderItem);
-        setFormData({
-            UserID: orderItem.UserID,
-            VoucherID: orderItem.VoucherID,
-            PaymentID: orderItem.PaymentID,
-            Status: orderItem.Status || 'pending',
-            Total_amount: orderItem.Total_amount,
-            Receiver_name: orderItem.Receiver_name,
-            Receiver_phone: orderItem.Receiver_phone,
-            Shipping_address: orderItem.Shipping_address,
-            order_details: orderItem.order_details,
-        });
-        setFormErrors({}); // Reset lỗi
+        setStatus(orderItem.Status || 'pending');
         setShowModal(true);
-    };
-
-    const handleDeleteOrder = async (id) => {
-        if (window.confirm('Bạn có chắc muốn xóa đơn hàng này?')) {
-            try {
-                await deleteOrder(id);
-                fetchOrders();
-            } catch (err) {
-                setError('Lỗi: ' + (err.message || 'Không thể xóa'));
-            }
-        }
     };
 
     if (loading) return <div>Đang tải...</div>;
@@ -166,72 +81,32 @@ const AdminOrder = () => {
 
     return (
         <div>
-            <h2>Quản lý đơn hàng</h2>
-            <button onClick={openAddModal} style={{ marginBottom: '20px' }}>
-                Thêm đơn hàng
-            </button>
+            <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Quản lý đơn hàng</h2>
 
-            {/* Modal Form */}
+            {/* Modal cập nhật trạng thái */}
             {showModal && (
                 <div style={{
                     position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    background: 'rgba(0,0,0,0.5)',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    zIndex: 1000,
+                    top: 0, left: 0, width: '100%', height: '100%',
+                    background: 'rgba(0,0,0,0.5)', display: 'flex',
+                    justifyContent: 'center', alignItems: 'center', zIndex: 1000
                 }}>
                     <div style={{
-                        background: 'white',
-                        padding: '30px',
-                        borderRadius: '8px',
-                        width: '500px',
-                        maxHeight: '80vh',
-                        overflowY: 'auto',
+                        background: 'white', padding: '30px', borderRadius: '8px',
+                        width: '400px'
                     }}>
-                        <h3>{editingOrder ? 'Sửa đơn hàng' : 'Thêm đơn hàng mới'}</h3>
-
+                        <h3>Cập nhật trạng thái đơn hàng</h3>
+                        <p><b>ID:</b> {editingOrder?.OrderID}</p>
+                        <p><b>Tên người nhận:</b> {editingOrder?.Receiver_name}</p>
+                        <p><b>Số điện thoại:</b> {editingOrder?.Receiver_phone}</p>
+                        <p><b>Tổng số tiền:</b> {editingOrder?.Total_amount}</p>
                         <form onSubmit={handleSubmit}>
-                            <div>
-                                <label>ID người dùng *</label>
-                                <input
-                                    type="text"
-                                    name="UserID"
-                                    value={formData.UserID}
-                                    onChange={handleChange}
-                                    required
-                                />
-                                {formErrors.UserID && <span style={{ color: 'red' }}>{formErrors.UserID}</span>}
-                            </div>
-                            <div>
-                                <label>ID voucher (nếu có)</label>
-                                <input
-                                    type="text"
-                                    name="VoucherID"
-                                    value={formData.VoucherID}
-                                    onChange={handleChange}
-                                />
-                            </div>
-                            <div>
-                                <label>ID phương thức thanh toán (nếu có)</label>
-                                <input
-                                    type="text"
-                                    name="PaymentID"
-                                    value={formData.PaymentID}
-                                    onChange={handleChange}
-                                />
-                                {formErrors.PaymentID && <span style={{ color: 'red' }}>{formErrors.PaymentID}</span>}
-                            </div>
-                            <div>
+                            <div style={{ marginBottom: '15px' }}>
                                 <label>Trạng thái</label>
                                 <select
-                                    name="Status"
-                                    value={formData.Status}
-                                    onChange={handleChange}
+                                    value={status}
+                                    onChange={(e) => setStatus(e.target.value)}
+                                    style={{ width: '100%', padding: '8px' }}
                                 >
                                     <option value="pending">Chờ xử lý</option>
                                     <option value="processing">Đang xử lý</option>
@@ -240,52 +115,8 @@ const AdminOrder = () => {
                                     <option value="shipped">Đã giao hàng</option>
                                 </select>
                             </div>
-                            <div>
-                                <label>Tổng số tiền *</label>
-                                <input
-                                    type="number"
-                                    name="Total_amount"
-                                    value={formData.Total_amount}
-                                    onChange={handleChange}
-                                    required
-                                />
-                                {formErrors.Total_amount && <span style={{ color: 'red' }}>{formErrors.Total_amount}</span>}
-                            </div>
-                            <div>
-                                <label>Tên người nhận *</label>
-                                <input
-                                    type="text"
-                                    name="Receiver_name"
-                                    value={formData.Receiver_name}
-                                    onChange={handleChange}
-                                    required
-                                />
-                                {formErrors.Receiver_name && <span style={{ color: 'red' }}>{formErrors.Receiver_name}</span>}
-                            </div>
-                            <div>
-                                <label>Số điện thoại người nhận *</label>
-                                <input
-                                    type="text"
-                                    name="Receiver_phone"
-                                    value={formData.Receiver_phone}
-                                    onChange={handleChange}
-                                    required
-                                />
-                                {formErrors.Receiver_phone && <span style={{ color: 'red' }}>{formErrors.Receiver_phone}</span>}
-                            </div>
-                            <div>
-                                <label>Địa chỉ giao hàng *</label>
-                                <input
-                                    type="text"
-                                    name="Shipping_address"
-                                    value={formData.Shipping_address}
-                                    onChange={handleChange}
-                                    required
-                                />
-                                {formErrors.Shipping_address && <span style={{ color: 'red' }}>{formErrors.Shipping_address}</span>}
-                            </div>
-                            <button type="submit">{editingOrder ? 'Cập nhật' : 'Thêm'}</button>
-                            <button type="button" onClick={() => setShowModal(false)}>Hủy</button>
+                            <button type="submit" style={{ background: '#28a745', color: '#fff', padding: '8px 15px', marginRight: '10px' }}>Cập nhật</button>
+                            <button type="button" onClick={() => setShowModal(false)} style={{ padding: '8px 15px' }}>Hủy</button>
                         </form>
                     </div>
                 </div>
@@ -315,11 +146,33 @@ const AdminOrder = () => {
                             <td>{item.Receiver_phone}</td>
                             <td>{item.Shipping_address}</td>
                             <td>{item.Total_amount}</td>
-                            <td>{item.Status}</td>
-                            <td>{new Date(item.created_at).toLocaleDateString('vi-VN')}</td>
+                            {/* ✅ Hiển thị trạng thái tiếng Việt + màu */}
+                            <td style={{
+                                color: '#fff',
+                                background: getStatusColor(item.Status),
+                                padding: '5px 10px',
+                                borderRadius: '4px',
+                                textAlign: 'center'
+                            }}>
+                                {translateStatus(item.Status)}
+                            </td>
+                            {/* ✅ Hiển thị ngày tạo */}
                             <td>
-                                <button onClick={() => openEditModal(item)}>Sửa</button>
-                                <button onClick={() => handleDeleteOrder(item.OrderID)}>Xóa</button>
+                                {item.created_at
+                                    ? new Date(item.created_at).toLocaleString('vi-VN', {
+                                        day: '2-digit',
+                                        month: '2-digit',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })
+                                    : 'Không có dữ liệu'}
+                            </td>
+                            <td>
+                                <button
+                                    onClick={() => openEditModal(item)}
+                                    style={{ background: '#28a745', color: '#fff', padding: '5px 10px' }}
+                                >Cập nhật</button>
                             </td>
                         </tr>
                     ))}
