@@ -71,7 +71,7 @@ const EditCategory = () => {
 
     return (
         <form className="edit-category-form" onSubmit={handleSubmit}>
-            <h2 className="form-title">Edit Category</h2>
+            <h2 className="form-title">sửa</h2>
             <input
                 className="form-input"
                 name="Name"
@@ -96,10 +96,10 @@ const EditCategory = () => {
             {category.Image && (
                 <div className="current-image">
                     <img src={`http://localhost:8000/storage/${category.Image}`} alt={category.Name} className="image-preview" />
-                    <p>Current Image</p>
+                    <p>hình ảnh</p>
                 </div>
             )}
-            <button type="submit" className="form-button">Update Category</button>
+            <button type="submit" className="form-button">cập nhật danh mục</button>
         </form>
     );
 };

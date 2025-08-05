@@ -39,8 +39,8 @@ const AdminCategory = () => {
 
     return (
         <div className="admin-category-container">
-            <h2 className="admin-category-title">Category List</h2>
-            <Link to="/admin/add-category" className="admin-category-add-link">Add Category</Link>
+            <h2 className="admin-category-title">Danh sách danh mục</h2>
+            <Link to="/admin/add-category" className="admin-category-add-link">Thêm danh mục</Link>
             <ul className="admin-category-list">
                 {categories.map((category) => (
                     <li key={category.CategoryID} className="admin-category-item">
@@ -57,7 +57,7 @@ const AdminCategory = () => {
                                 className="admin-category-delete-button"
                                 onClick={() => handleDelete(category.CategoryID)}
                             >
-                                Delete
+                                xóa
                             </button>
                         </div>
                     </li>
