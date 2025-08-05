@@ -50,8 +50,8 @@ const ProductList = () => {
           <div key={product.id} className="product-card">
             <div className="product-image">
               {product.image && (
-                <img 
-                  src={product.image ? `http://localhost:8000/storage/${product.image}` : "default_image.jpg"}
+                <img
+                  src={`http://localhost:8000/storage/${product.image}`}
                   alt={product.name || "Không có tên"}
                   className="tw-w-full tw-h-full tw-object-cover tw-absolute tw-top-0 tw-left-0"
                 />
@@ -61,7 +61,7 @@ const ProductList = () => {
               <h3>{product.name}</h3>
               <p className="price">{product.price?.toLocaleString('vi-VN')} VNĐ</p>
               <p className="description">{product.description}</p>
-              <button 
+              <button
                 className="add-to-cart-btn"
                 onClick={() => handleAddToCart(product.id)}
               >

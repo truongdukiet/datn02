@@ -56,10 +56,7 @@ class CartController extends Controller // Khai báo lớp CartController, kế 
      * Phương thức này thường được sử dụng để xóa một tài nguyên cụ thể khỏi cơ sở dữ liệu.
      * Với giỏ hàng, chức năng 'removeFromCart' thường được sử dụng để xóa một sản phẩm cụ thể.
      */
-    public function destroy(string $id)
-    {
-        // Hiện tại không có logic nào được triển khai ở đây, phương thức này để trống
-    }
+
 
     /**
      * Thêm sản phẩm vào giỏ hàng.
@@ -245,9 +242,16 @@ class CartController extends Controller // Khai báo lớp CartController, kế 
             return response()->json(['message' => 'Vui lòng đăng nhập để xóa giỏ hàng.'], 401);
         }
 
+        // Lấy giỏ hàng của người dùng
         $cart = Cart::where('UserID', $userId)->first();
         if ($cart) {
-            $cart->items()->delete();
+            // Lấy tất cả CartItem có CartID tương ứng
+            $cartItems = $cart->items()->where('CartID', $cart->id)->get();
+
+            // Xóa từng CartItem
+            foreach ($cartItems as $cartItem) {
+                $cartItem->delete();
+            }
         }
 
         return response()->json([

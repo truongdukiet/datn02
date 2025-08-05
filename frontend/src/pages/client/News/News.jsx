@@ -1,6 +1,47 @@
+import { Link } from "react-router-dom";
 import ClientHeader from "../../../layouts/MainLayout/ClientHeader";
 
 const News = () => {
+  // ✅ Dữ liệu demo để mapping (sau này có thể thay bằng API)
+  const newsList = [
+    {
+      id: 1,
+      title: "Xu hướng thiết kế nội thất 2024: Minimalism và Sustainability",
+      image: "/images/img_1.jpg",
+      date: "23 Tháng 6, 2024",
+    },
+    {
+      id: 2,
+      title: "Cách tối ưu hóa không gian nhỏ với thiết kế thông minh",
+      image: "/images/img_2.jpg",
+      date: "20 Tháng 6, 2024",
+    },
+    {
+      id: 3,
+      title: "Màu sắc và ánh sáng: Bí quyết tạo không gian sống ấm cúng",
+      image: "/images/img_3.jpg",
+      date: "18 Tháng 6, 2024",
+    },
+    {
+      id: 4,
+      title: "Thiết kế văn phòng hiện đại: Productivity meets Aesthetics",
+      image: "/images/img_4.jpg",
+      date: "15 Tháng 6, 2024",
+    },
+    {
+      id: 5,
+      title: "Smart Home Integration: Công nghệ trong thiết kế nội thất",
+      image: "/images/img_5.jpg",
+      date: "12 Tháng 6, 2024",
+    },
+    {
+      id: 6,
+      title: "Kinh nghiệm lựa chọn nội thất cho căn hộ chung cư",
+      image: "/images/img_1.jpg",
+      date: "10 Tháng 6, 2024",
+    },
+  ];
+
   return (
     <>
       <ClientHeader />
@@ -26,97 +67,21 @@ const News = () => {
       <div className="site-section">
         <div className="container">
           <div className="row mb-5">
-            <div className="col-lg-4 col-md-6 mb-5 post-entry">
-              <a href="#" className="d-block figure">
-                <img
-                  src="/images/img_1.jpg"
-                  alt="Image"
-                  className="img-fluid"
-                />
-              </a>
-              <span className="text-muted d-block mb-1">23 Tháng 6, 2024</span>
-              <h3>
-                <a href="#">
-                  Xu hướng thiết kế nội thất 2024: Minimalism và Sustainability
-                </a>
-              </h3>
-            </div>
-            <div className="col-lg-4 col-md-6 mb-5 post-entry">
-              <a href="#" className="d-block figure">
-                <img
-                  src="/images/img_2.jpg"
-                  alt="Image"
-                  className="img-fluid"
-                />
-              </a>
-              <span className="text-muted d-block mb-1">20 Tháng 6, 2024</span>
-              <h3>
-                <a href="#">
-                  Cách tối ưu hóa không gian nhỏ với thiết kế thông minh
-                </a>
-              </h3>
-            </div>
-            <div className="col-lg-4 col-md-6 mb-5 post-entry">
-              <a href="#" className="d-block figure">
-                <img
-                  src="/images/img_3.jpg"
-                  alt="Image"
-                  className="img-fluid"
-                />
-              </a>
-              <span className="text-muted d-block mb-1">18 Tháng 6, 2024</span>
-              <h3>
-                <a href="#">
-                  Màu sắc và ánh sáng: Bí quyết tạo không gian sống ấm cúng
-                </a>
-              </h3>
-            </div>
-
-            <div className="col-lg-4 col-md-6 mb-5 post-entry">
-              <a href="#" className="d-block figure">
-                <img
-                  src="/images/img_4.jpg"
-                  alt="Image"
-                  className="img-fluid"
-                />
-              </a>
-              <span className="text-muted d-block mb-1">15 Tháng 6, 2024</span>
-              <h3>
-                <a href="#">
-                  Thiết kế văn phòng hiện đại: Productivity meets Aesthetics
-                </a>
-              </h3>
-            </div>
-            <div className="col-lg-4 col-md-6 mb-5 post-entry">
-              <a href="#" className="d-block figure">
-                <img
-                  src="/images/img_5.jpg"
-                  alt="Image"
-                  className="img-fluid"
-                />
-              </a>
-              <span className="text-muted d-block mb-1">12 Tháng 6, 2024</span>
-              <h3>
-                <a href="#">
-                  Smart Home Integration: Công nghệ trong thiết kế nội thất
-                </a>
-              </h3>
-            </div>
-            <div className="col-lg-4 col-md-6 mb-5 post-entry">
-              <a href="#" className="d-block figure">
-                <img
-                  src="/images/img_1.jpg"
-                  alt="Image"
-                  className="img-fluid"
-                />
-              </a>
-              <span className="text-muted d-block mb-1">10 Tháng 6, 2024</span>
-              <h3>
-                <a href="#">
-                  Kinh nghiệm lựa chọn nội thất cho căn hộ chung cư
-                </a>
-              </h3>
-            </div>
+            {newsList.map((news) => (
+              <div key={news.id} className="col-lg-4 col-md-6 mb-5 post-entry">
+                <Link to={`/news/${news.id}`} className="d-block figure">
+                  <img
+                    src={news.image}
+                    alt={news.title}
+                    className="img-fluid"
+                  />
+                </Link>
+                <span className="text-muted d-block mb-1">{news.date}</span>
+                <h3>
+                  <Link to={`/news/${news.id}`}>{news.title}</Link>
+                </h3>
+              </div>
+            ))}
           </div>
 
           {/* Pagination */}

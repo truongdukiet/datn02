@@ -6,32 +6,32 @@ const Banner = () => {
   const bannerImages = [
     {
       id: 1,
-      src: "/images/banner-1.png",
+      src: "/images/banner/slideshow01.png",
       alt: "Banner 1",
     },
     {
       id: 2,
-      src: "/images/banner-1.png",
+      src: "/images/banner/slideshow02.png",
       alt: "Banner 2",
     },
     {
       id: 3,
-      src: "/images/banner-1.png",
+      src: "/images/banner/slideshow03.png",
       alt: "Banner 3",
     },
     {
       id: 4,
-      src: "/images/banner-1.png",
+      src: "/images/banner/slideshow04.png",
       alt: "Banner 4",
     },
   ];
 
   const carouselSettings = {
     autoplay: true,
-    autoplaySpeed: 4000,
+    autoplaySpeed: 3000,
     dots: true,
     infinite: true,
-    speed: 500,
+    speed: 1000,
     pauseOnHover: true,
     draggable: true,
   };

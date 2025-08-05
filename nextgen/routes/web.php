@@ -27,10 +27,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // Các API Route cho Frontend React.js (News)
 // Các route này sẽ trả về dữ liệu JSON cho ứng dụng React.js của bạn
-Route::prefix('news')->group(function () {
-    Route::get('/', [NewsApiController::class, 'index']); // Lấy danh sách tin tức
-    Route::get('/{slug}', [NewsApiController::class, 'show']); // Lấy chi tiết tin tức theo slug
-});
+
 
 // Thêm các API Route cho Dashboard Admin
 Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function () {
@@ -40,9 +37,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::post('/dashboard-stats/export-to-sheet', [DashboardController::class, 'exportStatsToSheet']);
 
     // Các route Resource cho quản lý Tin tức (CRUD)
-    Route::resource('news', NewsController::class);
     // Route để xuất dữ liệu tin tức ra Google Sheet
-    Route::post('news/export-to-sheet', [NewsController::class, 'exportNewsToSheet'])->name('admin.news.exportToSheet');
 
     // Các route Resource cho quản lý Đơn hàng (CRUD)
     Route::resource('orders', OrderController::class);

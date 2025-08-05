@@ -26,9 +26,11 @@ class PaymentGatewayController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'Name' => 'required|string|max:255|unique:payment_gateway,Name'
+            'Name' => 'required|string|max:255|unique:payment_gateways,Name'
         ]);
+
         $gateway = PaymentGateway::create($validated);
+
         return response()->json(['success' => true, 'data' => $gateway], 201);
     }
 
@@ -38,10 +40,13 @@ class PaymentGatewayController extends Controller
         if (!$gateway) {
             return response()->json(['success' => false, 'message' => 'Payment gateway not found'], 404);
         }
+
         $validated = $request->validate([
-            'Name' => 'sometimes|string|max:255|unique:payment_gateway,Name,' . $id . ',PaymentID'
+            'Name' => 'sometimes|string|max:255|unique:payment_gateways,Name,' . $id . ',PaymentID'
         ]);
+
         $gateway->update($validated);
+
         return response()->json(['success' => true, 'data' => $gateway]);
     }
 
@@ -51,11 +56,13 @@ class PaymentGatewayController extends Controller
         if (!$gateway) {
             return response()->json(['success' => false, 'message' => 'Payment gateway not found'], 404);
         }
-        // Nếu có đơn hàng sử dụng thì không cho xóa
+
         if ($gateway->orders()->count() > 0) {
             return response()->json(['success' => false, 'message' => 'Cannot delete: Payment gateway is used in orders'], 400);
         }
+
         $gateway->delete();
+
         return response()->json(['success' => true, 'message' => 'Payment gateway deleted']);
     }
 }

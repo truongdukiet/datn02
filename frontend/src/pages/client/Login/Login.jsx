@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import ClientHeader from "../../../layouts/MainLayout/ClientHeader";
 import { Link, useNavigate } from "react-router-dom";
 import { Checkbox, message } from "antd";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import apiClient from "../../../api/api";
 
@@ -10,24 +10,38 @@ const Login = () => {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm();
   const navigate = useNavigate();
 
+  // ✅ Kiểm tra nếu đã đăng nhập thì redirect
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (token && user?.Role) {
+      if (user.Role === 1) {
+        navigate("/admin/");
+      } else {
+        navigate("/");
+      }
+    }
+  }, [navigate]);
+
+  // ✅ Mutation cho login
   const loginMutation = useMutation({
     mutationFn: (data) => apiClient.post("/api/login", data),
     onSuccess: (response) => {
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
+      const { token, user } = response.data;
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
 
       message.success("Đăng nhập thành công");
 
-      // Kiểm tra vai trò và điều hướng đến trang admin nếu là admin
-      const user = response.data.user;
-      if (user.Role == 1) {
-        navigate("/admin/"); // Điều hướng đến trang admin
+      if (user.Role === 1) {
+        navigate("/admin/");
       } else {
-        navigate("/"); // Điều hướng đến trang chủ
+        navigate("/");
       }
     },
     onError: (error) => {
@@ -38,7 +52,10 @@ const Login = () => {
   });
 
   const onSubmit = (data) => {
-    loginMutation.mutate(data);
+    loginMutation.mutate({
+      login: data.login,
+      Password: data.Password,
+    });
   };
 
   return (
@@ -51,11 +68,9 @@ const Login = () => {
             <Link to="/" className="tw-text-[#9E9E9E]">
               Trang chủ
             </Link>
-
             <div className="tw-text-[#9E9E9E]">
               <i className="fa-solid fa-chevron-right"></i>
             </div>
-
             <p className="tw-text-[#1A1C20] tw-font-bold tw-m-0">Đăng nhập</p>
           </div>
 
@@ -67,6 +82,7 @@ const Login = () => {
               Đăng nhập
             </h1>
 
+            {/* Username or Email */}
             <div className="row form-group">
               <div className="col-md-12 mb-3 mb-md-0">
                 <label className="font-weight-bold" htmlFor="login">
@@ -91,6 +107,7 @@ const Login = () => {
               </div>
             </div>
 
+            {/* Password */}
             <div className="row form-group">
               <div className="col-md-12 tw-mb-3 mb-md-0">
                 <label className="font-weight-bold" htmlFor="Password">
@@ -115,11 +132,20 @@ const Login = () => {
               </div>
             </div>
 
+            {/* Remember Me */}
             <div className="tw-flex tw-items-center tw-justify-between">
               <div className="tw-flex tw-items-center tw-gap-x-2">
-                <Checkbox {...register("rememberMe")}>
-                  <p className="tw-text-[#1A1C20] tw-m-0">Ghi nhớ mật khẩu</p>
-                </Checkbox>
+                <Controller
+                  name="rememberMe"
+                  control={control}
+                  render={({ field }) => (
+                    <Checkbox {...field}>
+                      <p className="tw-text-[#1A1C20] tw-m-0">
+                        Ghi nhớ mật khẩu
+                      </p>
+                    </Checkbox>
+                  )}
+                />
               </div>
 
               <Link
@@ -130,6 +156,7 @@ const Login = () => {
               </Link>
             </div>
 
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loginMutation.isPending}

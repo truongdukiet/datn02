@@ -14,7 +14,7 @@ import ProductLatest from "./ProductLatest/ProductLatest";
 import BestSelling from "./BestSelling/BestSelling";
 import News from "./News/News";
 import SectionContent2 from "./SectionContent2/SectionContent2";
-import Favorites from "./Favorites/Favorites"; // ✅ Thêm component Favorites
+import Favorites from "./Favorites/Favorites";
 
 const Home = () => {
   const { data: productsData, isLoading } = useQuery({
@@ -25,16 +25,16 @@ const Home = () => {
     },
   });
 
-  // ✅ State quản lý danh sách yêu thích
+  // State quản lý danh sách yêu thích
   const [favorites, setFavorites] = useState([]);
 
-  // ✅ Load favorites từ LocalStorage khi load trang
+  // Load favorites từ LocalStorage khi load trang
   useEffect(() => {
     const storedFavorites = JSON.parse(localStorage.getItem("favorites")) || [];
     setFavorites(storedFavorites);
   }, []);
 
-  // ✅ Hàm xử lý thêm/xóa sản phẩm yêu thích
+  // Hàm xử lý thêm/xóa sản phẩm yêu thích
   const handleToggleFavorite = (product) => {
     const exists = favorites.find((item) => item.ProductID === product.ProductID);
     const updatedFavorites = exists
@@ -45,7 +45,7 @@ const Home = () => {
     localStorage.setItem("favorites", JSON.stringify(updatedFavorites));
   };
 
-  // ✅ Hiệu ứng AOS và OwlCarousel
+  // Hiệu ứng AOS và OwlCarousel
   useEffect(() => {
     if (window.AOS) window.AOS.init();
     if (window.jQuery && window.jQuery.fn.owlCarousel) {
@@ -72,21 +72,9 @@ const Home = () => {
     <>
       <ClientHeader />
 
-      {/* ✅ Các component mới */}
-      <Banner />
-      <CouponList />
-      <CategoryList />
-
-      {/* ✅ Hiển thị danh sách sản phẩm yêu thích */}
-      {favorites.length > 0 && <Favorites favorites={favorites} />}
-
-      <SectionContent />
-      <ProductLatest />
-      <BestSelling />
-      <News />
-      <SectionContent2 />
-
-      {/* ✅ Hero giữ nguyên */}
+      {/* ========================================================= */}
+      {/* ✅ PHẦN NỘI THẤT ĐÃ ĐƯỢC CHUYỂN LÊN ĐÂY */}
+      {/* ========================================================= */}
       <div
         className="site-blocks-cover overlay"
         style={{ backgroundImage: "url(/images/hero_bg_1.jpg)" }}
@@ -96,14 +84,21 @@ const Home = () => {
         <div className="container">
           <div className="row align-items-center text-center justify-content-center">
             <div className="col-md-8">
-              <span className="sub-text">Công ty Thiết kế Nội thất</span>
-              <h1>Trải nghiệm Thiết kế Nội thất</h1>
+              <span className="sub-text"> Next Gen furniture business</span>
+              <h1>Next Gen</h1>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ✅ Sản phẩm nổi bật */}
+      {/* Các component còn lại được giữ nguyên thứ tự như bạn đã chỉnh sửa trước đó */}
+      <Banner />
+      <CouponList />
+      <CategoryList />
+
+      {favorites.length > 0 && <Favorites favorites={favorites} />}
+
+      {/* Sản phẩm nổi bật */}
       <div className="site-section tw-mb-32">
         <div className="container">
           <div className="row mb-5">
@@ -142,6 +137,74 @@ const Home = () => {
           </div>
         </div>
       </div>
+
+      <SectionContent />
+      <ProductLatest />
+      <BestSelling />
+      <News />
+      {/* Testimonials Section */}
+<div className="container site-section block-13 testimonial-wrap">
+  <div className="row">
+    <div className="col-12 text-center">
+      <span className="sub-title">Khách Hàng Hài Lòng</span>
+      <h2 className="font-weight-bold text-black mb-5">Đánh Giá Nội Thất</h2>
+    </div>
+  </div>
+  <div className="nonloop-block-13 owl-carousel">
+    <div className="testimony">
+      <img src="/images/person_1.jpg" alt="Khách hàng" className="img-fluid" />
+      <h3>Ngọc Anh</h3>
+      <span className="sub-title">Chủ căn hộ cao cấp</span>
+      <p>
+        &ldquo;
+        <em>
+          Bộ sofa hiện đại cực kỳ êm ái và sang trọng, màu sắc hài hòa với phòng khách. Rất đáng tiền!
+        </em>
+        &rdquo;
+      </p>
+    </div>
+    <div className="testimony">
+      <img src="/images/person_2.jpg" alt="Khách hàng" className="img-fluid" />
+      <h3>Lan Hương</h3>
+      <span className="sub-title">Chủ biệt thự</span>
+      <p>
+        &ldquo;
+        <em>
+          Tủ quần áo thiết kế tinh tế, chất liệu gỗ chắc chắn và hoàn thiện tỉ mỉ. Hoàn toàn hài lòng!
+        </em>
+        &rdquo;
+      </p>
+    </div>
+    <div className="testimony">
+      <img src="/images/person_3.jpg" alt="Khách hàng" className="img-fluid" />
+      <h3>Minh Quân</h3>
+      <span className="sub-title">Nhà phố hiện đại</span>
+      <p>
+        &ldquo;
+        <em>
+          Bàn ăn đẹp, sang trọng, kích thước vừa vặn. Phù hợp với phong cách tối giản của gia đình tôi.
+        </em>
+        &rdquo;
+      </p>
+    </div>
+    <div className="testimony">
+      <img src="/images/person_4.jpg" alt="Khách hàng" className="img-fluid" />
+      <h3>Hữu Thắng</h3>
+      <span className="sub-title">Căn hộ chung cư</span>
+      <p>
+        &ldquo;
+        <em>
+          Kệ tivi và tủ trang trí rất chắc chắn, kiểu dáng hiện đại, lắp đặt nhanh chóng và chuyên nghiệp.
+        </em>
+        &rdquo;
+      </p>
+    </div>
+  </div>
+</div>
+
+      <SectionContent2 />
+
+
     </>
   );
 };

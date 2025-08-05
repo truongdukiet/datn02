@@ -12,13 +12,13 @@ return [
     |
     */
 
-    // Áp dụng cho tất cả endpoint trong API và CSRF cookie của Sanctum
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    // ✅ Áp dụng cho tất cả endpoint trong API + route cần thiết
+    'paths' => ['api/*', 'sanctum/csrf-cookie', 'payment-gateways', '*'],
 
     // ✅ Cho phép tất cả HTTP methods (GET, POST, PUT, PATCH, DELETE, OPTIONS)
     'allowed_methods' => ['*'],
 
-    // ✅ Danh sách domain được phép truy cập API
+    // ✅ Danh sách domain được phép truy cập API (không dùng '*', vì supports_credentials = true)
     'allowed_origins' => [
         env('FRONTEND_URL', 'http://localhost:5173'), // React (Vite)
         'http://127.0.0.1:5173', // Localhost IP

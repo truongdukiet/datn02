@@ -81,7 +81,7 @@ const ClientHeader = ({ lightMode = true }) => {
                 "!tw-text-[#212121]": !lightMode,
               })}
             >
-              Interior
+             Next Gen
             </Link>
 
             <form
@@ -135,11 +135,7 @@ const ClientHeader = ({ lightMode = true }) => {
                   Về chúng tôi
                 </NavLink>
               </li>
-              <li>
-                <NavLink className="!tw-text-[inherit]" to="/projects">
-                  Dự án
-                </NavLink>
-              </li>
+
               <li>
                 <NavLink className="!tw-text-[inherit]" to="/news">
                   Tin tức

@@ -3,11 +3,11 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import './Login.css';
 
 const ResetPassword = () => {
-  const { userId, token } = useParams();
+  const { userId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Lấy token và email từ query string
+  // ✅ Lấy token & email từ query string
   const query = new URLSearchParams(location.search);
   const tokenFromQuery = query.get('token') || '';
   const emailFromQuery = query.get('email') || '';
@@ -19,6 +19,7 @@ const ResetPassword = () => {
     token: ''
   });
 
+  // ✅ Đồng bộ email và token từ query
   useEffect(() => {
     setFormData((prev) => ({
       ...prev,
@@ -43,8 +44,9 @@ const ResetPassword = () => {
     setLoading(true);
     setError('');
     setSuccess('');
+
     try {
-      const response = await fetch('http://localhost:8000/api/reset-password', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -57,15 +59,22 @@ const ResetPassword = () => {
           token: formData.token
         })
       });
+
       const data = await response.json();
+
       if (response.ok) {
-        setSuccess(data.status || 'Đặt lại mật khẩu thành công! Bạn có thể đăng nhập lại.');
+        setSuccess(data.message || 'Đặt lại mật khẩu thành công! Bạn sẽ được chuyển hướng đến trang đăng nhập.');
         setTimeout(() => navigate('/login'), 2000);
       } else {
-        setError(data.message || data.errors?.email?.[0] || 'Có lỗi xảy ra');
+        setError(
+          data.message ||
+            data.errors?.password?.[0] ||
+            data.errors?.email?.[0] ||
+            'Có lỗi xảy ra, vui lòng thử lại.'
+        );
       }
     } catch (err) {
-      setError('Có lỗi xảy ra');
+      setError('Không thể kết nối đến máy chủ, vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -77,7 +86,9 @@ const ResetPassword = () => {
         <h2>Đặt lại mật khẩu</h2>
         {error && <div className="error-message">{error}</div>}
         {success && <div className="success-message">{success}</div>}
+
         <form onSubmit={handleSubmit}>
+          {/* Email */}
           <div className="form-group">
             <label htmlFor="email">Email:</label>
             <input
@@ -88,8 +99,11 @@ const ResetPassword = () => {
               onChange={handleChange}
               required
               placeholder="Nhập email đã đăng ký"
+              readOnly={!!emailFromQuery} // Nếu có email từ link thì khóa lại
             />
           </div>
+
+          {/* New Password */}
           <div className="form-group">
             <label htmlFor="password">Mật khẩu mới:</label>
             <input
@@ -102,6 +116,8 @@ const ResetPassword = () => {
               placeholder="Nhập mật khẩu mới"
             />
           </div>
+
+          {/* Confirm Password */}
           <div className="form-group">
             <label htmlFor="password_confirmation">Nhập lại mật khẩu:</label>
             <input
@@ -114,6 +130,7 @@ const ResetPassword = () => {
               placeholder="Nhập lại mật khẩu mới"
             />
           </div>
+
           <button type="submit" className="login-btn" disabled={loading}>
             {loading ? 'Đang đặt lại...' : 'Đặt lại mật khẩu'}
           </button>

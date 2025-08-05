@@ -1,0 +1,29 @@
+.admin-news-container {
+  padding: 20px;
+}
+
+.admin-news-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ff5722;
+}
+
+.admin-news-list {
+  list-style: none;
+  padding: 0;
+}
+
+.admin-news-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+
+.admin-news-actions button {
+  padding: 6px 10px;
+  border-radius: 4px;
+}
