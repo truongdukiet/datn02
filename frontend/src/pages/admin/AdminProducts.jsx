@@ -10,7 +10,7 @@ const AdminProducts = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
-  const [categories, setCategories] = useState([]); // Danh mục cho dropdown
+  const [categories, setCategories] = useState([]);
 
   const API_BASE_URL = 'http://localhost:8000/api';
 
@@ -24,6 +24,7 @@ const AdminProducts = () => {
       const response = await axios.get(`${API_BASE_URL}/products`);
       setProducts(response.data.data || []);
       setLoading(false);
+      setError(null);
     } catch (err) {
       setError("Error fetching products");
       setLoading(false);
@@ -35,7 +36,7 @@ const AdminProducts = () => {
       const response = await axios.get(`${API_BASE_URL}/categories`);
       setCategories(response.data.data || []);
     } catch (err) {
-      console.error("Error fetching categories");
+      console.error("Error fetching categories", err);
     }
   };
 
@@ -44,8 +45,11 @@ const AdminProducts = () => {
       try {
         await axios.delete(`${API_BASE_URL}/products/${productId}`);
         setProducts(products.filter(product => product.ProductID !== productId));
+        alert("Xóa sản phẩm thành công!");
       } catch (err) {
+        console.error("Error deleting product", err);
         setError("Error deleting product");
+        alert("Lỗi khi xóa sản phẩm.");
       }
     }
   };
@@ -58,27 +62,32 @@ const AdminProducts = () => {
   const handleSaveProduct = async (productData) => {
     try {
       if (editingProduct) {
-        await axios.put(`${API_BASE_URL}/products/${editingProduct.ProductID}`, productData, {
+        // Sử dụng POST với _method=PATCH để hỗ trợ multipart/form-data
+        productData.append('_method', 'PATCH');
+        await axios.post(`${API_BASE_URL}/products/${editingProduct.ProductID}`, productData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
+        alert("Cập nhật sản phẩm thành công!");
       } else {
         await axios.post(`${API_BASE_URL}/products`, productData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
+        alert("Thêm sản phẩm thành công!");
       }
       fetchProducts();
       setShowAddForm(false);
       setEditingProduct(null);
     } catch (err) {
+      console.error("Error saving product", err);
       setError("Error saving product");
+      alert("Lỗi khi lưu sản phẩm.");
     }
   };
 
-  // ✅ Lọc dữ liệu
   const filteredProducts = products.filter(product => {
     const matchesSearch =
-      product.Name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.ProductID.toString().includes(searchTerm);
+      product.Name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.ProductID?.toString().includes(searchTerm);
     const matchesCategory = filterCategory ? product.CategoryID === parseInt(filterCategory) : true;
     const matchesStatus = filterStatus ? (filterStatus === "active" ? product.Status : !product.Status) : true;
     return matchesSearch && matchesCategory && matchesStatus;
@@ -86,6 +95,134 @@ const AdminProducts = () => {
 
   if (loading) return <div>Đang tải...</div>;
   if (error) return <div>Lỗi: {error}</div>;
+
+  const ProductForm = ({ product, onSave, onCancel, categories }) => {
+    const [formData, setFormData] = useState({
+      Name: "",
+      Description: "",
+      base_price: "",
+      Stock: "",
+      CategoryID: "",
+    });
+    const [imageFile, setImageFile] = useState(null);
+
+    useEffect(() => {
+      if (product) {
+        setFormData({
+          Name: product.Name || "",
+          Description: product.Description || "",
+          base_price: product.base_price || "",
+          Stock: product.variants?.[0]?.Stock || "",
+          CategoryID: product.CategoryID || "",
+        });
+        setImageFile(null);
+      } else {
+        setFormData({
+          Name: "",
+          Description: "",
+          base_price: "",
+          Stock: "",
+          CategoryID: "",
+        });
+        setImageFile(null);
+      }
+    }, [product]);
+
+    const handleFileChange = (e) => {
+      const file = e.target.files[0];
+      setImageFile(file);
+    };
+
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      const formDataToSubmit = new FormData();
+      Object.keys(formData).forEach(key => {
+        formDataToSubmit.append(key, formData[key]);
+      });
+
+      if (imageFile) {
+        formDataToSubmit.append('image_file', imageFile);
+      } else if (product?.Image) {
+        formDataToSubmit.append('Image', product.Image);
+      }
+
+      await onSave(formDataToSubmit);
+    };
+
+    return (
+      <div style={{ marginBottom: 20, padding: 20, background: "#f8f9fa", borderRadius: 8 }}>
+        <h3>{product ? "Sửa sản phẩm" : "Thêm sản phẩm mới"}</h3>
+        <form onSubmit={handleSubmit}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <input
+              type="text"
+              placeholder="Tên sản phẩm"
+              value={formData.Name}
+              onChange={(e) => setFormData({ ...formData, Name: e.target.value })}
+              style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
+              required
+            />
+            <input
+              type="number"
+              placeholder="Giá"
+              value={formData.base_price}
+              onChange={(e) => setFormData({ ...formData, base_price: e.target.value })}
+              style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
+              required
+            />
+            <input
+              type="number"
+              placeholder="Tồn kho"
+              value={formData.Stock}
+              onChange={(e) => setFormData({ ...formData, Stock: e.target.value })}
+              style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
+              required
+            />
+            <select
+              value={formData.CategoryID}
+              onChange={(e) => setFormData({ ...formData, CategoryID: e.target.value })}
+              style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
+              required
+            >
+              <option value="">Chọn danh mục</option>
+              {categories.map(cat => (
+                <option key={cat.CategoryID} value={cat.CategoryID}>
+                  {cat.Name}
+                </option>
+              ))}
+            </select>
+            <input
+              type="file"
+              onChange={handleFileChange}
+              style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
+            />
+          </div>
+          <textarea
+            placeholder="Mô tả sản phẩm"
+            value={formData.Description}
+            onChange={(e) => setFormData({ ...formData, Description: e.target.value })}
+            style={{ width: "100%", padding: 8, marginTop: 10, borderRadius: 4, border: "1px solid #ddd", minHeight: 100 }}
+            required
+          />
+          <div style={{ marginTop: 10 }}>
+            <button
+              type="submit"
+              style={{ marginRight: 10, padding: "8px 16px", background: "#28a745", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
+            >
+              {product ? "Cập nhật" : "Thêm"}
+            </button>
+            <button
+              type="button"
+              onClick={onCancel}
+              style={{ padding: "8px 16px", background: "#6c757d", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
+            >
+              Hủy
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  };
 
   return (
     <div>
@@ -123,10 +260,13 @@ const AdminProducts = () => {
         <button
           style={{ padding: "8px 16px", background: "#6c757d", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
         >
-           bộ lọc
+          Bộ lọc
         </button>
         <button
-          onClick={() => setShowAddForm(true)}
+          onClick={() => {
+            setShowAddForm(true);
+            setEditingProduct(null);
+          }}
           style={{ padding: "8px 16px", background: "#28a745", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
         >
           Thêm
@@ -141,6 +281,7 @@ const AdminProducts = () => {
             setShowAddForm(false);
             setEditingProduct(null);
           }}
+          categories={categories}
         />
       )}
 
@@ -200,107 +341,6 @@ const AdminProducts = () => {
           )}
         </tbody>
       </table>
-    </div>
-  );
-};
-
-// ✅ Form thêm/sửa sản phẩm
-const ProductForm = ({ product, onSave, onCancel }) => {
-  const [formData, setFormData] = useState({
-    Name: product?.Name || "",
-    Description: product?.Description || "",
-    base_price: product?.base_price || "",
-    Stock: product?.variants?.[0]?.Stock || "",
-    CategoryID: product?.CategoryID || "",
-    Image: product?.Image || "",
-  });
-
-  const [imageFile, setImageFile] = useState(null);
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    setImageFile(file);
-    setFormData({ ...formData, Image: file.name });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const formDataToSubmit = new FormData();
-    Object.keys(formData).forEach(key => {
-      formDataToSubmit.append(key, formData[key]);
-    });
-    if (imageFile) {
-      formDataToSubmit.append('image_file', imageFile);
-    }
-    await onSave(formDataToSubmit);
-  };
-
-  return (
-    <div style={{ marginBottom: 20, padding: 20, background: "#f8f9fa", borderRadius: 8 }}>
-      <h3>{product ? "Sửa sản phẩm" : "Thêm sản phẩm mới"}</h3>
-      <form onSubmit={handleSubmit}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <input
-            type="text"
-            placeholder="Tên sản phẩm"
-            value={formData.Name}
-            onChange={(e) => setFormData({ ...formData, Name: e.target.value })}
-            style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
-            required
-          />
-          <input
-            type="number"
-            placeholder="Giá"
-            value={formData.base_price}
-            onChange={(e) => setFormData({ ...formData, base_price: e.target.value })}
-            style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
-            required
-          />
-          <input
-            type="number"
-            placeholder="Tồn kho"
-            value={formData.Stock}
-            onChange={(e) => setFormData({ ...formData, Stock: e.target.value })}
-            style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
-            required
-          />
-          <input
-            type="text"
-            placeholder="Danh mục ID"
-            value={formData.CategoryID}
-            onChange={(e) => setFormData({ ...formData, CategoryID: e.target.value })}
-            style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
-            required
-          />
-          <input
-            type="file"
-            onChange={handleFileChange}
-            style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
-          />
-        </div>
-        <textarea
-          placeholder="Mô tả sản phẩm"
-          value={formData.Description}
-          onChange={(e) => setFormData({ ...formData, Description: e.target.value })}
-          style={{ width: "100%", padding: 8, marginTop: 10, borderRadius: 4, border: "1px solid #ddd", minHeight: 100 }}
-          required
-        />
-        <div style={{ marginTop: 10 }}>
-          <button
-            type="submit"
-            style={{ marginRight: 10, padding: "8px 16px", background: "#28a745", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
-          >
-            {product ? "Cập nhật" : "Thêm"}
-          </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            style={{ padding: "8px 16px", background: "#6c757d", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
-          >
-            Hủy
-          </button>
-        </div>
-      </form>
     </div>
   );
 };
