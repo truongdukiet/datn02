@@ -14,7 +14,7 @@ const CategoryList = () => {
         },
       });
 
-      return response.data; // ✅ Trả về object { success, data }
+      return response.data; // API trả về { success, data }
     } catch (error) {
       console.error("Failed to fetch categories:", error);
       return null;
@@ -30,17 +30,10 @@ const CategoryList = () => {
     queryFn: fetchCategories,
   });
 
-  // ✅ Đảm bảo categories luôn là mảng
+  // Đảm bảo categories luôn là mảng
   const categories = Array.isArray(categoryResponse)
     ? categoryResponse
     : categoryResponse?.data || [];
-
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) {
-      return "/images/category-1.png"; // fallback image
-    }
-    return `${import.meta.env.VITE_API_URL || ""}/storage/${imagePath}`;
-  };
 
   if (isLoading) {
     return (
@@ -66,16 +59,17 @@ const CategoryList = () => {
       <Flex className="tw-mt-[32px]" wrap="wrap" gap={42} justify="center">
         {categories.slice(0, 6).map((category) => (
           <Link
-            to={`/products?category=${category.CategoryID}`} // ✅ query category
+            to={`/products?category=${category.CategoryID}`}
             key={category.CategoryID}
             className="tw-text-center tw-cursor-pointer hover:tw-transform hover:tw-scale-105 tw-transition-all tw-duration-300"
           >
+            {/* ✅ Chỉ giữ ảnh từ localhost */}
             <img
-              src={getImageUrl(category.Image)}
+              src={`http://localhost:8000/storage/${category.Image}`}
               alt={category.Name}
-              className="tw-size-[123px] tw-border tw-border-solid tw-border-[#2196F3] tw-rounded-full tw-object-cover"
+              className="admin-category-image tw-size-[123px] tw-border tw-border-solid tw-border-[#2196F3] tw-rounded-full tw-object-cover"
               onError={(e) => {
-                e.target.src = "/images/category-1.png";
+                e.target.src = "/images/category-1.png"; // fallback nếu ảnh không tồn tại
               }}
             />
             <p className="tw-text-[20px] tw-mt-[12px] tw-font-medium">
