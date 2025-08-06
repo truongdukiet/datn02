@@ -335,7 +335,7 @@ const AdminProducts = () => {
                     onClick={() => handleDeleteProduct(product.ProductID)}
                     style={{ padding: "4px 8px", background: "#dc3545", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
                   >
-
+                    Xóa
                   </button>
                 </td>
               </tr>
