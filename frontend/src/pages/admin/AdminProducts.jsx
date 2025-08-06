@@ -123,13 +123,13 @@ const AdminProducts = () => {
         <button
           style={{ padding: "8px 16px", background: "#6c757d", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
         >
-          Lưu bộ lọc
+           bộ lọc
         </button>
         <button
           onClick={() => setShowAddForm(true)}
           style={{ padding: "8px 16px", background: "#28a745", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
         >
-          Thêm sản phẩm
+          Thêm
         </button>
       </div>
 
