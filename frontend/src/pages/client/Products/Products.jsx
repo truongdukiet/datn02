@@ -29,25 +29,28 @@ const fetchCategories = async () => {
 const Products = () => {
   const location = useLocation();
   const [priceRange, setPriceRange] = useState([0, 100000000]);
-  // const [selectedColor, setSelectedColor] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [filters, setFilters] = useState({
     minPrice: 0,
     maxPrice: 100000000,
     sortBy: "newest",
     query: "",
+    category: null,
   });
 
+  // ✅ Nhận query "q" và "category" từ URL mà không phá cấu trúc cũ
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const query = searchParams.get("q");
+    const category = searchParams.get("category");
 
-    if (query) {
-      setFilters((prev) => ({
-        ...prev,
-        query: query,
-      }));
-    }
+    setFilters((prev) => ({
+      ...prev,
+      query: query || "",
+      category: category || null,
+    }));
+
+    setSelectedCategory(category || null);
   }, [location.search]);
 
   const { data, isLoading } = useQuery({
@@ -176,10 +179,6 @@ const Products = () => {
                           >
                             {category.Name}
                           </Radio>
-
-                          {/* <p className="tw-m-0 tw-border tw-border-solid tw-border-[#999] tw-rounded-xl tw-text-xs tw-text-[#999] tw-min-w-6 tw-flex tw-justify-center tw-px-1">
-                            {category.productCount || 0}
-                          </p> */}
                         </div>
                       ))}
                     </>
