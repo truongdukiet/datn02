@@ -7,22 +7,35 @@ const AdminProducts = () => {
   const [error, setError] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [categories, setCategories] = useState([]); // Danh mục cho dropdown
 
-  // API Base URL
   const API_BASE_URL = 'http://localhost:8000/api';
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   const fetchProducts = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/products`);
-      setProducts(response.data.data || []); // Ensure products is always an array
+      setProducts(response.data.data || []);
       setLoading(false);
     } catch (err) {
       setError("Error fetching products");
       setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/categories`);
+      setCategories(response.data.data || []);
+    } catch (err) {
+      console.error("Error fetching categories");
     }
   };
 
@@ -45,21 +58,15 @@ const AdminProducts = () => {
   const handleSaveProduct = async (productData) => {
     try {
       if (editingProduct) {
-        // Update existing product
         await axios.put(`${API_BASE_URL}/products/${editingProduct.ProductID}`, productData, {
-          headers: {
-            'Content-Type': 'multipart/form-data' // Set the content type for FormData
-          }
+          headers: { 'Content-Type': 'multipart/form-data' }
         });
       } else {
-        // Add new product
         await axios.post(`${API_BASE_URL}/products`, productData, {
-          headers: {
-            'Content-Type': 'multipart/form-data' // Set the content type for FormData
-          }
+          headers: { 'Content-Type': 'multipart/form-data' }
         });
       }
-      fetchProducts(); // Refresh the product list
+      fetchProducts();
       setShowAddForm(false);
       setEditingProduct(null);
     } catch (err) {
@@ -67,16 +74,60 @@ const AdminProducts = () => {
     }
   };
 
+  // ✅ Lọc dữ liệu
+  const filteredProducts = products.filter(product => {
+    const matchesSearch =
+      product.Name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.ProductID.toString().includes(searchTerm);
+    const matchesCategory = filterCategory ? product.CategoryID === parseInt(filterCategory) : true;
+    const matchesStatus = filterStatus ? (filterStatus === "active" ? product.Status : !product.Status) : true;
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
+
   if (loading) return <div>Đang tải...</div>;
   if (error) return <div>Lỗi: {error}</div>;
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <h2>Quản lý sản phẩm</h2>
+      {/* Thanh tìm kiếm và bộ lọc */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, gap: 10 }}>
+        <div style={{ position: "relative", flex: 1 }}>
+          <input
+            type="text"
+            placeholder="🔍 Tìm kiếm theo mã sản phẩm, tên sản phẩm"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ width: "100%", padding: "8px 12px 8px 35px", borderRadius: 4, border: "1px solid #ddd" }}
+          />
+          <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#888" }}>🔍</span>
+        </div>
+        <select
+          value={filterCategory}
+          onChange={(e) => setFilterCategory(e.target.value)}
+          style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
+        >
+          <option value="">Loại sản phẩm</option>
+          {categories.map(cat => (
+            <option key={cat.CategoryID} value={cat.CategoryID}>{cat.Name}</option>
+          ))}
+        </select>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
+        >
+          <option value="">Trạng thái</option>
+          <option value="active">Hoạt động</option>
+          <option value="inactive">Không hoạt động</option>
+        </select>
+        <button
+          style={{ padding: "8px 16px", background: "#6c757d", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
+        >
+          Lưu bộ lọc
+        </button>
         <button
           onClick={() => setShowAddForm(true)}
-          style={{ padding: "10px 20px", background: "#28a745", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
+          style={{ padding: "8px 16px", background: "#28a745", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
         >
           Thêm sản phẩm
         </button>
@@ -93,6 +144,7 @@ const AdminProducts = () => {
         />
       )}
 
+      {/* Bảng sản phẩm */}
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr style={{ background: "#f5f5f5" }}>
@@ -106,13 +158,13 @@ const AdminProducts = () => {
           </tr>
         </thead>
         <tbody>
-          {products.length > 0 ? (
-            products.map((product) => (
+          {filteredProducts.length > 0 ? (
+            filteredProducts.map((product) => (
               <tr key={product.ProductID} style={{ borderBottom: "1px solid #eee" }}>
                 <td style={{ padding: 12 }}>
-                  <img 
-                    src={product.Image ? `http://localhost:8000/storage/${product.Image}` : "https://via.placeholder.com/100"} 
-                    alt={product.Name} 
+                  <img
+                    src={product.Image ? `http://localhost:8000/storage/${product.Image}` : "https://via.placeholder.com/100"}
+                    alt={product.Name}
                     style={{ width: 50, height: 50, objectFit: "cover" }}
                   />
                 </td>
@@ -152,40 +204,35 @@ const AdminProducts = () => {
   );
 };
 
-// Component form để thêm/sửa sản phẩm
+// ✅ Form thêm/sửa sản phẩm
 const ProductForm = ({ product, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
     Name: product?.Name || "",
     Description: product?.Description || "",
     base_price: product?.base_price || "",
-    Stock: product?.variants?.[0]?.Stock || "", // Assume first variant for simplicity
+    Stock: product?.variants?.[0]?.Stock || "",
     CategoryID: product?.CategoryID || "",
     Image: product?.Image || "",
   });
-  
-  const [imageFile, setImageFile] = useState(null); // State for the image file
+
+  const [imageFile, setImageFile] = useState(null);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    setImageFile(file); // Save the file in state
-    setFormData({ ...formData, Image: file.name }); // Optional: Store file name (not necessary)
+    setImageFile(file);
+    setFormData({ ...formData, Image: file.name });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formDataToSubmit = new FormData();
-    
-    // Append form data
     Object.keys(formData).forEach(key => {
       formDataToSubmit.append(key, formData[key]);
     });
-
-    // Append the image file if selected
     if (imageFile) {
-      formDataToSubmit.append('image_file', imageFile); // Ensure this key matches your backend
+      formDataToSubmit.append('image_file', imageFile);
     }
-
-    await onSave(formDataToSubmit); // Send FormData to the save function
+    await onSave(formDataToSubmit);
   };
 
   return (
