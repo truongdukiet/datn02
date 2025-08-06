@@ -16,7 +16,7 @@ const AdminOrder = () => {
             case 'processing': return 'Đang xử lý';
             case 'completed': return 'Đã hoàn thành';
             case 'cancelled': return 'Đã hủy';
-            case 'shipped': return 'Đã giao hàng';
+            case 'shipped': return 'Đang giao hàng';
             default: return status;
         }
     };
@@ -56,6 +56,12 @@ const AdminOrder = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!editingOrder) return;
+
+        // ✅ Không cho cập nhật nếu đơn hàng đã giao hoặc đã hủy
+        if (editingOrder.Status === 'shipped' || editingOrder.Status === 'cancelled') {
+            alert('Đơn hàng này không thể cập nhật.');
+            return;
+        }
 
         try {
             const response = await updateOrder(editingOrder.OrderID, { Status: status });
@@ -111,8 +117,14 @@ const AdminOrder = () => {
                                     <option value="pending">Chờ xử lý</option>
                                     <option value="processing">Đang xử lý</option>
                                     <option value="completed">Đã hoàn thành</option>
-                                    <option value="cancelled">Đã hủy</option>
-                                    <option value="shipped">Đã giao hàng</option>
+                                    {/* ✅ Chỉ cho chọn shipped nếu đơn chưa shipped */}
+                                    {editingOrder.Status !== 'shipped' && (
+                                        <option value="shipped">Đang giao hàng</option>
+                                    )}
+                                    {/* ✅ Không cho chọn hủy nếu đơn đã shipped */}
+                                    {editingOrder.Status !== 'shipped' && (
+                                        <option value="cancelled">Đã hủy</option>
+                                    )}
                                 </select>
                             </div>
                             <button type="submit" style={{ background: '#28a745', color: '#fff', padding: '8px 15px', marginRight: '10px' }}>Cập nhật</button>
@@ -169,10 +181,15 @@ const AdminOrder = () => {
                                     : 'Không có dữ liệu'}
                             </td>
                             <td>
-                                <button
-                                    onClick={() => openEditModal(item)}
-                                    style={{ background: '#28a745', color: '#fff', padding: '5px 10px' }}
-                                >Cập nhật</button>
+                                {/* ✅ Không hiển thị nút cập nhật nếu đơn hàng đã hủy */}
+                                {item.Status !== 'cancelled' && (
+                                    <button
+                                        onClick={() => openEditModal(item)}
+                                        style={{ background: '#28a745', color: '#fff', padding: '5px 10px' }}
+                                    >
+                                        Cập nhật
+                                    </button>
+                                )}
                             </td>
                         </tr>
                     ))}
