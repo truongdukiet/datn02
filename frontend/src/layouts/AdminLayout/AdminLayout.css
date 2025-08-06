@@ -1,3 +1,10 @@
+/* Thêm đoạn này để căn chỉnh icon và chữ */
+.admin-sidebar nav ul li a,
+.admin-sidebar nav ul li button {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Khoảng cách giữa icon và chữ */
+}
 .admin-layout {
     display: flex;
     min-height: 100vh;
