@@ -59,10 +59,11 @@ const AdminProducts = () => {
     setShowAddForm(true);
   };
 
+  // ----- PHẦN ĐÃ CHỈNH SỬA LẠI -----
   const handleSaveProduct = async (productData) => {
     try {
       if (editingProduct) {
-        // Sử dụng POST với _method=PATCH để hỗ trợ multipart/form-data
+        // Sử dụng lại cách POST với _method=PATCH vì đây là cách chuẩn cho Laravel
         productData.append('_method', 'PATCH');
         await axios.post(`${API_BASE_URL}/products/${editingProduct.ProductID}`, productData, {
           headers: { 'Content-Type': 'multipart/form-data' }
@@ -78,11 +79,13 @@ const AdminProducts = () => {
       setShowAddForm(false);
       setEditingProduct(null);
     } catch (err) {
-      console.error("Error saving product", err);
+      // Log lỗi chi tiết hơn từ server để dễ debug
+      console.error("Error saving product:", err.response?.data || err.message);
       setError("Error saving product");
-      alert("Lỗi khi lưu sản phẩm.");
+      alert("Lỗi khi lưu sản phẩm. Vui lòng kiểm tra console (F12) để xem chi tiết lỗi từ server.");
     }
   };
+  // ----------------------------------
 
   const filteredProducts = products.filter(product => {
     const matchesSearch =
@@ -133,6 +136,7 @@ const AdminProducts = () => {
       setImageFile(file);
     };
 
+    // ----- PHẦN ĐÃ CHỈNH SỬA LẠI -----
     const handleSubmit = async (e) => {
       e.preventDefault();
       const formDataToSubmit = new FormData();
@@ -140,14 +144,16 @@ const AdminProducts = () => {
         formDataToSubmit.append(key, formData[key]);
       });
 
+      // Chỉ thêm file hình ảnh nếu người dùng chọn file mới
       if (imageFile) {
         formDataToSubmit.append('image_file', imageFile);
-      } else if (product?.Image) {
-        formDataToSubmit.append('Image', product.Image);
       }
+      // Không cần gửi lại đường dẫn ảnh cũ, backend sẽ tự động giữ lại
+      // nếu không có ảnh mới được gửi lên.
 
       await onSave(formDataToSubmit);
     };
+    // ----------------------------------
 
     return (
       <div style={{ marginBottom: 20, padding: 20, background: "#f8f9fa", borderRadius: 8 }}>
