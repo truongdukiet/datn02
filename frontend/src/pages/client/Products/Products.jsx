@@ -218,7 +218,7 @@ const Products = () => {
             <div className="tw-col-span-9">
               <div className="tw-flex tw-items-center tw-justify-between tw-mb-6">
                 <p className="tw-m-0 tw-text-xs tw-uppercase tw-text-[#666]">
-                  Hiển thị {products.length} sản phẩm, trong số {productsCount}{" "}
+                  Hiển thị {products.length} sản phẩm,trong số {productsCount}{" "}
                   sản phẩm
                 </p>
               </div>
