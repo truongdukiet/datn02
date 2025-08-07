@@ -72,6 +72,17 @@ const EditCategory = () => {
                 </div>
                 <div style={{ marginBottom: "10px" }}>
                     <label>Hình ảnh:</label>
+                    {/* Đoạn code thêm vào để hiển thị ảnh cũ */}
+                    {formData.Image && (
+                        <div style={{ marginTop: "10px", marginBottom: "10px" }}>
+                            <p>Ảnh hiện tại:</p>
+                            <img
+                                src={`http://localhost:8000/storage/${formData.Image}`}
+                                alt={formData.Name}
+                                style={{ maxWidth: "150px" }}
+                            />
+                        </div>
+                    )}
                     <input type="text" name="Image" value={formData.Image} onChange={handleChange} />
                 </div>
                 <div style={{ marginBottom: "10px" }}>

@@ -1,54 +1,71 @@
 import React, { useState } from 'react';
-import { addCategory } from '../../../api/api';
 import { useNavigate } from 'react-router-dom';
-import './AdminCategory.css';
+import axios from 'axios';
 
 const AddCategory = () => {
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [image, setImage] = useState(null);
     const navigate = useNavigate();
+    const [formData, setFormData] = useState({
+        Name: "",
+        Description: "",
+        Image: "",
+        Status: "active"
+    });
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value
+        }));
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const formData = new FormData();
-        formData.append('Name', name);
-        formData.append('Description', description);
-        if (image) formData.append('Image', image);
-
+        setLoading(true);
+        setError("");
         try {
-            await addCategory(formData); // Không cần thiết phải chỉ định Content-Type
-            navigate('/admin/categories');
-        } catch (error) {
-            console.error("Error adding category:", error);
-            // Có thể hiển thị thông báo lỗi cho người dùng ở đây
+            await axios.post(`http://localhost:8000/api/categories`, formData);
+            alert("Thêm danh mục thành công!");
+            navigate("/admin/categories");
+        } catch (err) {
+            console.error("Error adding category:", err);
+            setError("Lỗi thêm danh mục.");
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <form className="add-category-form" onSubmit={handleSubmit}>
-            <h2 className="form-title">Add Category</h2>
-            <input
-                className="form-input"
-                type="text"
-                placeholder="Category Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-            />
-            <textarea
-                className="form-textarea"
-                placeholder="Description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-            />
-            <input
-                className="form-file-input"
-                type="file"
-                onChange={(e) => setImage(e.target.files[0])}
-            />
-            <button type="submit" className="form-button">Add Category</button>
-        </form>
+        <div style={{ maxWidth: "600px", margin: "auto", padding: "20px" }}>
+            <h2>Thêm danh mục mới</h2>
+            {error && <p style={{ color: "red" }}>{error}</p>}
+            <form onSubmit={handleSubmit}>
+                <div style={{ marginBottom: "10px" }}>
+                    <label>Tên danh mục:</label>
+                    <input type="text" name="Name" value={formData.Name} onChange={handleChange} required />
+                </div>
+                <div style={{ marginBottom: "10px" }}>
+                    <label>Mô tả:</label>
+                    <textarea name="Description" value={formData.Description} onChange={handleChange} />
+                </div>
+                <div style={{ marginBottom: "10px" }}>
+                    <label>Hình ảnh:</label>
+                    <input type="text" name="Image" value={formData.Image} onChange={handleChange} />
+                </div>
+                <div style={{ marginBottom: "10px" }}>
+                    <label>Trạng thái:</label>
+                    <select name="Status" value={formData.Status} onChange={handleChange}>
+                        <option value="active">Hoạt động</option>
+                        <option value="inactive">Không hoạt động</option>
+                    </select>
+                </div>
+                <button type="submit" disabled={loading}>
+                    {loading ? "Đang thêm..." : "Thêm danh mục"}
+                </button>
+            </form>
+        </div>
     );
 };
 
