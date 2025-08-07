@@ -1,115 +1,89 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { useParams, useNavigate } from 'react-router-dom';
-import { fetchCategories } from '../../../api/api';
-import './AdminCategory.css';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const EditCategory = () => {
     const { id } = useParams();
-    const [category, setCategory] = useState(null);
-    const [formData, setFormData] = useState({
-        Name: '',
-        Description: '',
-        Image: '',
-    });
     const navigate = useNavigate();
+    const [formData, setFormData] = useState({
+        Name: "",
+        Description: "",
+        Image: "",
+        Status: "inactive"
+    });
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const loadCategory = async () => {
+        const fetchCategory = async () => {
             try {
-                // ✅ Lấy toàn bộ danh mục
-                const response = await fetchCategories();
-                const allCategories = response.data.data || [];
-                const cat = allCategories.find(c => c.CategoryID === parseInt(id));
+                const response = await axios.get(`http://localhost:8000/api/categories/${id}`);
+                const category = response.data.data;
 
-                if (cat) {
-                    setCategory(cat);
-                    setFormData({
-                        Name: cat.Name,
-                        Description: cat.Description,
-                        Image: cat.Image || '',
-                    });
-                } else {
-                    alert('Không tìm thấy danh mục!');
-                    navigate('/admin/categories');
-                }
-            } catch (error) {
-                console.error("Error loading category:", error);
+                setFormData({
+                    Name: category.Name || "",
+                    Description: category.Description || "",
+                    Image: category.Image || "",
+                    Status: category.Status || "inactive"
+                });
+                setLoading(false);
+            } catch (err) {
+                setError("Không thể tải danh mục.");
+                setLoading(false);
             }
         };
-        loadCategory();
-    }, [id, navigate]);
+
+        fetchCategory();
+    }, [id]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const filePath = `categories/${file.name}`;
-            setFormData(prev => ({ ...prev, Image: filePath }));
-        }
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value
+        }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        const data = {
-            Name: formData.Name,
-            Description: formData.Description,
-            Image: formData.Image || category.Image,
-        };
-
         try {
-            await axios.put(`http://localhost:8000/api/categories/${id}`, data);
-            alert('Cập nhật danh mục thành công!');
-            navigate('/admin/categories');
-        } catch (error) {
-            console.error("Error updating category:", error.response?.data || error.message);
-            alert(error.response?.data?.message || 'Có lỗi xảy ra');
+            await axios.put(`http://localhost:8000/api/categories/${id}`, formData);
+            alert("Cập nhật thành công!");
+            navigate("/admin/categories");
+        } catch (err) {
+            setError("Lỗi cập nhật danh mục.");
         }
     };
 
-    if (!category) return <div>Loading...</div>;
+    if (loading) return <p>Đang tải danh mục...</p>;
 
     return (
-        <form className="edit-category-form" onSubmit={handleSubmit}>
-            <h2 className="form-title">Sửa Danh Mục</h2>
-            <input
-                className="form-input"
-                name="Name"
-                value={formData.Name}
-                onChange={handleChange}
-                placeholder="Category Name"
-                required
-            />
-            <textarea
-                className="form-textarea"
-                name="Description"
-                value={formData.Description}
-                onChange={handleChange}
-                placeholder="Description"
-            />
-            <input
-                className="form-file-input"
-                type="file"
-                accept="image/jpeg,image/png,image/jpg,gif"
-                onChange={handleFileChange}
-            />
-            {category.Image && (
-                <div className="current-image">
-                    <img
-                        src={`http://localhost:8000/storage/${category.Image}`}
-                        alt={category.Name}
-                        className="image-preview"
-                    />
-                    <p>Hình ảnh hiện tại</p>
+        <div style={{ maxWidth: "600px", margin: "auto", padding: "20px" }}>
+            <h2>Cập nhật danh mục</h2>
+            {error && <p style={{ color: "red" }}>{error}</p>}
+            <form onSubmit={handleSubmit}>
+                <div style={{ marginBottom: "10px" }}>
+                    <label>Tên danh mục:</label>
+                    <input type="text" name="Name" value={formData.Name} onChange={handleChange} required />
                 </div>
-            )}
-            <button type="submit" className="form-button">Cập nhật danh mục</button>
-        </form>
+                <div style={{ marginBottom: "10px" }}>
+                    <label>Mô tả:</label>
+                    <textarea name="Description" value={formData.Description} onChange={handleChange} />
+                </div>
+                <div style={{ marginBottom: "10px" }}>
+                    <label>Hình ảnh:</label>
+                    <input type="text" name="Image" value={formData.Image} onChange={handleChange} />
+                </div>
+                <div style={{ marginBottom: "10px" }}>
+                    <label>Trạng thái:</label>
+                    <select name="Status" value={formData.Status} onChange={handleChange}>
+                        <option value="active">Hoạt động</option>
+                        <option value="inactive">Không hoạt động</option>
+                    </select>
+                </div>
+                <button type="submit">Cập nhật</button>
+            </form>
+        </div>
     );
 };
 

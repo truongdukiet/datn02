@@ -1,66 +1,157 @@
 .admin-category-container {
-  padding: 20px;
-  background: #fff;
+    padding: 20px;
+    background-color: #fff;
 }
 
-.admin-category-container h2 {
-  font-size: 24px;
-  margin-bottom: 15px;
+.admin-category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
 }
 
-.btn-add-category {
-  display: inline-block;
-  padding: 8px 16px;
-  background-color: #28a745;
-  color: #fff;
-  border-radius: 6px;
-  text-decoration: none;
-  margin-bottom: 15px;
+.admin-category-add-button {
+    background-color: #28a745;
+    color: white;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
 }
 
-.admin-category-list {
-  list-style: none;
-  padding: 0;
+.admin-category-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
 }
 
-.admin-category-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 10px;
-  margin-bottom: 10px;
+.admin-category-filters input,
+.admin-category-filters select {
+    padding: 8px 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 }
 
-.admin-category-image {
-  width: 60px;
-  height: 60px;
-  border-radius: 8px;
-  object-fit: cover;
-  margin-right: 10px;
+.admin-category-table {
+    width: 100%;
+    border-collapse: collapse;
 }
 
-.admin-category-info {
-  flex-grow: 1;
-  margin-left: 10px;
+.admin-category-table th,
+.admin-category-table td {
+    border: 1px solid #eee;
+    padding: 12px;
+    text-align: left;
+    vertical-align: middle;
 }
 
-.admin-category-actions .btn-edit,
-.admin-category-actions .btn-delete {
-  margin-left: 10px;
-  padding: 6px 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.admin-category-table th {
+    background-color: #f5f5f5;
 }
 
+.admin-category-table-img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+/* Trạng thái */
+.status-tag {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.status-tag.active {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-tag.inactive {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Nút hành động */
 .btn-edit {
-  background: #007bff;
-  color: #fff;
+    background-color: #ffc107;
+    color: #000;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    margin-right: 5px;
 }
 
 .btn-delete {
-  background: #dc3545;
-  color: #fff;
+    background-color: #dc3545;
+    color: white;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.edit-category-form {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 30px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.form-title {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 24px;
+}
+
+.form-label {
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-input,
+.form-textarea,
+.form-file-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.form-textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-button {
+    margin-top: 20px;
+    background: #007bff;
+    color: white;
+    padding: 12px;
+    width: 100%;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.form-button:hover {
+    background: #0056b3;
+}
+
+.current-image {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.image-preview {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 10px;
 }

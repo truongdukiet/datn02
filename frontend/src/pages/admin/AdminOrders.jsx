@@ -9,6 +9,10 @@ const AdminOrder = () => {
     const [editingOrder, setEditingOrder] = useState(null);
     const [status, setStatus] = useState('pending');
 
+    // ✅ Thêm state cho lọc và tìm kiếm
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
+
     // ✅ Hàm dịch trạng thái sang tiếng Việt
     const translateStatus = (status) => {
         switch (status) {
@@ -57,7 +61,6 @@ const AdminOrder = () => {
         e.preventDefault();
         if (!editingOrder) return;
 
-        // ✅ Không cho cập nhật nếu đơn hàng đã giao hoặc đã hủy
         if (editingOrder.Status === 'shipped' || editingOrder.Status === 'cancelled') {
             alert('Đơn hàng này không thể cập nhật.');
             return;
@@ -82,12 +85,48 @@ const AdminOrder = () => {
         setShowModal(true);
     };
 
+    // ✅ Lọc + tìm kiếm
+    const filteredOrders = orders.filter(order => {
+        const matchStatus = filterStatus === 'all' || order.Status === filterStatus;
+        const matchSearch =
+            order.Receiver_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            order.Receiver_phone.includes(searchTerm);
+        return matchStatus && matchSearch;
+    });
+
     if (loading) return <div>Đang tải...</div>;
     if (error) return <div style={{ color: 'red' }}>Lỗi: {error}</div>;
 
     return (
         <div>
             <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Quản lý đơn hàng</h2>
+
+            {/* ✅ Thanh lọc và tìm kiếm */}
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: '20px'
+            }}>
+                <input
+                    type="text"
+                    placeholder="Tìm kiếm theo tên hoặc SĐT..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    style={{ padding: '8px', width: '50%' }}
+                />
+                <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    style={{ padding: '8px' }}
+                >
+                    <option value="all">Tất cả trạng thái</option>
+                    <option value="pending">Chờ xử lý</option>
+                    <option value="processing">Đang xử lý</option>
+                    <option value="completed">Đã hoàn thành</option>
+                    <option value="shipped">Đang giao hàng</option>
+                    <option value="cancelled">Đã hủy</option>
+                </select>
+            </div>
 
             {/* Modal cập nhật trạng thái */}
             {showModal && (
@@ -117,11 +156,9 @@ const AdminOrder = () => {
                                     <option value="pending">Chờ xử lý</option>
                                     <option value="processing">Đang xử lý</option>
                                     <option value="completed">Đã hoàn thành</option>
-                                    {/* ✅ Chỉ cho chọn shipped nếu đơn chưa shipped */}
                                     {editingOrder.Status !== 'shipped' && (
                                         <option value="shipped">Đang giao hàng</option>
                                     )}
-                                    {/* ✅ Không cho chọn hủy nếu đơn đã shipped */}
                                     {editingOrder.Status !== 'shipped' && (
                                         <option value="cancelled">Đã hủy</option>
                                     )}
@@ -150,49 +187,52 @@ const AdminOrder = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {orders.map(item => (
-                        <tr key={item.OrderID}>
-                            <td>{item.OrderID}</td>
-                            <td>{item.UserID}</td>
-                            <td>{item.Receiver_name}</td>
-                            <td>{item.Receiver_phone}</td>
-                            <td>{item.Shipping_address}</td>
-                            <td>{item.Total_amount}</td>
-                            {/* ✅ Hiển thị trạng thái tiếng Việt + màu */}
-                            <td style={{
-                                color: '#fff',
-                                background: getStatusColor(item.Status),
-                                padding: '5px 10px',
-                                borderRadius: '4px',
-                                textAlign: 'center'
-                            }}>
-                                {translateStatus(item.Status)}
-                            </td>
-                            {/* ✅ Hiển thị ngày tạo */}
-                            <td>
-                                {item.created_at
-                                    ? new Date(item.created_at).toLocaleString('vi-VN', {
-                                        day: '2-digit',
-                                        month: '2-digit',
-                                        year: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })
-                                    : 'Không có dữ liệu'}
-                            </td>
-                            <td>
-                                {/* ✅ Không hiển thị nút cập nhật nếu đơn hàng đã hủy */}
-                                {item.Status !== 'cancelled' && (
-                                    <button
-                                        onClick={() => openEditModal(item)}
-                                        style={{ background: '#28a745', color: '#fff', padding: '5px 10px' }}
-                                    >
-                                        Cập nhật
-                                    </button>
-                                )}
-                            </td>
+                    {filteredOrders.length > 0 ? (
+                        filteredOrders.map(item => (
+                            <tr key={item.OrderID}>
+                                <td>{item.OrderID}</td>
+                                <td>{item.UserID}</td>
+                                <td>{item.Receiver_name}</td>
+                                <td>{item.Receiver_phone}</td>
+                                <td>{item.Shipping_address}</td>
+                                <td>{item.Total_amount}</td>
+                                <td style={{
+                                    color: '#fff',
+                                    background: getStatusColor(item.Status),
+                                    padding: '5px 10px',
+                                    borderRadius: '4px',
+                                    textAlign: 'center'
+                                }}>
+                                    {translateStatus(item.Status)}
+                                </td>
+                                <td>
+                                    {item.created_at
+                                        ? new Date(item.created_at).toLocaleString('vi-VN', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        })
+                                        : 'Không có dữ liệu'}
+                                </td>
+                                <td>
+                                    {item.Status !== 'cancelled' && (
+                                        <button
+                                            onClick={() => openEditModal(item)}
+                                            style={{ background: '#28a745', color: '#fff', padding: '5px 10px' }}
+                                        >
+                                            Cập nhật
+                                        </button>
+                                    )}
+                                </td>
+                            </tr>
+                        ))
+                    ) : (
+                        <tr>
+                            <td colSpan="9" style={{ textAlign: 'center', padding: '20px' }}>Không tìm thấy đơn hàng phù hợp</td>
                         </tr>
-                    ))}
+                    )}
                 </tbody>
             </table>
         </div>
