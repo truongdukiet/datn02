@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { getVouchers, addVoucher, updateVoucher, deleteVoucher } from '../../../api/api';
 import './AdminVoucher.css';
 
@@ -18,7 +17,6 @@ const AdminVoucher = () => {
     const [error, setError] = useState(null);
     const API_BASE_URL = 'http://localhost:8000/api';
 
-    // Hàm lấy danh sách voucher
     const fetchVouchers = async () => {
         try {
             const response = await fetch(`${API_BASE_URL}/vouchers`);
@@ -26,10 +24,10 @@ const AdminVoucher = () => {
             if (data.success) {
                 setVouchers(data.data || []);
             } else {
-                setError('Failed to fetch vouchers');
+                setError('Không thể lấy danh sách mã giảm giá');
             }
         } catch (err) {
-            setError('Error fetching vouchers: ' + err.message);
+            setError('Lỗi khi lấy dữ liệu: ' + err.message);
         } finally {
             setLoading(false);
         }
@@ -56,9 +54,9 @@ const AdminVoucher = () => {
             }
             setFormData({ Code: '', Value: '', Quantity: '', Status: true, Description: '', Expiry_date: '' });
             setSelectedVoucher(null);
-            fetchVouchers(); // Cập nhật lại danh sách voucher
+            fetchVouchers();
         } catch (err) {
-            setError('Error: ' + (err.response?.data?.message || 'Something went wrong'));
+            setError('Lỗi: ' + (err.response?.data?.message || 'Đã có lỗi xảy ra'));
         }
     };
 
@@ -70,31 +68,31 @@ const AdminVoucher = () => {
     const handleDelete = async (id) => {
         try {
             await deleteVoucher(id);
-            fetchVouchers(); // Cập nhật lại danh sách voucher
+            fetchVouchers();
         } catch (err) {
-            setError('Error: ' + (err.response?.data?.message || 'Could not delete'));
+            setError('Lỗi: ' + (err.response?.data?.message || 'Không thể xóa'));
         }
     };
 
     return (
         <div className="voucher-management">
-            <h2>Voucher Management</h2>
+            <h2>Quản lý mã giảm giá</h2>
             {error && <p className="error">{error}</p>}
             {loading ? (
-                <p>Loading...</p>
+                <p>Đang tải dữ liệu...</p>
             ) : (
                 <>
-                    <button onClick={() => setSelectedVoucher(null)}>Add New Voucher</button>
+                    <button onClick={() => setSelectedVoucher(null)}>Thêm mã mới</button>
                     <table>
                         <thead>
                             <tr>
-                                <th>Code</th>
-                                <th>Value</th>
-                                <th>Quantity</th>
-                                <th>Status</th>
-                                <th>Description</th>
-                                <th>Expiry Date</th>
-                                <th>Actions</th>
+                                <th>Mã</th>
+                                <th>Giá trị</th>
+                                <th>Số lượng</th>
+                                <th>Trạng thái</th>
+                                <th>Mô tả</th>
+                                <th>Hạn sử dụng</th>
+                                <th>Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -103,12 +101,12 @@ const AdminVoucher = () => {
                                     <td>{voucher.Code}</td>
                                     <td>{voucher.Value}</td>
                                     <td>{voucher.Quantity}</td>
-                                    <td>{voucher.Status ? 'Active' : 'Inactive'}</td>
+                                    <td>{voucher.Status ? 'Kích hoạt' : 'Không kích hoạt'}</td>
                                     <td>{voucher.Description}</td>
-                                    <td>{new Date(voucher.Expiry_date).toLocaleDateString()}</td>
+                                    <td>{new Date(voucher.Expiry_date).toLocaleDateString('vi-VN')}</td>
                                     <td>
-                                        <button onClick={() => handleEdit(voucher)}>Edit</button>
-                                        <button onClick={() => handleDelete(voucher.VoucherID)}>Delete</button>
+                                        <button onClick={() => handleEdit(voucher)}>Sửa</button>
+                                        <button onClick={() => handleDelete(voucher.VoucherID)}>Xóa</button>
                                     </td>
                                 </tr>
                             ))}
@@ -118,10 +116,10 @@ const AdminVoucher = () => {
             )}
 
             <form onSubmit={handleSubmit}>
-                <h3>{selectedVoucher ? 'Edit Voucher' : 'Add Voucher'}</h3>
+                <h3>{selectedVoucher ? 'Chỉnh sửa mã' : 'Thêm mã giảm giá'}</h3>
                 <input
                     name="Code"
-                    placeholder="Voucher Code"
+                    placeholder="Nhập mã giảm giá"
                     value={formData.Code}
                     onChange={handleChange}
                     required
@@ -129,7 +127,7 @@ const AdminVoucher = () => {
                 <input
                     type="number"
                     name="Value"
-                    placeholder="Value"
+                    placeholder="Giá trị giảm (%)"
                     value={formData.Value}
                     onChange={handleChange}
                     required
@@ -137,18 +135,18 @@ const AdminVoucher = () => {
                 <input
                     type="number"
                     name="Quantity"
-                    placeholder="Quantity"
+                    placeholder="Số lượng"
                     value={formData.Quantity}
                     onChange={handleChange}
                     required
                 />
                 <select name="Status" value={formData.Status} onChange={handleChange}>
-                    <option value={true}>Active</option>
-                    <option value={false}>Inactive</option>
+                    <option value={true}>Kích hoạt</option>
+                    <option value={false}>Không kích hoạt</option>
                 </select>
                 <textarea
                     name="Description"
-                    placeholder="Description"
+                    placeholder="Mô tả mã giảm giá"
                     value={formData.Description}
                     onChange={handleChange}
                 />
@@ -159,7 +157,7 @@ const AdminVoucher = () => {
                     onChange={handleChange}
                     required
                 />
-                <button type="submit">{selectedVoucher ? 'Update' : 'Add'} Voucher</button>
+                <button type="submit">{selectedVoucher ? 'Cập nhật' : 'Thêm'} mã</button>
             </form>
         </div>
     );

@@ -29,7 +29,7 @@ const AdminOrder = () => {
             case 'completed': return '#28a745';
             case 'cancelled': return '#dc3545';
             case 'shipped': return '#007bff';
-            default: return '#cccccc';
+            default: return '#ffffffff';
         }
     };
 
