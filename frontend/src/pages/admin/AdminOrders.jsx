@@ -8,12 +8,9 @@ const AdminOrder = () => {
     const [showModal, setShowModal] = useState(false);
     const [editingOrder, setEditingOrder] = useState(null);
     const [status, setStatus] = useState('pending');
-
-    // ✅ Thêm state cho lọc và tìm kiếm
     const [filterStatus, setFilterStatus] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
 
-    // ✅ Hàm dịch trạng thái sang tiếng Việt
     const translateStatus = (status) => {
         switch (status) {
             case 'pending': return 'Chờ xử lý';
@@ -25,15 +22,14 @@ const AdminOrder = () => {
         }
     };
 
-    // ✅ Hàm chọn màu cho trạng thái
     const getStatusColor = (status) => {
         switch (status) {
-            case 'pending': return '#ffc107'; // vàng
-            case 'processing': return '#17a2b8'; // xanh nhạt
-            case 'completed': return '#28a745'; // xanh lá
-            case 'cancelled': return '#dc3545'; // đỏ
-            case 'shipped': return '#007bff'; // xanh đậm
-            default: return '#ffffffff'; // xám
+            case 'pending': return '#ffc107';
+            case 'processing': return '#17a2b8';
+            case 'completed': return '#28a745';
+            case 'cancelled': return '#dc3545';
+            case 'shipped': return '#007bff';
+            default: return '#cccccc';
         }
     };
 
@@ -61,8 +57,8 @@ const AdminOrder = () => {
         e.preventDefault();
         if (!editingOrder) return;
 
-        if (editingOrder.Status === 'shipped' || editingOrder.Status === 'cancelled') {
-            alert('Đơn hàng này không thể cập nhật.');
+        if (editingOrder.Status === 'completed' || editingOrder.Status === 'cancelled') {
+            alert('Đơn hàng đã hoàn thành hoặc bị hủy, không thể cập nhật.');
             return;
         }
 
@@ -85,7 +81,6 @@ const AdminOrder = () => {
         setShowModal(true);
     };
 
-    // ✅ Lọc + tìm kiếm
     const filteredOrders = orders.filter(order => {
         const matchStatus = filterStatus === 'all' || order.Status === filterStatus;
         const matchSearch =
@@ -101,12 +96,8 @@ const AdminOrder = () => {
         <div>
             <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Quản lý đơn hàng</h2>
 
-            {/* ✅ Thanh lọc và tìm kiếm */}
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                marginBottom: '20px'
-            }}>
+            {/* Lọc và tìm kiếm */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
                 <input
                     type="text"
                     placeholder="Tìm kiếm theo tên hoặc SĐT..."
@@ -122,19 +113,20 @@ const AdminOrder = () => {
                     <option value="all">Tất cả trạng thái</option>
                     <option value="pending">Chờ xử lý</option>
                     <option value="processing">Đang xử lý</option>
-                    <option value="completed">Đã hoàn thành</option>
                     <option value="shipped">Đang giao hàng</option>
+                    <option value="completed">Đã hoàn thành</option>
                     <option value="cancelled">Đã hủy</option>
                 </select>
             </div>
 
-            {/* Modal cập nhật trạng thái */}
+            {/* Modal cập nhật */}
             {showModal && (
                 <div style={{
                     position: 'fixed',
                     top: 0, left: 0, width: '100%', height: '100%',
-                    background: 'rgba(0,0,0,0.5)', display: 'flex',
-                    justifyContent: 'center', alignItems: 'center', zIndex: 1000
+                    background: 'rgba(0,0,0,0.5)',
+                    display: 'flex', justifyContent: 'center', alignItems: 'center',
+                    zIndex: 1000
                 }}>
                     <div style={{
                         background: 'white', padding: '30px', borderRadius: '8px',
@@ -155,13 +147,9 @@ const AdminOrder = () => {
                                 >
                                     <option value="pending">Chờ xử lý</option>
                                     <option value="processing">Đang xử lý</option>
+                                    <option value="shipped">Đang giao hàng</option>
                                     <option value="completed">Đã hoàn thành</option>
-                                    {editingOrder.Status !== 'shipped' && (
-                                        <option value="shipped">Đang giao hàng</option>
-                                    )}
-                                    {editingOrder.Status !== 'shipped' && (
-                                        <option value="cancelled">Đã hủy</option>
-                                    )}
+                                    <option value="cancelled">Đã hủy</option>
                                 </select>
                             </div>
                             <button type="submit" style={{ background: '#28a745', color: '#fff', padding: '8px 15px', marginRight: '10px' }}>Cập nhật</button>
@@ -171,7 +159,7 @@ const AdminOrder = () => {
                 </div>
             )}
 
-            {/* Bảng danh sách đơn hàng */}
+            {/* Danh sách đơn hàng */}
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                     <tr style={{ background: '#f5f5f5' }}>
@@ -217,7 +205,7 @@ const AdminOrder = () => {
                                         : 'Không có dữ liệu'}
                                 </td>
                                 <td>
-                                    {item.Status !== 'cancelled' && (
+                                    {(item.Status !== 'completed' && item.Status !== 'cancelled') && (
                                         <button
                                             onClick={() => openEditModal(item)}
                                             style={{ background: '#28a745', color: '#fff', padding: '5px 10px' }}
