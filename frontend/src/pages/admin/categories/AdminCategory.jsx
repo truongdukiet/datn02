@@ -51,7 +51,6 @@ const AdminCategory = () => {
             const result = await response.json();
 
             if (response.ok) {
-                // Gọi lại danh sách thay vì cập nhật local để đảm bảo đồng bộ DB
                 fetchCategories();
             } else {
                 alert(result.message || "Không thể chuyển đổi trạng thái");
@@ -63,6 +62,7 @@ const AdminCategory = () => {
 
     const filteredCategories = categories.filter((category) => {
         const matchesSearch = category.Name.toLowerCase().includes(searchTerm.toLowerCase());
+        // Giả sử Status từ API là 'active' và 'inactive'
         const matchesStatus = statusFilter === 'all' || category.Status === statusFilter;
         return matchesSearch && matchesStatus;
     });
