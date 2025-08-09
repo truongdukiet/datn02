@@ -48,6 +48,12 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::middleware('auth:sanctum')->group(function () {
 
 });
+
+// routes/api.php
+  Route::post('/payment', [CheckoutController::class, 'payment']);
+
+Route::get('/payment/return', [CheckoutController::class, 'payment_return'])->name('payment.return');
+
 Route::apiResource('news', NewsApiController::class); // Tuyến đường RESTful cho quản lý tin tức (admin)
 Route::put('news/{id}', [NewsApiController::class, 'update']);
 Route::apiResource('categories', CategoryController::class);

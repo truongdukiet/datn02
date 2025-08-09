@@ -91,6 +91,7 @@ const App = () => {
             {
               path: "profile",
               element: (
+                
                 <ProtectedUserRoute>
                   <ProfilePage />
                 </ProtectedUserRoute>

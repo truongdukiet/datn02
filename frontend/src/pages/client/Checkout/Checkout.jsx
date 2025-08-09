@@ -37,37 +37,76 @@ const Checkout = () => {
   }, []);
 
   const handlePlaceOrder = async () => {
-    if (!receiverName || !receiverPhone || !address || !paymentId) {
-      message.warning("Vui lòng nhập đầy đủ thông tin.");
-      return;
+  if (!receiverName || !receiverPhone || !address || !paymentId) {
+    message.warning("Vui lòng nhập đầy đủ thông tin.");
+    return;
+  }
+
+  setLoading(true);
+  try {
+    const orderData = {
+    UserID: user.UserID,
+    Total_amount: state.totalAmount,
+    Receiver_name: receiverName,
+    Receiver_phone: receiverPhone,
+    Shipping_address: address,
+    PaymentID: paymentId,
+    VoucherID: null,
+    order_details: state.cartItems.map(item => ({
+        ProductVariantID: item.product_variant.ProductVariantID,
+        Quantity: item.Quantity,
+        Unit_price: item.product_variant.Price,
+        Subtotal: item.product_variant.Price * item.Quantity,
+    })),
+};
+
+    if (paymentId === 9) {
+  try {
+    const response = await fetch('http://localhost:8000/api/payment', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(orderData),
+    });
+
+    console.log("Payment API response:", response);
+    
+    if (response.redirected) {
+      console.log("Redirect URL:", response.url);
+      window.location.href = response.url;
+    } else {
+      const data = await response.json();
+      console.log("Payment data:", data);
+      
+      if (data.success && data.paymentUrl) {
+        console.log("VNPay URL:", data.paymentUrl);
+        window.location.href = data.paymentUrl;
+      } else {
+        message.error(data.error || "Lỗi chuyển hướng VNPay");
+      }
     }
-
-    setLoading(true);
-    try {
-      const orderData = {
-        UserID: user.UserID,
-        Total_amount: state.totalAmount,
-        Receiver_name: receiverName,
-        Receiver_phone: receiverPhone,
-        Shipping_address: address,
-        PaymentID: paymentId,
-        VoucherID: null,
-      };
-
+  } catch (error) {
+    console.error("VNPay error:", error);
+    message.error(error.message || "Lỗi kết nối đến server thanh toán");
+  }
+}else {
+      // Thực hiện đặt hàng như bình thường
       await addOrder(orderData);
-
       // Xóa giỏ hàng
       await clearCart();
-
       message.success("Đặt hàng thành công!");
-      navigate("/thank-you"); // Điều hướng sang trang cảm ơn
-    } catch (error) {
-      console.error("Error placing order:", error);
-      message.error("Có lỗi khi đặt hàng.");
-    } finally {
-      setLoading(false);
+      navigate("/thank-you");
     }
-  };
+  } catch (error) {
+    console.error("Error placing order:", error);
+    message.error("Có lỗi khi đặt hàng.");
+  } finally {
+    setLoading(false);
+  }
+  
+};
 
   return (
     <>

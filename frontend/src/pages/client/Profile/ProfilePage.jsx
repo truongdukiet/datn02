@@ -67,11 +67,13 @@ const ProfilePage = () => {
   if (!userData) return <div>Không thể tải dữ liệu người dùng</div>;
 
   return (
-    <div style={{ maxWidth: 600, margin: "50px auto", padding: "0 15px" }}>
-      <Card>
-        <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <Avatar size={100} icon={<UserOutlined />} />
-          <h2>{userData.Fullname}</h2>
+    <>
+      <ClientHeader />
+      <div style={{ maxWidth: 600, margin: "50px auto", padding: "0 15px" }}>
+        <Card>
+          <div style={{ textAlign: "center", marginBottom: 20 }}>
+            <Avatar size={100} icon={<UserOutlined />} />
+            <h2>{userData.Fullname}</h2>
         </div>
 
         <Descriptions column={1} bordered>
@@ -114,6 +116,7 @@ const ProfilePage = () => {
         </div>
       </Card>
     </div>
+    </>
   );
 };
 
