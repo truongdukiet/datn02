@@ -98,6 +98,24 @@ export const validatePaymentId = async (paymentId) => {
         return false; // Nếu có lỗi, trả về false
     }
 };
+export const getDashboardStats = () => {
+  return axios.get(`api/dashboard/stats`);
+};
 
+export const getUserGrowth = () => {
+  return axios.get(`api/dashboard/user-growth`);
+};
+
+export const getRevenueData = () => {
+  return axios.get(`api/dashboard/revenue`);
+};
+
+export const getRecentOrders = () => {
+  return axios.get(`api/dashboard/recent-orders`);
+};
+
+export const getOrderStatus = () => {
+  return axios.get(`api/dashboard/order-status`);
+};
 // 5. Export default cho apiClient
 export default apiClient;

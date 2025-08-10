@@ -5,7 +5,9 @@ use Illuminate\Support\Facades\Route; // Import facade Route để định nghĩ
 use Illuminate\Support\Facades\Auth; // Import facade Auth để xử lý xác thực người dùng
 use App\Models\User; // Import Model User
 use Illuminate\Auth\Events\Verified; // Import sự kiện Verified (liên quan đến xác minh email)
-
+use App\Models\Order; // Import Model Order
+use App\Models\Product; // Import Model Product
+use App\Models\Category; // Import Model Category
 // Import tất cả các Controller API từ namespace App\Http\Controllers\Api
 use App\Http\Controllers\Api\CategoryController; // Import CategoryController
 use App\Http\Controllers\Api\ProductController; // Import ProductController
@@ -23,12 +25,12 @@ use App\Http\Controllers\Api\VariantAttributeController;
 use App\Http\Controllers\Api\NewsApiController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PasswordResetController;
-use App\Http\Controllers\Api\DashboardController; // Đây là DashboardController public nếu có
+// use App\Http\Controllers\Api\DashboardController; // Đây là DashboardController public nếu có
 use App\Http\Controllers\Api\CheckoutController;
 // Import các Controller từ namespace Admin (để dùng cho chức năng export và admin CRUD)
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController; // Import AdminCategoryController với alias
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController; // Import AdminDashboardController
-
+use App\Http\Controllers\Api\DashboardController; // Import ApiDashboardController
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -48,7 +50,38 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::middleware('auth:sanctum')->group(function () {
 
 });
-
+Route::get('/test-dashboard', function() {
+    try {
+        // Test từng thành phần
+        $tests = [
+            'users_count' => User::count(),
+            'products_count' => Product::count(),
+            'orders_count' => Order::count(),
+            'revenue' => Order::where('status', 'completed')->sum('total_amount'),
+            'recent_order' => Order::latest()->first()
+        ];
+        
+        return response()->json([
+            'success' => true,
+            'tests' => $tests
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
+});
+Route::prefix('dashboard')->group(function () {
+    Route::get('/', [DashboardController::class, 'index']);
+    Route::get('stats', [DashboardController::class, 'getStats']);
+    Route::get('user-growth', [DashboardController::class, 'getUserGrowth']);
+    Route::get('revenue', [DashboardController::class, 'getRevenue']);
+    Route::get('recent-orders', [DashboardController::class, 'getRecentOrders']);
+    Route::get('order-status', [DashboardController::class, 'getOrderStatus']);
+});
 // routes/api.php
   Route::post('/payment', [CheckoutController::class, 'payment']);
 

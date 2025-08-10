@@ -1,7 +1,7 @@
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import AppLayout from "./layouts/AppLayout/AppLayout";
 import MainLayout from "./layouts/MainLayout/MainLayout";
-
+import 'bootstrap/dist/css/bootstrap.min.css';
 // ✅ Client Pages
 import Home from "./pages/client/Home/Home";
 import About from "./pages/client/About/About";
@@ -37,7 +37,7 @@ import EditCategory from "./pages/admin/categories/EditCategory";
 import AddCategory from "./pages/admin/categories/AddCategory"; // ✅ Import AddCategory
 const App = () => {
   const user = JSON.parse(localStorage.getItem("user"));
-  const isAdmin = user && user.Role == 1;
+  const isAdmin = user || user.Role == 1;
 
   // ✅ Route bảo vệ Admin
   const ProtectedAdminRoute = ({ children }) => {
