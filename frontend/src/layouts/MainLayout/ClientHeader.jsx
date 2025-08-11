@@ -54,6 +54,9 @@ const ClientHeader = ({ lightMode = true }) => {
       <Menu.Item key="profile" icon={<UserOutlined />}>
         <Link to="/profile">Thông tin tài khoản</Link>
       </Menu.Item>
+      <Menu.Item key="myorder" icon={<UserOutlined />}>
+        <Link to="/myorder">Thông tin đơn hàng</Link>
+      </Menu.Item>
       <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={handleLogout}>
         Đăng xuất
       </Menu.Item>

@@ -71,5 +71,14 @@ export const updateNews = (id, data) =>
   axiosClient.put(`/news/${id}`, data);
 export const deleteNews = (id) =>
   axiosClient.delete(`/news/${id}`);
+export const getOrdersByUser = (userId) => {
+  return axiosClient.get(`/orders/user/${userId}`);
+};
 
+export const cancelOrder = (orderId) => {
+  return axiosClient.put(`/orders/${orderId}/cancel`);
+};
+export const getOrderDetail = (orderId) => {
+    return axiosClient.get(`/orders/${orderId}`);
+};
 export default axiosClient;

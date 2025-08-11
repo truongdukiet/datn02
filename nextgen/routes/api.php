@@ -50,6 +50,14 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::middleware('auth:sanctum')->group(function () {
 
 });
+
+    // Lấy đơn hàng theo user ID
+    Route::get('orders/user/{userId}', [OrderController::class, 'getUserOrders']);
+    
+    // Hủy đơn hàng
+    Route::put('orders/{orderId}/cancel', [OrderController::class, 'cancelOrder']);
+// routes/api.php
+Route::get('orders/{orderId}', [OrderController::class, 'getOrderDetail']);
 Route::get('/test-dashboard', function() {
     try {
         // Test từng thành phần

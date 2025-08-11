@@ -23,6 +23,8 @@ import Cart from "./pages/client/Cart/Cart";
 // ✅ Favorites & Profile
 import Favorites from "./pages/client/Favorites/Favorites";
 import ProfilePage from "./pages/client/ProfilePage/ProfilePage";
+import MyOrder from "./pages/client/Profile/MyOrder"; // ✅ Thông tin đơn hàng
+import MyOrderDetail from "./pages/client/Profile/MyOrderDetail"; // ✅ Chi tiết đơn hàng
 
 // ✅ Admin Layout & Pages
 import AdminLayout from "./layouts/AdminLayout/AdminLayout";
@@ -96,7 +98,21 @@ const App = () => {
                   <ProfilePage />
                 </ProtectedUserRoute>
               ),
-            },
+            },{
+              path: "myorder",
+              element: (
+                <ProtectedUserRoute>
+                  <MyOrder />
+                </ProtectedUserRoute>
+              ),
+            },{
+              path: "myorder/:orderId",
+              element: (
+                <ProtectedUserRoute>
+                  <MyOrderDetail />
+                </ProtectedUserRoute>
+              ),
+            }
           ],
         },
 
