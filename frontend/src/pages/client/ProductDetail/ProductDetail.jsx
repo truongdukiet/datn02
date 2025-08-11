@@ -17,6 +17,8 @@ const ProductDetail = () => {
     const [isAdding, setIsAdding] = useState(false);
     const [reviews, setReviews] = useState([]);
     const [newReview, setNewReview] = useState({ rating: 0, comment: "" });
+    const [displayImages, setDisplayImages] = useState([]);
+
 
     const noMatchingVariantRef = useRef(false);
     const navigate = useNavigate();
@@ -141,53 +143,72 @@ const ProductDetail = () => {
     };
 
     // Thêm vào giỏ hàng
-    const handleAddToCart = () => {
-        if (!selectedVariant) {
-            message.error("Vui lòng chọn phiên bản sản phẩm!");
-            return;
+    // Thêm vào giỏ hàng
+const handleAddToCart = () => {
+    console.log("=== BẮT ĐẦU handleAddToCart ===");
+    console.log("selectedVariant:", selectedVariant);
+    console.log("selectedAttributes:", selectedAttributes);
+    console.log("quantity:", quantity);
+
+    if (!selectedVariant) {
+        message.error("Vui lòng chọn phiên bản sản phẩm!");
+        console.log("❌ selectedVariant = null => Không thêm vào giỏ");
+        return;
+    }
+
+    setIsAdding(true);
+
+    try {
+        const newCartItem = {
+            id: selectedVariant.ProductVariantID,
+            productId: selectedVariant.ProductID, // để test xem trang cart dùng id nào
+            productName: product.Name,
+            variantName: Object.values(selectedAttributes).join(" / ") || "Default",
+            image: selectedVariant.Image || product.Image,
+            price: selectedVariant.Price,
+            quantity: quantity,
+        };
+
+        console.log("🆕 Sản phẩm chuẩn bị thêm:", newCartItem);
+
+        const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
+        console.log("📦 Giỏ hàng hiện tại:", storedCart);
+
+        const existingIndex = storedCart.findIndex(
+            (item) => item.id === newCartItem.id
+        );
+        console.log("🔍 Vị trí sản phẩm trùng:", existingIndex);
+
+        if (existingIndex > -1) {
+            storedCart[existingIndex].quantity += quantity;
+            console.log("➕ Cập nhật số lượng:", storedCart[existingIndex]);
+        } else {
+            storedCart.push(newCartItem);
+            console.log("📥 Thêm sản phẩm mới vào giỏ");
         }
 
-        setIsAdding(true);
+        localStorage.setItem("cart", JSON.stringify(storedCart));
+        console.log("💾 Đã lưu vào localStorage:", storedCart);
 
-        try {
-            const newCartItem = {
-                id: selectedVariant.ProductVariantID,
-                productName: product.Name,
-                variantName: Object.values(selectedAttributes).join(" / ") || "Default",
-                image: selectedVariant.Image || product.Image,
-                price: selectedVariant.Price,
-                quantity: quantity,
-            };
+        // Cập nhật state ngay lập tức
+        setCart(storedCart);
 
-            // Lấy giỏ hàng từ localStorage
-            const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
+        // Thử đọc lại từ localStorage
+        const reloadedCart = JSON.parse(localStorage.getItem("cart")) || [];
+        console.log("📤 Đọc lại từ localStorage:", reloadedCart);
 
-            // Kiểm tra sản phẩm có trong giỏ chưa
-            const existingIndex = storedCart.findIndex(
-                (item) => item.id === newCartItem.id
-            );
+        window.dispatchEvent(new Event("storage"));
 
-            if (existingIndex > -1) {
-                storedCart[existingIndex].quantity += quantity;
-            } else {
-                storedCart.push(newCartItem);
-            }
-
-            // Lưu giỏ hàng vào localStorage
-            localStorage.setItem("cart", JSON.stringify(storedCart));
-
-            // Trigger update cho các component khác (icon giỏ hàng)
-            window.dispatchEvent(new Event("storage"));
-
-            message.success("Đã thêm sản phẩm vào giỏ hàng!");
-            navigate("/cart");
-        } catch (error) {
-            console.error(error);
-            message.error("Có lỗi xảy ra khi thêm vào giỏ hàng!");
-        } finally {
-            setIsAdding(false);
-        }
-    };
+        message.success("Đã thêm sản phẩm vào giỏ hàng!");
+        navigate("/cart");
+    } catch (error) {
+        console.error("❌ Lỗi khi thêm vào giỏ hàng:", error);
+        message.error("Có lỗi xảy ra khi thêm vào giỏ hàng!");
+    } finally {
+        setIsAdding(false);
+        console.log("=== KẾT THÚC handleAddToCart ===");
+    }
+};
 
     // Gửi đánh giá
     const handleSubmitReview = () => {
@@ -208,6 +229,68 @@ const ProductDetail = () => {
         setNewReview({ rating: 0, comment: "" });
         message.success("Gửi đánh giá thành công!");
     };
+useEffect(() => {
+    if (product && product.media) {
+        let filtered = [];
+
+        if (selectedVariant) {
+            // Nếu đã chọn biến thể → lấy ảnh theo biến thể
+            filtered = product.media.filter(
+                (img) => img.variant_id === selectedVariant.ProductVariantID
+            );
+        } else if (product.variants && product.variants.length > 0) {
+            // Nếu chưa chọn → lấy ảnh theo biến thể đầu tiên
+            const firstVariant = product.variants[0];
+            setSelectedVariant(firstVariant); // set luôn biến thể đầu tiên
+            filtered = product.media.filter(
+                (img) => img.variant_id === firstVariant.ProductVariantID
+            );
+        }
+
+        // Nếu vẫn chưa có ảnh → fallback về ảnh của product không thuộc variant
+        if (filtered.length === 0) {
+            filtered = product.media.filter(
+                (img) => img.product_id === product.ProductID && img.variant_id === null
+            );
+        }
+
+        setDisplayImages(filtered);
+    }
+}, [product, selectedVariant]);
+
+useEffect(() => {
+    if (selectedVariant && selectedVariant.media) {
+        setDisplayImages(selectedVariant.media);
+    } else if (product && product.media) {
+        const fallbackImages = product.media.filter(img => img.variant_id === null);
+        setDisplayImages(fallbackImages);
+    }
+}, [product, selectedVariant]);
+
+const handleClickThumbnail = (clickedIndex) => {
+  setDisplayImages(prevImages => {
+    const currentMainIndex = prevImages.findIndex(img => img.is_main === 1);
+    
+    // Clone mảng để tránh thay đổi trực tiếp state cũ
+    const newImages = [...prevImages];
+    
+    // Đổi ảnh chính hiện tại thành ảnh con
+    if (currentMainIndex !== -1) {
+      newImages[currentMainIndex] = {
+        ...newImages[currentMainIndex],
+        is_main: 0,
+      };
+    }
+    
+    // Đổi ảnh được bấm thành ảnh chính
+    newImages[clickedIndex] = {
+      ...newImages[clickedIndex],
+      is_main: 1,
+    };
+    
+    return newImages;
+  });
+};
 
     if (isLoading)
         return (
@@ -233,15 +316,50 @@ const ProductDetail = () => {
             <main className="tw-pt-32 container">
                 <div className="tw-grid tw-grid-cols-2 tw-gap-6">
                     {/* Ảnh sản phẩm */}
-                    <div className="tw-col-span-1">
-                        <div className="tw-relative tw-pt-[100%]">
-                            <img
-                                src={`http://localhost:8000${getProductImageUrl(product.Image)}`}
-                                alt={product.Name}
-                                className="tw-w-full tw-h-full tw-object-cover tw-block tw-absolute tw-top-0 tw-left-0 tw-right-0 tw-bottom-0"
-                            />
-                        </div>
-                    </div>
+                   <div className="tw-col-span-1">
+  {displayImages.length > 0 ? (
+    <div>
+      {/* Ảnh chính */}
+      <div className="tw-relative tw-aspect-[1/1] tw-mb-4 tw-border tw-rounded-lg tw-overflow-hidden">
+        <img
+          src={`http://localhost:8000/storage/${
+            displayImages.find((img) => img.is_main === 1)?.image || displayImages[0]?.image
+          }`}
+          alt={product?.Name}
+          className="tw-w-full tw-h-full tw-object-cover tw-absolute tw-top-0 tw-left-0"
+        />
+      </div>
+
+      {/* Ảnh con */}
+      <div className="tw-grid tw-grid-cols-4 tw-gap-2">
+        {displayImages
+          .map((img, idx) => ({ ...img, idx })) // giữ chỉ số gốc để xử lý
+          .filter((img) => img.is_main === 0)
+          .map((img) => (
+            <div
+              key={img.idx}
+              className="tw-relative tw-pt-[100%] tw-border tw-rounded-lg tw-cursor-pointer tw-overflow-hidden"
+              onClick={() => handleClickThumbnail(img.idx)} // gọi hàm đổi ảnh khi click
+            >
+              <img
+                src={`http://localhost:8000/storage/${img.image}`}
+                alt={`Ảnh phụ ${img.idx + 1}`}
+                className="tw-w-full tw-h-full tw-object-cover tw-absolute tw-top-0 tw-left-0"
+              />
+            </div>
+          ))}
+      </div>
+    </div>
+  ) : (
+    <div className="tw-relative tw-pt-[100%] tw-bg-gray-100 tw-rounded-md">
+      <p className="tw-absolute tw-top-1/2 tw-left-1/2 tw-transform tw--translate-x-1/2 tw--translate-y-1/2 tw-text-gray-400">
+        Không có hình ảnh
+      </p>
+    </div>
+  )}
+</div>
+
+
 
                     {/* Thông tin sản phẩm */}
                     <div className="tw-col-span-1">
