@@ -102,7 +102,7 @@ Route::apiResource(name: 'product-variants', controller: ProductVariantControlle
 // Product routes (API public) - Cần xem xét lại nếu bạn đã dùng apiResource cho products ở dưới
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/search', [ProductController::class, 'search']);
-Route::get('/products/detail/{id}', [ProductController::class, 'show']);
+Route::get('/products/detail/{id}', [ProductController::class, 'detail']);
 Route::post('/products/add', [ProductController::class, 'store']);
 Route::put('/products/update/{id}', [ProductController::class, 'update']);
 Route::delete('/products/{id}', [ProductController::class, 'destroy']);

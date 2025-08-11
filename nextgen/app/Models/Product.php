@@ -81,4 +81,10 @@ class Product extends Model
     {
         return $this->hasMany(OrderDetail::class, 'ProductID', 'ProductID');
     }
+    public function media()
+{
+    return $this->hasMany(Media::class, 'product_id', 'ProductID');
+}
+
+
 }

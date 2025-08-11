@@ -36,8 +36,17 @@ class ProductVariant extends Model
         return $this->belongsTo(Product::class, 'ProductID', 'ProductID');
     }
 
-    public function attributes()
-    {
-        return $this->hasMany(\App\Models\VariantAttribute::class, 'ProductVariantID', 'ProductVariantID');
-    }
+public function media()
+{
+    return $this->hasMany(Media::class, 'variant_id', 'ProductVariantID');
+}
+
+public function attributes()
+{
+    return $this->hasMany(VariantAttribute::class, 'ProductVariantID', 'ProductVariantID')
+        ->with('attribute');
+}
+
+
+
 }
