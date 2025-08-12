@@ -20,13 +20,13 @@ class Product extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'CategoryID', 
-        'Name', 
-        'Description', 
-        'Image', 
-        'base_price', 
-        'Status', 
-        'Create_at', 
+        'CategoryID',
+        'Name',
+        'Description',
+        'Image',
+        'base_price',
+        'Status',
+        'Create_at',
         'Update_at'
     ];
 
@@ -81,10 +81,4 @@ class Product extends Model
     {
         return $this->hasMany(OrderDetail::class, 'ProductID', 'ProductID');
     }
-    public function media()
-{
-    return $this->hasMany(Media::class, 'product_id', 'ProductID');
-}
-
-
 }
