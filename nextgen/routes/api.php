@@ -53,7 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Lấy đơn hàng theo user ID
     Route::get('orders/user/{userId}', [OrderController::class, 'getUserOrders']);
-    
+
     // Hủy đơn hàng
     Route::put('orders/{orderId}/cancel', [OrderController::class, 'cancelOrder']);
 // routes/api.php
@@ -68,12 +68,12 @@ Route::get('/test-dashboard', function() {
             'revenue' => Order::where('status', 'completed')->sum('total_amount'),
             'recent_order' => Order::latest()->first()
         ];
-        
+
         return response()->json([
             'success' => true,
             'tests' => $tests
         ]);
-        
+
     } catch (\Exception $e) {
         return response()->json([
             'success' => false,
@@ -106,11 +106,10 @@ Route::apiResource('categories', CategoryController::class);
 
 Route::apiResource(name: 'product-variants', controller: ProductVariantController::class); // Tuyến đường RESTful cho biến thể sản phẩm
 
-
 // Product routes (API public) - Cần xem xét lại nếu bạn đã dùng apiResource cho products ở dưới
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/search', [ProductController::class, 'search']);
-Route::get('/products/detail/{id}', [ProductController::class, 'detail']);
+Route::get('/products/detail/{id}', [ProductController::class, 'show']);
 Route::post('/products/add', [ProductController::class, 'store']);
 Route::put('/products/update/{id}', [ProductController::class, 'update']);
 Route::delete('/products/{id}', [ProductController::class, 'destroy']);
