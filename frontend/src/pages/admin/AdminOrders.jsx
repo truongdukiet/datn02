@@ -53,12 +53,45 @@ const AdminOrder = () => {
         fetchOrders();
     }, []);
 
+    // Hàm helper để tạo danh sách tùy chọn trạng thái động
+    const getStatusOptions = (currentStatus) => {
+        switch (currentStatus) {
+            case 'pending':
+                return [
+                    { value: 'pending', label: 'Chờ xử lý' },
+                    { value: 'processing', label: 'Đang xử lý' },
+                    { value: 'cancelled', label: 'Đã hủy' },
+                ];
+            case 'processing':
+                return [
+                    { value: 'processing', label: 'Đang xử lý' },
+                    { value: 'shipped', label: 'Đang giao hàng' },
+                    { value: 'cancelled', label: 'Đã hủy' },
+                ];
+            case 'shipped':
+                // Đơn hàng đang giao không được hủy
+                return [
+                    { value: 'shipped', label: 'Đang giao hàng' },
+                    { value: 'completed', label: 'Đã hoàn thành' },
+                ];
+            default:
+                return [];
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!editingOrder) return;
 
+        // Cập nhật logic kiểm tra
         if (editingOrder.Status === 'completed' || editingOrder.Status === 'cancelled') {
             alert('Đơn hàng đã hoàn thành hoặc bị hủy, không thể cập nhật.');
+            return;
+        }
+
+        // Thêm điều kiện ngăn chặn hủy đơn hàng đang giao
+        if (editingOrder.Status === 'shipped' && status === 'cancelled') {
+            alert('Đơn hàng đang giao hàng không thể hủy. Chỉ có thể hoàn thành.');
             return;
         }
 
@@ -120,7 +153,7 @@ const AdminOrder = () => {
             </div>
 
             {/* Modal cập nhật */}
-            {showModal && (
+            {showModal && editingOrder && (
                 <div style={{
                     position: 'fixed',
                     top: 0, left: 0, width: '100%', height: '100%',
@@ -133,10 +166,10 @@ const AdminOrder = () => {
                         width: '400px'
                     }}>
                         <h3>Cập nhật trạng thái đơn hàng</h3>
-                        <p><b>ID:</b> {editingOrder?.OrderID}</p>
-                        <p><b>Tên người nhận:</b> {editingOrder?.Receiver_name}</p>
-                        <p><b>Số điện thoại:</b> {editingOrder?.Receiver_phone}</p>
-                        <p><b>Tổng số tiền:</b> {editingOrder?.Total_amount}</p>
+                        <p><b>ID:</b> {editingOrder.OrderID}</p>
+                        <p><b>Tên người nhận:</b> {editingOrder.Receiver_name}</p>
+                        <p><b>Số điện thoại:</b> {editingOrder.Receiver_phone}</p>
+                        <p><b>Tổng số tiền:</b> {editingOrder.Total_amount}</p>
                         <form onSubmit={handleSubmit}>
                             <div style={{ marginBottom: '15px' }}>
                                 <label>Trạng thái</label>
@@ -145,11 +178,11 @@ const AdminOrder = () => {
                                     onChange={(e) => setStatus(e.target.value)}
                                     style={{ width: '100%', padding: '8px' }}
                                 >
-                                    <option value="pending">Chờ xử lý</option>
-                                    <option value="processing">Đang xử lý</option>
-                                    <option value="shipped">Đang giao hàng</option>
-                                    <option value="completed">Đã hoàn thành</option>
-                                    <option value="cancelled">Đã hủy</option>
+                                    {getStatusOptions(editingOrder.Status).map(option => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                             <button type="submit" style={{ background: '#28a745', color: '#fff', padding: '8px 15px', marginRight: '10px' }}>Cập nhật</button>

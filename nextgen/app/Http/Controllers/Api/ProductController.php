@@ -100,28 +100,31 @@ class ProductController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-public function detail($id)
-{
-    $product = Product::with([
-        'category',
-        'variants.attributes.attribute',
-        'media',             // ảnh sản phẩm chính
-        'variants.media'     // ảnh của từng biến thể
-    ])->where('ProductID', $id)->first();
+    public function show($id)
+    {
+        try {
+            $product = Product::with(['category', 'variants.attributes'])
+                ->find($id);
 
-    if (!$product) {
-        return response()->json([
-            'status' => false,
-            'message' => 'Không tìm thấy sản phẩm'
-        ], 404);
+            if (!$product) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product not found'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $product,
+                'message' => 'Product retrieved successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error retrieving product: ' . $e->getMessage()
+            ], 500);
+        }
     }
-
-    return response()->json([
-        'status' => true,
-        'message' => 'Lấy chi tiết sản phẩm thành công',
-        'data' => $product
-    ]);
-}
 
     /**
      * Update the specified resource in storage.

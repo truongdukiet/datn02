@@ -97,19 +97,21 @@ const ProductItem = ({ product }) => {
   });
 
   // ✅ Xử lý thêm giỏ hàng
- const handleAddToCart = () => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    message.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
-    return;
-  }
+  const handleAddToCart = () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      message.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
+      return;
+    }
 
-  // Nếu không có biến thể thì gán null
-  const variantId = defaultVariant?.ProductVariantID || null;
+    const variantId = defaultVariant?.ProductVariantID;
+    if (!variantId) {
+      message.error("Sản phẩm không có biến thể");
+      return;
+    }
 
-  addToCartMutation.mutate({ variantId, quantity: 1 });
-};
-
+    addToCartMutation.mutate({ variantId, quantity: 1 });
+  };
 
   // ✅ Xử lý toggle yêu thích
   const handleToggleFavorite = () => {

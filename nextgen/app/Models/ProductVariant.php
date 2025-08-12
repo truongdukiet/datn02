@@ -3,8 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-
 
 class ProductVariant extends Model
 {
@@ -36,17 +34,8 @@ class ProductVariant extends Model
         return $this->belongsTo(Product::class, 'ProductID', 'ProductID');
     }
 
-public function media()
-{
-    return $this->hasMany(Media::class, 'variant_id', 'ProductVariantID');
-}
-
-public function attributes()
-{
-    return $this->hasMany(VariantAttribute::class, 'ProductVariantID', 'ProductVariantID')
-        ->with('attribute');
-}
-
-
-
+    public function attributes()
+    {
+        return $this->hasMany(\App\Models\VariantAttribute::class, 'ProductVariantID', 'ProductVariantID');
+    }
 }
