@@ -63,8 +63,13 @@ export const deleteNews = (id) => apiClient.delete(`/api/news/${id}`);
 export const selectNews = (id) => apiClient.get(`/api/news/${id}`);
 
 // ✅ API cho giỏ hàng & thanh toán
+// src/api/api.js
 export const addOrder = (orderData) => {
-  return apiClient.post(`/api/orders/${orderData.UserID}`, orderData); // Đặt hàng
+  return axios.post('http://localhost:8000/api/orders', orderData, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem('token')}`
+    }
+  });
 };
 
 export const clearCart = () => {
@@ -117,5 +122,23 @@ export const getRecentOrders = () => {
 export const getOrderStatus = () => {
   return axios.get(`api/dashboard/order-status`);
 };
+// Thêm hàm lấy voucher khả dụng
+export const getAvailableVouchers = () => {
+  return axios.get('http://localhost:8000/api/vouchers/available');
+};
 // 5. Export default cho apiClient
+export const getCartItems = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(`http://localhost:8000/api/carts`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response;
+  } catch (error) {
+    console.error("Error fetching cart items:", error);
+    throw error;
+  }
+};
 export default apiClient;

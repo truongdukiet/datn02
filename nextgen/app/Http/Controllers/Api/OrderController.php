@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Models\Voucher;
 class OrderController extends Controller
 {
     public function index()
@@ -46,7 +47,7 @@ class OrderController extends Controller
                 'UserID' => 'required|integer|exists:users,UserID',
                 'VoucherID' => 'nullable|integer|exists:voucher,VoucherID',
                 'PaymentID' => 'nullable|integer|exists:payment_gateway,PaymentID',
-                'Status' => 'nullable|string',
+                'Status' => 'nullable|string', // Cho phép null
                 'Total_amount' => 'required|numeric|min:0',
                 'Receiver_name' => 'required|string|max:255',
                 'Receiver_phone' => 'required|string|max:255',
@@ -58,19 +59,51 @@ class OrderController extends Controller
                 'order_details.*.Subtotal' => 'nullable|numeric|min:0',
             ]);
 
-            $orderData = $validated;
+            // Xử lý voucher
+            $voucher = null;
+            if (!empty($validated['VoucherID'])) {
+                $voucher = Voucher::find($validated['VoucherID']);
+                
+                // Kiểm tra voucher hợp lệ
+                if (!$voucher || $voucher->Quantity <= 0 || 
+                    now() > $voucher->Expiry_date || 
+                    !$voucher->Status) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Voucher không hợp lệ hoặc đã hết hạn'
+                    ], 400);
+                }
+                
+                // Giảm số lượng voucher
+                $voucher->decrement('Quantity');
+            }
+
+            // Thiết lập trạng thái mặc định nếu không có
+            if (!isset($validated['Status'])) {
+                $validated['Status'] = 'pending';
+            }
+
+            // Tạo đơn hàng
+             $orderData = $validated;
             unset($orderData['order_details']);
             $order = Order::create($orderData);
 
+            // Tạo chi tiết đơn hàng
             if (isset($validated['order_details'])) {
                 foreach ($validated['order_details'] as $detail) {
                     $detail['OrderID'] = $order->OrderID;
-                    \App\Models\OrderDetail::create($detail);
+                    OrderDetail::create($detail);
                 }
             }
 
-            $order->load(['orderDetails.productVariant.product']);
-            return response()->json(['success' => true, 'data' => $order], 201);
+            // Load thông tin đầy đủ để trả về
+            $order->load('orderDetails');
+
+            return response()->json([
+                'success' => true, 
+                'message' => 'Order created successfully',
+                'data' => $order
+            ], 201);
             
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
