@@ -345,7 +345,7 @@ const AdminUsers = () => {
                 )}
                 {editingUser && (
                   <div style={{ fontStyle: 'italic', color: '#6c757d' }}>
-                    Không thể xem mật khẩu. Để trống nếu không thay đổi.
+                    Không thể xem mật khẩu.
                   </div>
                 )}
               </div>
