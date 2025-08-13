@@ -46,7 +46,7 @@ use App\Http\Controllers\Api\DashboardController; // Import ApiDashboardControll
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
-
+Route::get('/vouchers/available', [VoucherController::class, 'availableVouchers']);
 Route::middleware('auth:sanctum')->group(function () {
 
 });

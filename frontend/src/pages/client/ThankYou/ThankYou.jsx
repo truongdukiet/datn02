@@ -1,9 +1,30 @@
 import React from "react";
 import ClientHeader from "../../../layouts/MainLayout/ClientHeader";
 import { formatPrice } from "../../../utils/formatPrice";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 const ThankYou = () => {
+  const location = useLocation();
+  const { 
+    order, 
+    orderDetails = [], 
+    voucher, 
+    discount = 0, 
+    totalAfterDiscount = 0,
+    paymentMethod
+  } = location.state || {};
+  
+  // Nếu không có dữ liệu đơn hàng, điều hướng về trang chủ
+  if (!order) {
+    return <Navigate to="/" />;
+  }
+
+  // Format ngày tháng
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return `${date.getHours()}:${date.getMinutes()} ${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+  };
+
   return (
     <>
       <ClientHeader lightMode={false} />
@@ -49,14 +70,14 @@ const ThankYou = () => {
             <p className="tw-mb-1">
               <span className="tw-text-[#1A1C20]">Mã đơn hàng:</span>
               <span className="tw-text-[#1A1C20] tw-ml-1 tw-font-bold">
-                #0001
+                #{order.OrderID}
               </span>
             </p>
 
             <p className="tw-mb-1">
               <span className="tw-text-[#1A1C20]">Thời gian đặt hàng:</span>
               <span className="tw-text-[#1A1C20] tw-ml-1 tw-font-bold">
-                15:26 22/11/2024
+                {formatDate(order.Create_at)}
               </span>
             </p>
           </section>
@@ -67,62 +88,53 @@ const ThankYou = () => {
             </p>
 
             <div className="tw-border tw-border-solid tw-border-[#EEEEEE] tw-rounded tw-px-6 tw-py-3">
-              <div className="tw-flex tw-items-center tw-gap-x-4 tw-border-x-0 tw-border-t-0 tw-py-4 [&:not(:last-child)]:tw-border-b [&:not(:last-child)]:tw-border-solid [&:not(:last-child)]:tw-border-[#EEEEEE]">
-                <img
-                  src="https://picsum.photos/200/300"
-                  alt=""
-                  className="tw-size-28 tw-object-cover tw-rounded"
-                />
+              {orderDetails.map((item) => (
+                <div 
+                  key={item.CartItemID || item.ProductVariantID} 
+                  className="tw-flex tw-items-center tw-gap-x-4 tw-border-x-0 tw-border-t-0 tw-py-4 [&:not(:last-child)]:tw-border-b [&:not(:last-child)]:tw-border-solid [&:not(:last-child)]:tw-border-[#EEEEEE]"
+                >
+                  <img
+                    src={
+                      item.product_variant?.product?.Image
+                        ? `http://localhost:8000/storage/${item.product_variant.product.Image}`
+                        : "https://picsum.photos/200/300"
+                    }
+                    alt={item.product_variant?.product?.Name || "Sản phẩm"}
+                    className="tw-size-28 tw-object-cover tw-rounded"
+                  />
 
-                <div>
-                  <p className="tw-m-0 tw-font-bold tw-text-xl tw-text-[#1A1C20]">
-                    Bàn nước Orientale walnut
+                  <div>
+                    <p className="tw-m-0 tw-font-bold tw-text-xl tw-text-[#1A1C20]">
+                      {item.product_variant?.product?.Name || "Tên sản phẩm không xác định"}
+                    </p>
+
+                    <p className="tw-mt-3 tw-text-[#1A1C20]">SL: {item.Quantity}</p>
+                  </div>
+
+                  <p className="tw-ml-auto tw-text-[#1A1C20] tw-text-xl">
+                    {formatPrice((item.product_variant?.Price || 0) * item.Quantity)}
                   </p>
-
-                  <p className="tw-mt-3 tw-text-[#1A1C20]">SL: 1</p>
                 </div>
-
-                <p className="tw-ml-auto tw-text-[#1A1C20] tw-text-xl">
-                  {formatPrice(39999999)}
-                </p>
-              </div>
-
-              <div className="tw-flex tw-items-center tw-gap-x-4 tw-border-x-0 tw-border-t-0 tw-py-4 [&:not(:last-child)]:tw-border-b [&:not(:last-child)]:tw-border-solid [&:not(:last-child)]:tw-border-[#EEEEEE]">
-                <img
-                  src="https://picsum.photos/200/300"
-                  alt=""
-                  className="tw-size-28 tw-object-cover tw-rounded"
-                />
-
-                <div>
-                  <p className="tw-m-0 tw-font-bold tw-text-xl tw-text-[#1A1C20]">
-                    Bàn nước Orientale walnut
-                  </p>
-
-                  <p className="tw-mt-3 tw-text-[#1A1C20]">SL: 1</p>
-                </div>
-
-                <p className="tw-ml-auto tw-text-[#1A1C20] tw-text-xl">
-                  {formatPrice(39999999)}
-                </p>
-              </div>
+              ))}
             </div>
 
             <div className="tw-flex tw-items-center tw-justify-between tw-mt-6">
               <p className="tw-m-0 tw-text-[#1A1C20]">Tổng đơn hàng</p>
               <p className="tw-m-0 tw-font-bold tw-text-[#1A1C20]">
-                {formatPrice(61000000)}
+                {formatPrice(order.Total_amount + discount)}
               </p>
             </div>
 
             <hr className="tw-my-4 tw-bg-[#EEEEEE] tw-h-[1px] tw-outline-none tw-border-none" />
 
-            <div className="tw-flex tw-items-center tw-justify-between tw-mb-4">
-              <p className="tw-m-0 tw-text-[#1A1C20]">Mã giảm giá</p>
-              <p className="tw-m-0 tw-font-bold tw-text-[#1A1C20]">
-                -{formatPrice(1000000)}
-              </p>
-            </div>
+            {discount > 0 && (
+              <div className="tw-flex tw-items-center tw-justify-between tw-mb-4">
+                <p className="tw-m-0 tw-text-[#1A1C20]">Mã giảm giá ({voucher?.Code || ""})</p>
+                <p className="tw-m-0 tw-font-bold tw-text-[#1A1C20]">
+                  -{formatPrice(discount)}
+                </p>
+              </div>
+            )}
 
             <div className="tw-flex tw-items-center tw-justify-between tw-mb-4">
               <p className="tw-m-0 tw-text-[#1A1C20]">Phí vận chuyển</p>
@@ -134,7 +146,7 @@ const ThankYou = () => {
             <div className="tw-flex tw-items-center tw-justify-between tw-mb-4">
               <p className="tw-m-0 tw-text-[#1A1C20]">Phương thức thanh toán</p>
               <p className="tw-m-0 tw-font-bold tw-text-[#1A1C20]">
-                Thanh toán khi nhận hàng
+                {paymentMethod?.Name || "Thanh toán khi nhận hàng"}
               </p>
             </div>
 
@@ -143,7 +155,7 @@ const ThankYou = () => {
             <div className="tw-flex tw-items-center tw-justify-between">
               <p className="tw-m-0 tw-text-[#1A1C20]">Tổng thanh toán</p>
               <p className="tw-m-0 tw-font-bold tw-text-[#1A1C20] tw-text-xl">
-                {formatPrice(60000000)}
+                {formatPrice(totalAfterDiscount)}
               </p>
             </div>
           </section>
@@ -155,27 +167,20 @@ const ThankYou = () => {
 
             <div className="tw-flex tw-items-center tw-justify-between tw-mb-4">
               <p className="tw-m-0 tw-text-[#1A1C20]">Họ tên người nhận</p>
-              <p className="tw-m-0 tw-font-bold tw-text-[#1A1C20]">Hao Le</p>
+              <p className="tw-m-0 tw-font-bold tw-text-[#1A1C20]">{order.Receiver_name}</p>
             </div>
 
             <div className="tw-flex tw-items-center tw-justify-between tw-mb-4">
               <p className="tw-m-0 tw-text-[#1A1C20]">Số điện thoại</p>
               <p className="tw-m-0 tw-font-bold tw-text-[#1A1C20]">
-                0378596059
-              </p>
-            </div>
-
-            <div className="tw-flex tw-items-center tw-justify-between tw-mb-4">
-              <p className="tw-m-0 tw-text-[#1A1C20]">Email</p>
-              <p className="tw-m-0 tw-font-bold tw-text-[#1A1C20]">
-                haonle.design@gmail.com
+                {order.Receiver_phone}
               </p>
             </div>
 
             <div className="tw-flex tw-items-center tw-justify-between">
               <p className="tw-m-0 tw-text-[#1A1C20]">Địa chỉ</p>
               <p className="tw-m-0 tw-font-bold tw-text-[#1A1C20]">
-                27 Hoàng Hoa Thám, P. 6, Q. Bình Thạnh, TP. Hồ Chí Minh
+                {order.Shipping_address}
               </p>
             </div>
           </section>

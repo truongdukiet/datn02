@@ -64,4 +64,26 @@ class VoucherController extends Controller
         $voucher->delete();
         return response()->json(['success' => true, 'message' => 'Voucher deleted']);
     }
+    public function availableVouchers()
+    {
+        try {
+            $now = now();
+            
+            $vouchers = Voucher::where('Status', true)
+                ->where('Expiry_date', '>=', $now)
+                ->where('Quantity', '>', 0)
+                ->get();
+                
+            return response()->json([
+                'success' => true,
+                'data' => $vouchers
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get available vouchers: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

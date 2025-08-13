@@ -155,9 +155,12 @@ const Cart = () => {
                     </div>
                   </div>
                   <hr />
-                  <Link
+                   <Link
                     to="/checkout"
-                    state={{ cartItems, totalAmount }}
+                    state={{ 
+                      cartItems: cartItems, // Truyền toàn bộ mảng cartItems
+                      totalAmount: totalAmount // Tổng tiền đã tính
+                    }}
                     className="tw-bg-[#99CCD0] tw-text-white tw-font-medium tw-px-4 tw-h-12 tw-uppercase tw-cursor-pointer tw-flex tw-items-center tw-justify-center tw-w-full tw-mt-6"
                   >
                     Thanh toán
