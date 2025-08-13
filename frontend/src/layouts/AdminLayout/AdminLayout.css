@@ -1,77 +1,126 @@
 /* Thêm đoạn này để căn chỉnh icon và chữ */
 .admin-sidebar nav ul li a,
 .admin-sidebar nav ul li button {
-  display: flex;
-  align-items: center;
-  gap: 10px; /* Khoảng cách giữa icon và chữ */
+ display: flex;
+ align-items: center;
+ gap: 10px; /* Khoảng cách giữa icon và chữ */
+ transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease; /* Thêm transition */
 }
 .admin-layout {
-    display: flex;
-    min-height: 100vh;
-  }
+ display: flex;
+ min-height: 100vh;
+}
 
-  .admin-sidebar {
-    width: 250px;
-    background: #2c3e50;
-    color: white;
-    padding: 20px;
-    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-  }
+.admin-sidebar {
+ width: 250px;
+ background: #646464;
+ color: rgb(255, 255, 255);
+ padding: 20px;
+ box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+ transition: box-shadow 0.3s ease; /* Thêm transition cho box-shadow */
+}
 
-  .admin-sidebar h2 {
-    margin: 0 0 30px 0;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #34495e;
-    text-align: center;
-  }
+.admin-sidebar:hover {
+ box-shadow: 4px 0 8px rgba(0,0,0,0.15); /* Hiệu ứng đổ bóng nhẹ khi hover vào sidebar */
+}
 
-  .admin-sidebar nav ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
+.admin-sidebar h2 {
+ margin: 0 0 30px 0;
+ padding-bottom: 20px;
+ border-bottom: 1px solid #747474;
+ text-align: center;
+}
 
-  .admin-sidebar nav ul li {
-    margin-bottom: 10px;
-  }
+.admin-sidebar nav ul {
+ list-style: none;
+ padding: 0;
+ margin: 0;
+}
 
-  .admin-sidebar nav ul li a {
-    display: block;
-    padding: 12px 15px;
-    color: #ecf0f1;
-    text-decoration: none;
-    border-radius: 5px;
-    transition: all 0.3s ease;
-  }
+.admin-sidebar nav ul li {
+ margin-bottom: 10px;
+}
 
-  .admin-sidebar nav ul li a:hover {
-    background: #b5b5b5;
-    color: #000000;
-  }
+.admin-sidebar nav ul li a,
+.admin-sidebar nav ul li button {
+ display: flex;
+ align-items: center;
+ gap: 10px; /* Khoảng cách giữa icon và chữ */
+ padding: 12px 15px;
+ color: #ecf0f1;
+ text-decoration: none;
+ border-radius: 5px;
+ transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease; /* Đã thêm transition */
+}
 
-  .admin-sidebar nav ul li a.active {
-    background: #8f8d89;
-    color: white;
-  }
+.admin-sidebar nav ul li a:hover,
+.admin-sidebar nav ul li button:hover {
+ background: #b5b5b5;
+ color: #000000;
+ transform: translateX(3px); /* Hiệu ứng dịch nhẹ khi hover */
+}
 
-  .admin-content {
-    flex: 1;
-    padding: 30px;
-    background: #f8f9fa;
-  }
+.admin-sidebar nav ul li a.active {
+ background: #8f8d89;
+ color: white;
+}
 
-  /* Responsive */
-  @media (max-width: 768px) {
-    .admin-layout {
-      flex-direction: column;
-    }
+.admin-content {
+ flex: 1;
+ padding: 30px;
+ background: #f8f9fa;
+ transition: box-shadow 0.3s ease; /* Thêm transition cho content */
+}
 
-    .admin-sidebar {
-      width: 100%;
-      padding: 15px;
-    }
+/* Responsive */
+@media (max-width: 768px) {
+ .admin-layout {
+ flex-direction: column;
+ }
 
-    .admin-content {
-      padding: 20px;
-    }
-  }
+ .admin-sidebar {
+ width: 100%;
+ padding: 15px;
+ }
+
+ .admin-content {
+ padding: 20px;
+ }
+}
+/* Thêm các style này vào file AdminLayout.css */
+
+.user-profile {
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ padding: 20px 0;
+ border-bottom: 1px solid #e0e0e0;
+ margin-bottom: 20px;
+}
+
+.user-avatar {
+ width: 80px;
+ height: 80px;
+ border-radius: 50%;
+ object-fit: cover;
+ border: 3px solid #fff;
+ box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+ transition: transform 0.2s ease; /* Thêm transition cho avatar */
+}
+
+.user-avatar:hover {
+ transform: scale(1.05); /* Hiệu ứng zoom nhẹ khi hover vào avatar */
+}
+
+.user-name {
+ font-size: 1.25rem;
+ font-weight: 600;
+ margin-top: 10px;
+ margin-bottom: 0;
+ color: #333;
+ transition: color 0.3s ease; /* Thêm transition cho tên */
+}
+
+.user-name:hover {
+ color: #ecf0f1; /* Đổi màu tên khi hover (nếu muốn) */
+}
