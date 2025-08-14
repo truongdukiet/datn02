@@ -62,11 +62,11 @@ const AdminOrder = () => {
                     { value: 'processing', label: 'Đang xử lý' },
                     { value: 'cancelled', label: 'Đã hủy' },
                 ];
+            // Đã loại bỏ tùy chọn "cancelled" cho trạng thái "processing"
             case 'processing':
                 return [
                     { value: 'processing', label: 'Đang xử lý' },
                     { value: 'shipped', label: 'Đang giao hàng' },
-                    { value: 'cancelled', label: 'Đã hủy' },
                 ];
             case 'shipped':
                 // Đơn hàng đang giao không được hủy
@@ -83,15 +83,15 @@ const AdminOrder = () => {
         e.preventDefault();
         if (!editingOrder) return;
 
-        // Cập nhật logic kiểm tra
-        if (editingOrder.Status === 'completed' || editingOrder.Status === 'cancelled') {
-            alert('Đơn hàng đã hoàn thành hoặc bị hủy, không thể cập nhật.');
+        // Logic kiểm tra mới: Chỉ cho phép hủy khi trạng thái hiện tại là 'pending'
+        if (editingOrder.Status !== 'pending' && status === 'cancelled') {
+            alert('Đơn hàng chỉ có thể hủy khi ở trạng thái "Chờ xử lý".');
             return;
         }
 
-        // Thêm điều kiện ngăn chặn hủy đơn hàng đang giao
-        if (editingOrder.Status === 'shipped' && status === 'cancelled') {
-            alert('Đơn hàng đang giao hàng không thể hủy. Chỉ có thể hoàn thành.');
+        // Cập nhật logic kiểm tra
+        if (editingOrder.Status === 'completed' || editingOrder.Status === 'cancelled') {
+            alert('Đơn hàng đã hoàn thành hoặc bị hủy, không thể cập nhật.');
             return;
         }
 
