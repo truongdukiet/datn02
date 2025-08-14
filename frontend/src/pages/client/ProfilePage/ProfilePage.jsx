@@ -13,8 +13,9 @@ import {
   EditOutlined,
   SaveOutlined,
   LogoutOutlined,
+  HomeOutlined,
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axiosClient from '../../../api/axiosClient';
 
 const defaultUserData = {
@@ -104,6 +105,11 @@ const ProfilePage = () => {
         style={{ borderRadius: '8px' }}
         extra={
           <Space>
+            <Link to="/">
+              <Button type="default" icon={<HomeOutlined />}>
+                Trang chủ
+              </Button>
+            </Link>
             <Button
               type={isEditing ? 'primary' : 'default'}
               icon={isEditing ? <SaveOutlined /> : <EditOutlined />}
