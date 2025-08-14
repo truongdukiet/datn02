@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Voucher;
+use App\Models\Cart;
 class OrderController extends Controller
 {
     public function index()
@@ -95,7 +96,11 @@ class OrderController extends Controller
                     OrderDetail::create($detail);
                 }
             }
-
+            // xóa giỏ hàng
+            $cart = Cart::where('UserID', $validated['UserID'])->first();
+            if ($cart) {
+                $cart->items()->delete();
+            }
             // Load thông tin đầy đủ để trả về
             $order->load('orderDetails');
 
