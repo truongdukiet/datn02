@@ -141,7 +141,6 @@ sup {
 
 a {
   color: #98ccd3;
-  text-decoration: none;
   background-color: transparent;
   -webkit-text-decoration-skip: objects; }
   a:hover {

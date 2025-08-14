@@ -13,9 +13,10 @@ import {
   EditOutlined,
   SaveOutlined,
   LogoutOutlined,
+  HomeOutlined,
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
-import axiosClient from '../../../api/axiosClient'; // ✅ Đổi sang axiosClient
+import { useNavigate, Link } from 'react-router-dom';
+import axiosClient from '../../../api/axiosClient';
 
 const defaultUserData = {
   name: 'Nguyễn Văn A',
@@ -29,14 +30,13 @@ const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [userData, setUserData] = useState(defaultUserData);
 
-  // ✅ Lấy dữ liệu từ API hoặc localStorage
   useEffect(() => {
     const loggedUser = JSON.parse(localStorage.getItem('user'));
     const storedProfile = localStorage.getItem('userProfile');
 
-    if (loggedUser) {
+    if (loggedUser && loggedUser.UserID) {
       axiosClient
-        .get(`/users/profile/${loggedUser.UserID}`)
+        .get(`/users/${loggedUser.UserID}`)
         .then((response) => {
           if (response.data.success) {
             const user = response.data.data;
@@ -66,7 +66,7 @@ const ProfilePage = () => {
 
   const handleSave = async () => {
     const loggedUser = JSON.parse(localStorage.getItem('user'));
-    if (!loggedUser) {
+    if (!loggedUser || !loggedUser.UserID) {
       message.error('Bạn chưa đăng nhập!');
       return;
     }
@@ -105,6 +105,11 @@ const ProfilePage = () => {
         style={{ borderRadius: '8px' }}
         extra={
           <Space>
+            <Link to="/">
+              <Button type="default" icon={<HomeOutlined />}>
+                Trang chủ
+              </Button>
+            </Link>
             <Button
               type={isEditing ? 'primary' : 'default'}
               icon={isEditing ? <SaveOutlined /> : <EditOutlined />}

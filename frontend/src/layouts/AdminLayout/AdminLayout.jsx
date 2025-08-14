@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import './AdminLayout.css';
 import {
@@ -14,6 +14,21 @@ import {
 
 const AdminLayout = () => {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Lấy thông tin người dùng từ localStorage
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+      } catch (error) {
+        console.error("Lỗi khi phân tích dữ liệu người dùng từ localStorage", error);
+        setUser(null);
+      }
+    }
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -24,7 +39,11 @@ const AdminLayout = () => {
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
-        <h2>Quản trị</h2>
+        {/* Đã bỏ ảnh, chỉ giữ lại tên và vai trò */}
+        <div className="user-profile">
+          <h4 className="user-name">{user?.name || 'Admin'}</h4>
+          <p className="user-role">Quản trị viên</p>
+        </div>
         <nav>
           <ul>
             <li>

@@ -8,7 +8,15 @@ const apiClient = axios.create({
     Accept: "application/json",
   },
 });
-
+export const getProducts = async () => {
+    const response = await fetch(`http://localhost:8000/api/products`, {
+        headers: {
+            'Accept': 'application/json',
+        },
+        credentials: 'include'
+    });
+    return response.json();
+};
 // 2. Interceptor cho request để tự động thêm Authorization token
 apiClient.interceptors.request.use(
   (config) => {

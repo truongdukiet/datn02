@@ -241,7 +241,8 @@ const AdminDashboard = () => {
                   {dashboardData.recentOrders.length > 0 ? dashboardData.recentOrders.map(order => (
                     <tr key={order.id}>
                       <td>#{order.id}</td>
-                      <td>{order.customer_name}</td>
+                      {/* ✅ Cập nhật: Thêm giá trị mặc định nếu customer_name không tồn tại */}
+                      <td>{order.customer_name || 'Khách vãng lai'}</td>
                       <td>
                         <span className="badge" style={{
                           backgroundColor: ORDER_STATUS[order.status]?.color || '#6c757d',
@@ -250,11 +251,11 @@ const AdminDashboard = () => {
                           {ORDER_STATUS[order.status]?.label || order.status}
                         </span>
                       </td>
-                      <td>{order.total_amount.toLocaleString('vi-VN')} VNĐ</td>
+                      <td>{order.total_amount?.toLocaleString('vi-VN')} VNĐ</td>
                       <td>{new Date(order.created_at).toLocaleDateString('vi-VN')}</td>
                     </tr>
                   )) : (
-                    <tr><td colSpan="5" className="text-center">Không có đơn hàng</td></tr>
+                    <tr><td colSpan="5" className="text-center">Không có đơn hàng nào gần đây.</td></tr>
                   )}
                 </tbody>
               </table>

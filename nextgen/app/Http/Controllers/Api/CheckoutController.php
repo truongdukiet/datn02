@@ -202,7 +202,7 @@ class CheckoutController extends Controller
             return response()->json(['error' => 'Failed to place order: ' . $e->getMessage()], 500);
         }
     }
-
+//thanh toán vnpay ở đây
 public function payment(Request $request)
 {
     try {
@@ -270,7 +270,7 @@ public function payment(Request $request)
 
         // Sắp xếp dữ liệu theo key
         ksort($inputData);
-        
+
         // Tạo chuỗi dữ liệu để hash (hashdata) và chuỗi query
         $hashdata = "";
         $query = "";
@@ -282,7 +282,7 @@ public function payment(Request $request)
             } else {
                 $hashdata .= "&" . urlencode($key) . "=" . urlencode($value);
             }
-            
+
             // Tạo chuỗi query
             $query .= urlencode($key) . "=" . urlencode($value) . '&';
             $i++;
@@ -290,7 +290,7 @@ public function payment(Request $request)
 
         // Tạo URL base
         $vnp_Url = $vnp_Url . "?" . $query;
-        
+
         // Tạo chữ ký bảo mật từ chuỗi hashdata
         if (isset($vnp_HashSecret)) {
             $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
@@ -309,7 +309,7 @@ public function payment(Request $request)
             'success' => true,
             'paymentUrl' => $vnp_Url
         ]);
-        
+
     } catch (\Exception $e) {
         \Log::error('Payment error: ' . $e->getMessage());
         return response()->json([

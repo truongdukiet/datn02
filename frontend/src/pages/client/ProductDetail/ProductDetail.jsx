@@ -18,6 +18,10 @@ const ProductDetail = () => {
     const [reviews, setReviews] = useState([]);
     const [newReview, setNewReview] = useState({ rating: 0, comment: "" });
 
+    // Thêm state riêng để quản lý ảnh chính
+    const [mainImage, setMainImage] = useState(null);
+    const [thumbnailImages, setThumbnailImages] = useState([]);
+
     const noMatchingVariantRef = useRef(false);
     const navigate = useNavigate();
     const { id } = useParams();
@@ -27,6 +31,7 @@ const ProductDetail = () => {
         try {
             const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
             setCart(storedCart);
+            loadProducts();
         } catch (error) {
             console.error("Failed to parse cart from localStorage", error);
             setCart([]);
@@ -53,6 +58,9 @@ const ProductDetail = () => {
                 setSelectedVariant(data.variants[0]);
                 setSelectedAttributes(initialAttributes);
                 updateAvailableAttributeValues(initialAttributes, data.variants);
+            } else {
+                // Nếu không có variants, đặt selectedVariant = null để hiển thị ảnh mặc định và giá cơ bản
+                setSelectedVariant(null);
             }
             setReviews(data.reviews || []);
         },
@@ -66,6 +74,51 @@ const ProductDetail = () => {
             return response.data.data;
         },
     });
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      const data = await getProducts();
+      setProducts(data.data || []);
+    } catch (err) {
+      setError('Không thể tải danh sách sản phẩm');
+      console.error('Load products error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+    // Hợp nhất logic xử lý ảnh vào một useEffect duy nhất
+    useEffect(() => {
+        if (product && product.media) {
+            let imagesToDisplay = [];
+            let mainImg = null;
+
+            if (selectedVariant) {
+                // Lọc ảnh theo variant đã chọn
+                imagesToDisplay = product.media.filter(
+                    (img) => img.variant_id === selectedVariant.ProductVariantID
+                );
+            }
+
+            // Nếu không có ảnh cho variant hoặc không có variant nào được chọn, sử dụng ảnh mặc định
+            if (imagesToDisplay.length === 0) {
+                imagesToDisplay = product.media.filter(
+                    (img) => img.variant_id === null
+                );
+            }
+
+            // Tìm ảnh chính trong mảng đã lọc
+            mainImg = imagesToDisplay.find(img => img.is_main === 1);
+            if (!mainImg && imagesToDisplay.length > 0) {
+                // Nếu không có ảnh nào là chính, lấy ảnh đầu tiên
+                mainImg = imagesToDisplay[0];
+            }
+
+            // Cập nhật state ảnh chính và ảnh con
+            setMainImage(mainImg);
+            // Ảnh con là tất cả ảnh trừ ảnh chính
+            setThumbnailImages(imagesToDisplay.filter(img => img.id !== mainImg?.id));
+        }
+    }, [product, selectedVariant]);
 
     // Cập nhật giá trị thuộc tính khả dụng
     const updateAvailableAttributeValues = (currentAttributes, variants) => {
@@ -109,6 +162,7 @@ const ProductDetail = () => {
     const handleAttributeSelect = (attributeId, value) => {
         const updatedAttributes = { ...selectedAttributes };
 
+        // Toggle selected attribute
         if (selectedAttributes[attributeId] === value) {
             delete updatedAttributes[attributeId];
         } else {
@@ -141,73 +195,89 @@ const ProductDetail = () => {
     };
 
     // Thêm vào giỏ hàng
-    const handleAddToCart = () => {
-        if (!selectedVariant) {
-            message.error("Vui lòng chọn phiên bản sản phẩm!");
-            return;
-        }
+   const handleAddToCart = async () => {
+    if (!selectedVariant) {
+        message.error("Vui lòng chọn phiên bản sản phẩm!");
+        return;
+    }
 
-        setIsAdding(true);
+    setIsAdding(true);
 
-        try {
-            const newCartItem = {
-                id: selectedVariant.ProductVariantID,
-                productName: product.Name,
-                variantName: Object.values(selectedAttributes).join(" / ") || "Default",
-                image: selectedVariant.Image || product.Image,
-                price: selectedVariant.Price,
-                quantity: quantity,
-            };
+    try {
+        await apiClient.post('/api/cart/add', {
+            product_id: selectedVariant.ProductID,
+            quantity: quantity
+        });
 
-            // Lấy giỏ hàng từ localStorage
-            const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
-
-            // Kiểm tra sản phẩm có trong giỏ chưa
-            const existingIndex = storedCart.findIndex(
-                (item) => item.id === newCartItem.id
-            );
-
-            if (existingIndex > -1) {
-                storedCart[existingIndex].quantity += quantity;
-            } else {
-                storedCart.push(newCartItem);
-            }
-
-            // Lưu giỏ hàng vào localStorage
-            localStorage.setItem("cart", JSON.stringify(storedCart));
-
-            // Trigger update cho các component khác (icon giỏ hàng)
-            window.dispatchEvent(new Event("storage"));
-
-            message.success("Đã thêm sản phẩm vào giỏ hàng!");
-            navigate("/cart");
-        } catch (error) {
-            console.error(error);
-            message.error("Có lỗi xảy ra khi thêm vào giỏ hàng!");
-        } finally {
-            setIsAdding(false);
-        }
-    };
+        message.success("Đã thêm sản phẩm vào giỏ hàng!");
+    } catch (error) {
+        console.error("Lỗi khi thêm vào giỏ hàng:", error);
+        message.error(error.response?.data?.message || "Có lỗi xảy ra khi thêm vào giỏ hàng!");
+    } finally {
+        setIsAdding(false);
+    }
+};
 
     // Gửi đánh giá
-    const handleSubmitReview = () => {
+    const handleSubmitReview = async () => {
+        // 1. Kiểm tra dữ liệu đầu vào trước khi gửi
         if (!newReview.rating || !newReview.comment.trim()) {
             message.error("Vui lòng chọn số sao và nhập nội dung đánh giá!");
             return;
         }
 
-        const newReviewItem = {
-            rating: newReview.rating,
-            comment: newReview.comment,
-            user: "Khách hàng ẩn danh",
-            date: new Date().toLocaleDateString(),
-        };
+        try {
+            // 2. Gọi API để gửi đánh giá
+            const response = await apiClient.post('/api/reviews', {
+                product_id: id, // Lấy ID sản phẩm từ useParams
+                rating: newReview.rating,
+                comment: newReview.comment,
+                // Bạn có thể thêm user_name nếu có
+                // user_name: 'Tên người dùng',
+            });
 
-        const updatedReviews = [...reviews, newReviewItem];
-        setReviews(updatedReviews);
-        setNewReview({ rating: 0, comment: "" });
-        message.success("Gửi đánh giá thành công!");
+            if (response.data.success) {
+                // 3. Xử lý khi gửi thành công
+                message.success(response.data.message);
+
+                // Cập nhật lại danh sách đánh giá trên UI (tùy chọn)
+                // Có thể thêm đánh giá mới vào state reviews
+                const newReviewItem = {
+                    rating: newReview.rating,
+                    comment: newReview.comment,
+                    user: "Khách hàng ẩn danh",
+                    date: new Date().toLocaleDateString(),
+                };
+                setReviews([...reviews, newReviewItem]);
+
+                // Reset form đánh giá
+                setNewReview({ rating: 0, comment: "" });
+            } else {
+                message.error("Gửi đánh giá thất bại.");
+            }
+        } catch (error) {
+            console.error("Lỗi khi gửi đánh giá:", error);
+            // Hiển thị thông báo lỗi chi tiết hơn nếu có
+            if (error.response && error.response.data && error.response.data.errors) {
+                const errors = error.response.data.errors;
+                const firstError = Object.values(errors)[0][0];
+                message.error(`Lỗi: ${firstError}`);
+            } else {
+                message.error("Đã xảy ra lỗi khi gửi đánh giá.");
+            }
+        }
     };
+
+    // Hàm xử lý click thumbnail
+    const handleClickThumbnail = (clickedImage) => {
+        // Đặt ảnh được click làm ảnh chính
+        setMainImage(clickedImage);
+
+        // Cập nhật lại mảng ảnh con để không bao gồm ảnh chính mới
+        const newThumbnails = thumbnailImages.filter(img => img.id !== clickedImage.id);
+        setThumbnailImages([...newThumbnails, mainImage].filter(Boolean)); // Thêm ảnh chính cũ vào mảng ảnh con
+    };
+
 
     if (isLoading)
         return (
@@ -234,12 +304,32 @@ const ProductDetail = () => {
                 <div className="tw-grid tw-grid-cols-2 tw-gap-6">
                     {/* Ảnh sản phẩm */}
                     <div className="tw-col-span-1">
-                        <div className="tw-relative tw-pt-[100%]">
-                            <img
-                                src={`http://localhost:8000${getProductImageUrl(product.Image)}`}
-                                alt={product.Name}
-                                className="tw-w-full tw-h-full tw-object-cover tw-block tw-absolute tw-top-0 tw-left-0 tw-right-0 tw-bottom-0"
-                            />
+                        <div>
+                            {/* Ảnh chính */}
+                            <div className="tw-relative tw-aspect-[1/1] tw-mb-4 tw-border tw-rounded-lg tw-overflow-hidden">
+                                <img
+                                    src={`http://localhost:8000/storage/${mainImage?.image || product?.Image}`}
+                                    alt={product?.Name}
+                                    className="tw-w-full tw-h-full tw-object-cover tw-absolute tw-top-0 tw-left-0"
+                                />
+                            </div>
+
+                            {/* Ảnh con */}
+                            <div className="tw-grid tw-grid-cols-4 tw-gap-2">
+                                {thumbnailImages.map((img) => (
+                                    <div
+                                        key={img.id} // Sử dụng ID duy nhất của ảnh
+                                        className="tw-relative tw-pt-[100%] tw-border tw-rounded-lg tw-cursor-pointer tw-overflow-hidden"
+                                        onClick={() => handleClickThumbnail(img)}
+                                    >
+                                        <img
+                                            src={`http://localhost:8000/storage/${img.image}`}
+                                            alt={`Ảnh phụ ${img.id}`}
+                                            className="tw-w-full tw-h-full tw-object-cover tw-absolute tw-top-0 tw-left-0"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
 
