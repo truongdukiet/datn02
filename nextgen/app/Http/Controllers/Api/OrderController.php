@@ -1,5 +1,6 @@
 <?php
 namespace App\Http\Controllers\Api;
+use Illuminate\Support\Facades\Mail;
 
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
@@ -8,6 +9,9 @@ use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Voucher;
 use App\Models\Cart;
+use App\Models\CartItem;
+use App\Models\User;
+use App\Models\ProductVariant;
 class OrderController extends Controller
 {
     public function index()
@@ -27,11 +31,11 @@ class OrderController extends Controller
     {
         try {
             $order = Order::with(['user', 'voucher', 'paymentGateway', 'orderDetails.productVariant.product'])->find($id);
-            
+
             if (!$order) {
                 return response()->json(['success' => false, 'message' => 'Order not found'], 404);
             }
-            
+
             return response()->json(['success' => true, 'data' => $order]);
         } catch (\Exception $e) {
             return response()->json([
@@ -64,17 +68,17 @@ class OrderController extends Controller
             $voucher = null;
             if (!empty($validated['VoucherID'])) {
                 $voucher = Voucher::find($validated['VoucherID']);
-                
+
                 // Kiểm tra voucher hợp lệ
-                if (!$voucher || $voucher->Quantity <= 0 || 
-                    now() > $voucher->Expiry_date || 
+                if (!$voucher || $voucher->Quantity <= 0 ||
+                    now() > $voucher->Expiry_date ||
                     !$voucher->Status) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Voucher không hợp lệ hoặc đã hết hạn'
                     ], 400);
                 }
-                
+
                 // Giảm số lượng voucher
                 $voucher->decrement('Quantity');
             }
@@ -85,7 +89,7 @@ class OrderController extends Controller
             }
 
             // Tạo đơn hàng
-             $orderData = $validated;
+            $orderData = $validated;
             unset($orderData['order_details']);
             $order = Order::create($orderData);
 
@@ -96,20 +100,40 @@ class OrderController extends Controller
                     OrderDetail::create($detail);
                 }
             }
-            // xóa giỏ hàng
+
+            // Xóa giỏ hàng
             $cart = Cart::where('UserID', $validated['UserID'])->first();
             if ($cart) {
                 $cart->items()->delete();
             }
-            // Load thông tin đầy đủ để trả về
-            $order->load('orderDetails');
+
+            // Lấy thông tin user để gửi email
+            $user = User::find($validated['UserID']); // Sửa: lấy bằng UserID từ request
+
+            // Tạo URL xem đơn hàng
+            $orderUrl = "http://localhost:5173/myorder/{$order->OrderID}";
+
+            // Gửi mail xác nhận đơn hàng
+            Mail::send([], [], function ($message) use ($user, $order, $orderUrl) {
+                $message->to($user->Email)
+                        ->subject('Xác nhận đơn hàng #' . $order->OrderID)
+                        ->html("
+                            <p>Xin chào {$user->Fullname},</p>
+                            <p>Cảm ơn bạn đã đặt hàng tại cửa hàng chúng tôi.</p>
+                            <p>Mã đơn hàng: <strong>#{$order->OrderID}</strong></p>
+                            <p>Tổng giá trị: <strong>" . number_format($order->Total_amount) . " VNĐ</strong></p>
+                            <p>Bạn có thể theo dõi đơn hàng tại: <a href='{$orderUrl}'>{$orderUrl}</a></p>
+                            <p>Trân trọng,</p>
+                            <p>NextGen Team</p>
+                        ");
+            });
 
             return response()->json([
-                'success' => true, 
+                'success' => true,
                 'message' => 'Order created successfully',
                 'data' => $order
             ], 201);
-            
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -178,7 +202,7 @@ class OrderController extends Controller
             $order->delete();
 
             return response()->json(['success' => true, 'message' => 'Order deleted']);
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -199,7 +223,7 @@ class OrderController extends Controller
                 'success' => true,
                 'data' => $orders
             ]);
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -212,7 +236,7 @@ class OrderController extends Controller
     {
         try {
             $order = Order::find($orderId);
-            
+
             if (!$order) {
                 return response()->json([
                     'success' => false,
@@ -228,7 +252,7 @@ class OrderController extends Controller
                 'message' => 'Đã hủy đơn hàng thành công',
                 'data' => $order
             ]);
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
