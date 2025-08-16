@@ -5,15 +5,15 @@ import { Link, useLocation } from "react-router-dom";
 
 const ThankYou = () => {
   const location = useLocation();
-  const { 
-    order, 
-    orderDetails = [], 
-    voucher, 
-    discount = 0, 
+  const {
+    order,
+    orderDetails = [],
+    voucher,
+    discount = 0,
     totalAfterDiscount = 0,
     paymentMethod
   } = location.state || {};
-  
+
   // Nếu không có dữ liệu đơn hàng, điều hướng về trang chủ
   if (!order) {
     return <Navigate to="/" />;
@@ -60,10 +60,10 @@ const ThankYou = () => {
           </h1>
 
           <p className="tw-m-0 tw-text-[#1A1C20] tw-text-center">
-            Cảm ơn bạn đã lựa chọn mua sắm tại Interior Haven, đơn hàng của bạn
+            Cảm ơn bạn đã lựa chọn mua sắm tại Nextgen, đơn hàng của bạn
             đã được chuyển tới hệ thống xử lý đơn hàng. Trong quá trình xử lý
-            Interior Haven sẽ liên hệ lại nếu như cần thêm thông tin từ bạn và
-            bạn sẽ nhận được Email xác nhận đơn hàng từ Interior Haven.
+            chúng tôi sẽ liên hệ lại nếu như cần thêm thông tin từ bạn và
+            bạn sẽ nhận gọi qua số điện thoại để xác nhận đơn hàng từ Next Gen.
           </p>
 
           <section className="tw-border tw-border-solid tw-border-[#EEEEEE] tw-rounded tw-p-4 tw-mt-4 tw-flex tw-flex-col tw-items-center">
@@ -89,8 +89,8 @@ const ThankYou = () => {
 
             <div className="tw-border tw-border-solid tw-border-[#EEEEEE] tw-rounded tw-px-6 tw-py-3">
               {orderDetails.map((item) => (
-                <div 
-                  key={item.CartItemID || item.ProductVariantID} 
+                <div
+                  key={item.CartItemID || item.ProductVariantID}
                   className="tw-flex tw-items-center tw-gap-x-4 tw-border-x-0 tw-border-t-0 tw-py-4 [&:not(:last-child)]:tw-border-b [&:not(:last-child)]:tw-border-solid [&:not(:last-child)]:tw-border-[#EEEEEE]"
                 >
                   <img

@@ -41,6 +41,7 @@ class AuthController extends Controller
             'Email' => $request->Email,
             'Password' => Hash::make($request->Password),
             'email_verified_at' => null,
+            'Role' => 0,
         ]);
 
         $verificationToken = Str::random(64);
@@ -118,7 +119,7 @@ class AuthController extends Controller
                 'Email' => $user->Email,
                 'Phone' => $user->Phone,
                 'Address' => $user->Address,
-                'Role' => $user->Role
+                'Role' => $user->Role,
             ]
         ]);
     }

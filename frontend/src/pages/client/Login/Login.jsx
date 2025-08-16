@@ -20,7 +20,7 @@ const Login = () => {
     const token = localStorage.getItem("token");
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     if (token && user?.Role) {
-      if (user.Role === 1) {
+      if (user.Role == 1) {
         navigate("/admin/");
       } else {
         navigate("/");
@@ -38,7 +38,7 @@ const Login = () => {
 
       message.success("Đăng nhập thành công");
 
-      if (user.Role === 1) {
+      if (user.Role == 1) {
         navigate("/admin/");
       } else {
         navigate("/");

@@ -40,8 +40,9 @@ import EditCategory from "./pages/admin/categories/EditCategory";
 import AddCategory from "./pages/admin/categories/AddCategory"; // ✅ Import AddCategory
 const App = () => {
   const user = JSON.parse(localStorage.getItem("user"));
-  const isAdmin = user || user.Role == 1;
-
+  const isAdmin = user.Role == 1;
+  console.log(isAdmin);
+  console.log(user);
   // ✅ Route bảo vệ Admin
   const ProtectedAdminRoute = ({ children }) => {
     return isAdmin ? children : <Navigate to="/" />;

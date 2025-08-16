@@ -55,10 +55,10 @@ const Dashboard = () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         // Using a single endpoint for dashboard data
         const response = await axios.get(`${API_BASE_URL}/dashboard`);
-        
+
         setDashboardData({
           summary: response.data.summary,
           userGrowth: response.data.user_growth,
@@ -66,7 +66,7 @@ const Dashboard = () => {
           recentOrders: response.data.recent_orders,
           orderStatus: response.data.order_status
         });
-        
+
       } catch (err) {
         console.error('Failed to fetch dashboard data:', err);
         setError('Không thể tải dữ liệu dashboard. Vui lòng thử lại sau.');
@@ -155,31 +155,31 @@ const Dashboard = () => {
   return (
     <div className="container-fluid py-4">
       <h1 className="mb-4">Bảng Điều Khiển Quản Trị</h1>
-      
+
       {/* Summary Cards */}
       <div className="row mb-4">
         {[
-          { 
-            title: 'Tổng người dùng', 
-            value: dashboardData.summary.total_users, 
+          {
+            title: 'Tổng người dùng',
+            value: dashboardData.summary.total_users,
             icon: 'users',
             color: 'primary'
           },
-          { 
-            title: 'Tổng sản phẩm', 
-            value: dashboardData.summary.total_products, 
+          {
+            title: 'Tổng sản phẩm',
+            value: dashboardData.summary.total_products,
             icon: 'boxes',
             color: 'success'
           },
-          { 
-            title: 'Tổng đơn hàng', 
-            value: dashboardData.summary.total_orders, 
+          {
+            title: 'Tổng đơn hàng',
+            value: dashboardData.summary.total_orders,
             icon: 'shopping-cart',
             color: 'info'
           },
-          { 
-            title: 'Tổng doanh thu', 
-            value: dashboardData.summary.total_revenue.toLocaleString('vi-VN') + ' VNĐ', 
+          {
+            title: 'Tổng doanh thu',
+            value: dashboardData.summary.total_revenue.toLocaleString('vi-VN') + ' VNĐ',
             icon: 'dollar-sign',
             color: 'warning'
           }
@@ -214,7 +214,7 @@ const Dashboard = () => {
               <h6 className="m-0 font-weight-bold text-primary">Tăng trưởng người dùng</h6>
             </div>
             <div className="card-body">
-              <Line data={userGrowthChart} options={chartOptions} height={300} />
+              <Line data={userGrowthChart} options={chartOptions} height={100} />
             </div>
           </div>
         </div>
@@ -225,8 +225,8 @@ const Dashboard = () => {
               <h6 className="m-0 font-weight-bold text-primary">Doanh thu theo tháng</h6>
             </div>
             <div className="card-body">
-              <Bar 
-                data={revenueChart} 
+              <Bar
+                data={revenueChart}
                 options={{
                   ...chartOptions,
                   scales: {
@@ -237,8 +237,8 @@ const Dashboard = () => {
                       }
                     }
                   }
-                }} 
-                height={300} 
+                }}
+                height={100}
               />
             </div>
           </div>
@@ -259,8 +259,8 @@ const Dashboard = () => {
               <div className="mt-4 text-center small">
                 {Object.entries(dashboardData.orderStatus).map(([status, count]) => (
                   <span key={status} className="mr-3">
-                    <i 
-                      className="fas fa-circle" 
+                    <i
+                      className="fas fa-circle"
                       style={{ color: ORDER_STATUS[status]?.color || '#6c757d' }}
                     ></i> {ORDER_STATUS[status]?.label || status}: {count}
                   </span>
@@ -293,9 +293,9 @@ const Dashboard = () => {
                         <td>#{order.id}</td>
                         <td>{order.customer_name}</td>
                         <td>
-                          <span 
-                            className="badge" 
-                            style={{ 
+                          <span
+                            className="badge"
+                            style={{
                               backgroundColor: ORDER_STATUS[order.status]?.color || '#6c757d',
                               color: 'white'
                             }}
