@@ -8,6 +8,7 @@ import apiClient from "../../../api/api";
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedItems, setSelectedItems] = useState([]); // Thêm state cho các sản phẩm được chọn
   const user = JSON.parse(localStorage.getItem("user")); // Lấy thông tin người dùng từ localStorage
 
   // Kiểm tra nếu người dùng chưa đăng nhập
@@ -43,6 +44,8 @@ const Cart = () => {
         data: { ProductVariantID: productVariantId },
       });
       setCartItems(cartItems.filter(item => item.ProductVariantID !== productVariantId));
+      // Xóa sản phẩm khỏi danh sách chọn nếu có
+      setSelectedItems(selectedItems.filter(id => id !== productVariantId));
       message.success("Sản phẩm đã được xóa khỏi giỏ hàng.");
     } catch (error) {
       message.error("Có lỗi xảy ra khi xóa sản phẩm.");
@@ -71,6 +74,39 @@ const Cart = () => {
     }
   };
 
+  // Hàm xử lý chọn/bỏ chọn sản phẩm
+  const handleSelectItem = (productVariantId) => {
+    if (selectedItems.includes(productVariantId)) {
+      setSelectedItems(selectedItems.filter(id => id !== productVariantId));
+    } else {
+      setSelectedItems([...selectedItems, productVariantId]);
+    }
+  };
+
+  // Hàm chọn tất cả sản phẩm
+  const handleSelectAll = () => {
+    if (selectedItems.length === cartItems.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(cartItems.map(item => item.ProductVariantID));
+    }
+  };
+
+  // Tính tổng tiền chỉ cho các sản phẩm được chọn
+  const selectedTotalAmount = cartItems.reduce((total, item) => {
+    if (selectedItems.includes(item.ProductVariantID)) {
+      const price = item.product_variant?.Price || 0;
+      const quantity = item.Quantity || 0;
+      return total + (price * quantity);
+    }
+    return total;
+  }, 0);
+
+  // Lấy danh sách sản phẩm được chọn để thanh toán
+  const getSelectedItems = () => {
+    return cartItems.filter(item => selectedItems.includes(item.ProductVariantID));
+  };
+
   const totalAmount = cartItems.reduce((total, item) => {
     const price = item.product_variant?.Price || 0;
     const quantity = item.Quantity || 0;
@@ -94,15 +130,22 @@ const Cart = () => {
             <div className="tw-grid tw-grid-cols-12 tw-gap-6 tw-mt-8">
               <div className="tw-col-span-7">
                 <div className="tw-border tw-border-solid tw-border-[#EEEEEE] tw-rounded tw-p-4">
-                  {/* <Checkbox>
-                    <p className="tw-font-bold tw-text-xl tw-text-[#1A1C20] tw-m-0">Chọn tất cả</p>
-                  </Checkbox> */}
+                  <Checkbox
+                    checked={selectedItems.length === cartItems.length && cartItems.length > 0}
+                    indeterminate={selectedItems.length > 0 && selectedItems.length < cartItems.length}
+                    onChange={handleSelectAll}
+                  >
+                    <p className="tw-font-bold tw-text-xl tw-text-[#1A1C20] tw-m-0">Chọn tất cả ({selectedItems.length}/{cartItems.length})</p>
+                  </Checkbox>
                 </div>
 
                 <div className="tw-mt-4 tw-flex tw-flex-col tw-gap-y-4">
                   {cartItems.map(item => (
                     <section key={item.CartItemID} className="tw-rounded tw-border tw-border-solid tw-border-[#EEEEEE] tw-p-4 tw-flex tw-items-center tw-gap-4">
-                      <Checkbox />
+                      <Checkbox
+                        checked={selectedItems.includes(item.ProductVariantID)}
+                        onChange={() => handleSelectItem(item.ProductVariantID)}
+                      />
                       <img
                         src={item.product_variant?.product?.Image ? `http://localhost:8000/storage/${item.product_variant.product.Image}` : "default_image.jpg"}
                         alt={item.product_variant?.product?.Name || "Không có tên"}
@@ -150,22 +193,36 @@ const Cart = () => {
                     <div className="tw-flex tw-items-center tw-justify-between">
                       <p className="tw-m-0">Tổng đơn hàng</p>
                       <p className="tw-m-0 tw-font-bold tw-text-xl tw-text-[#1A1C20]">
-                        {formatPrice(totalAmount)}
+                        {formatPrice(selectedItems.length > 0 ? selectedTotalAmount : totalAmount)}
+                      </p>
+                    </div>
+                    <div className="tw-flex tw-items-center tw-justify-between">
+                      <p className="tw-m-0">Số sản phẩm</p>
+                      <p className="tw-m-0 tw-text-[#1A1C20]">
+                        {selectedItems.length > 0 ? `${selectedItems.length} sản phẩm được chọn` : `${cartItems.length} sản phẩm`}
                       </p>
                     </div>
                   </div>
                   <hr />
-                   <Link
+                  <Link
                     to="/checkout"
-                    state={{ 
-                      cartItems: cartItems, // Truyền toàn bộ mảng cartItems
-                      totalAmount: totalAmount // Tổng tiền đã tính
+                    state={{
+                      cartItems: selectedItems.length > 0 ? getSelectedItems() : cartItems,
+                      totalAmount: selectedItems.length > 0 ? selectedTotalAmount : totalAmount
                     }}
-                    className="tw-bg-[#99CCD0] tw-text-white tw-font-medium tw-px-4 tw-h-12 tw-uppercase tw-cursor-pointer tw-flex tw-items-center tw-justify-center tw-w-full tw-mt-6"
+                    className={`tw-bg-[#99CCD0] tw-text-white tw-font-medium tw-px-4 tw-h-12 tw-uppercase tw-flex tw-items-center tw-justify-center tw-w-full tw-mt-6 ${
+                      cartItems.length === 0 ? "tw-opacity-50 tw-cursor-not-allowed" : "tw-cursor-pointer"
+                    }`}
+                    onClick={(e) => {
+                      if (cartItems.length === 0) {
+                        e.preventDefault();
+                        message.warning("Giỏ hàng của bạn đang trống");
+                      }
+                    }}
                   >
                     Thanh toán
                   </Link>
-                  <Link className="tw-flex tw-items-center tw-justify-center tw-gap-x-2 tw-text-[#1A1C20] tw-mt-6">
+                  <Link to="/" className="tw-flex tw-items-center tw-justify-center tw-gap-x-2 tw-text-[#1A1C20] tw-mt-6">
                     <div className="tw-text-sm tw-text-[#1A1C20]"><i className="fa-solid fa-chevron-left"></i></div>
                     <p className="tw-m-0 tw-text-[#1A1C20] tw-font-normal">Quay lại mua hàng</p>
                   </Link>
