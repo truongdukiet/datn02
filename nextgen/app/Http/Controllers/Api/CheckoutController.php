@@ -15,6 +15,9 @@ use App\Models\ProductVariant;
 use App\Models\CartItem;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use App\Models\User;
+
+use Illuminate\Support\Facades\Mail;
 
 class CheckoutController extends Controller
 {
@@ -310,6 +313,26 @@ class CheckoutController extends Controller
             \Log::info('Full Payment URL: ' . $vnp_Url);
             \Log::info('===============================');
 
+// Lấy thông tin user để gửi email
+            $user = User::find($validated['UserID']); // Sửa: lấy bằng UserID từ request
+
+            // Tạo URL xem đơn hàng
+            $orderUrl = "http://localhost:5173/myorder/{$order->OrderID}";
+
+            // Gửi mail xác nhận đơn hàng
+            Mail::send([], [], function ($message) use ($user, $order, $orderUrl) {
+                $message->to($user->Email)
+                        ->subject('Xác nhận đơn hàng #' . $order->OrderID)
+                        ->html("
+                            <p>Xin chào {$user->Fullname},</p>
+                            <p>Cảm ơn bạn đã đặt hàng tại cửa hàng chúng tôi.</p>
+                            <p>Mã đơn hàng: <strong>#{$order->OrderID}</strong></p>
+                            <p>Tổng giá trị: <strong>" . number_format($order->Total_amount) . " VNĐ</strong></p>
+                            <p>Bạn có thể theo dõi đơn hàng tại: <a href='{$orderUrl}'>{$orderUrl}</a></p>
+                            <p>Trân trọng,</p>
+                            <p>NextGen Team</p>
+                        ");
+            });
 
             return response()->json([
                 'success' => true,
