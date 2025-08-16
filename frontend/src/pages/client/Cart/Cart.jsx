@@ -94,9 +94,9 @@ const Cart = () => {
             <div className="tw-grid tw-grid-cols-12 tw-gap-6 tw-mt-8">
               <div className="tw-col-span-7">
                 <div className="tw-border tw-border-solid tw-border-[#EEEEEE] tw-rounded tw-p-4">
-                  <Checkbox>
+                  {/* <Checkbox>
                     <p className="tw-font-bold tw-text-xl tw-text-[#1A1C20] tw-m-0">Chọn tất cả</p>
-                  </Checkbox>
+                  </Checkbox> */}
                 </div>
 
                 <div className="tw-mt-4 tw-flex tw-flex-col tw-gap-y-4">

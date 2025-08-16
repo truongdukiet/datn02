@@ -149,4 +149,18 @@ export const getCartItems = async () => {
     throw error;
   }
 };
+
+// apiClient.interceptors.request.use(request => {
+//   console.log("Bắt đầu gửi request:", request);
+//   return request;
+// });
+
+// apiClient.interceptors.response.use(response => {
+//   console.log("Nhận response:", response);
+//   return response;
+// }, error => {
+//   console.error("Lỗi response:", error);
+//   return Promise.reject(error);
+// });
+
 export default apiClient;

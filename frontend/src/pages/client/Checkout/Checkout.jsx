@@ -15,15 +15,14 @@ const Checkout = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
-
   // State cho thông tin giao hàng
-  const [receiverName, setReceiverName] = useState(user?.FullName || "");
+  const [receiverName, setReceiverName] = useState(user?.Fullname || "");
   const [receiverPhone, setReceiverPhone] = useState(user?.Phone || "");
-  const [address, setAddress] = useState("");
+  const [address, setAddress] = useState(user?.Address || "");
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [paymentId, setPaymentId] = useState(null);
   const [loading, setLoading] = useState(false);
-  
+
   // State cho voucher và giỏ hàng
   const [vouchers, setVouchers] = useState([]);
   const [selectedVoucher, setSelectedVoucher] = useState(null);

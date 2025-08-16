@@ -20,6 +20,7 @@ import ForgotPassword from "./pages/client/ForgotPassword/ForgotPassword";
 import ResetPassword from "./pages/client/ResetPassword/ResetPassword";
 import Checkout from "./pages/client/Checkout/Checkout";
 import Cart from "./pages/client/Cart/Cart";
+import ThankYouPay from "./pages/client/ThankYou/ThankYouPay";
 // ✅ Favorites & Profile
 import Favorites from "./pages/client/Favorites/Favorites";
 import ProfilePage from "./pages/client/ProfilePage/ProfilePage";
@@ -85,6 +86,7 @@ const App = () => {
               ),
             },
             { path: "thank-you", element: <ThankYou /> },
+            { path: "thank-you-pay", element: <ThankYouPay /> },
 
             // ✅ Favorites
             { path: "favorites", element: <Favorites /> },

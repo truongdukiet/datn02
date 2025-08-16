@@ -91,18 +91,18 @@ const AdminDashboard = () => {
     datasets: [{
       label: 'Người dùng mới',
       data: dashboardData.userGrowth.map(item => item.count),
-      backgroundColor: 'rgba(54, 162, 235, 0.5)',
+      backgroundColor: 'rgba(54, 162, 235, 0.8)',
       borderColor: 'rgba(54, 162, 235, 1)',
-      borderWidth: 1,
-      tension: 0.1
+      borderWidth: 1
     }]
   };
 
-  const revenueChart = {
-    labels: dashboardData.revenueData.map(item => item.month),
+  // Dữ liệu biểu đồ tổng doanh thu
+  const totalRevenueChart = {
+    labels: ['Tổng doanh thu'],
     datasets: [{
-      label: 'Doanh thu (VND)',
-      data: dashboardData.revenueData.map(item => item.amount),
+      label: 'Tổng doanh thu (VND)',
+      data: [dashboardData.summary.total_revenue],
       backgroundColor: 'rgba(75, 192, 192, 0.5)',
       borderColor: 'rgba(75, 192, 192, 1)',
       borderWidth: 1
@@ -142,18 +142,24 @@ const AdminDashboard = () => {
 
   return (
     <div className="container-fluid py-4">
-      <h1 className="mb-4">Bảng Điều Khiển Quản Trị</h1>
+      <h1 className="mb-4 text-primary">Bảng Điều Khiển Quản Trị</h1>
 
-      {/* Summary Cards */}
+      {/* Summary Cards đã được cập nhật */}
       <div className="row mb-4">
         {[
           { title: 'Tổng người dùng', value: dashboardData.summary.total_users, icon: 'users', color: 'primary' },
           { title: 'Tổng sản phẩm', value: dashboardData.summary.total_products, icon: 'boxes', color: 'success' },
           { title: 'Tổng đơn hàng', value: dashboardData.summary.total_orders, icon: 'shopping-cart', color: 'info' },
-          { title: 'Tổng doanh thu', value: dashboardData.summary.total_revenue?.toLocaleString('vi-VN') + ' VNĐ', icon: 'dollar-sign', color: 'warning' }
+          // Card "Doanh thu tháng này" đã bị xóa hoàn toàn khỏi danh sách
+          {
+            title: 'Tổng doanh thu',
+            value: dashboardData.summary.total_revenue?.toLocaleString('vi-VN') + ' VNĐ',
+            icon: 'dollar-sign',
+            color: 'warning'
+          }
         ].map((card, index) => (
           <div key={index} className="col-xl-3 col-md-6 mb-4">
-            <div className={`card border-left-${card.color} shadow h-100 py-2`}>
+            <div className={`card border-left-${card.color} shadow h-100 py-2 rounded`}>
               <div className="card-body d-flex justify-content-between align-items-center">
                 <div>
                   <div className={`text-xs font-weight-bold text-${card.color} text-uppercase mb-1`}>
@@ -173,17 +179,23 @@ const AdminDashboard = () => {
       {/* Charts */}
       <div className="row mb-4">
         <div className="col-xl-6">
-          <div className="card shadow mb-4">
-            <div className="card-header py-3"><h6 className="m-0 font-weight-bold text-primary">Tăng trưởng người dùng</h6></div>
-            <div className="card-body"><Line data={userGrowthChart} options={chartOptions} height={300} /></div>
+          <div className="card shadow rounded mb-4">
+            <div className="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+              <h6 className="m-0 font-weight-bold text-primary">Tăng trưởng người dùng</h6>
+            </div>
+            <div className="card-body">
+              <Bar data={userGrowthChart} options={chartOptions} height={200} />
+            </div>
           </div>
         </div>
 
         <div className="col-xl-6">
-          <div className="card shadow mb-4">
-            <div className="card-header py-3"><h6 className="m-0 font-weight-bold text-primary">Doanh thu theo tháng</h6></div>
+          <div className="card shadow rounded mb-4">
+            <div className="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+              <h6 className="m-0 font-weight-bold text-primary">Tổng doanh thu</h6>
+            </div>
             <div className="card-body">
-              <Bar data={revenueChart} options={{
+              <Bar data={totalRevenueChart} options={{
                 ...chartOptions,
                 scales: {
                   y: {
@@ -191,7 +203,7 @@ const AdminDashboard = () => {
                     ticks: { callback: value => value.toLocaleString('vi-VN') + ' VNĐ' }
                   }
                 }
-              }} height={300} />
+              }} height={200} />
             </div>
           </div>
         </div>
@@ -201,8 +213,10 @@ const AdminDashboard = () => {
       <div className="row">
         {/* Pie Chart */}
         <div className="col-xl-5">
-          <div className="card shadow mb-4">
-            <div className="card-header py-3 bg-white"><h6 className="m-0 font-weight-bold text-primary">Phân bố trạng thái đơn hàng</h6></div>
+          <div className="card shadow rounded mb-4">
+            <div className="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+              <h6 className="m-0 font-weight-bold text-primary">Phân bố trạng thái đơn hàng</h6>
+            </div>
             <div className="card-body">
               <Pie data={orderStatusChart} options={{
                 plugins: {
@@ -224,14 +238,15 @@ const AdminDashboard = () => {
 
         {/* Recent Orders */}
         <div className="col-xl-7">
-          <div className="card shadow mb-4">
-            <div className="card-header py-3"><h6 className="m-0 font-weight-bold text-primary">Đơn hàng gần đây</h6></div>
+          <div className="card shadow rounded mb-4">
+            <div className="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+              <h6 className="m-0 font-weight-bold text-primary">Đơn hàng gần đây</h6>
+            </div>
             <div className="card-body table-responsive">
-              <table className="table table-bordered" width="100%">
+              <table className="table table-bordered table-hover" width="100%">
                 <thead>
                   <tr>
                     <th>Mã đơn</th>
-                    <th>Khách hàng</th>
                     <th>Trạng thái</th>
                     <th>Tổng tiền</th>
                     <th>Ngày tạo</th>
@@ -241,8 +256,6 @@ const AdminDashboard = () => {
                   {dashboardData.recentOrders.length > 0 ? dashboardData.recentOrders.map(order => (
                     <tr key={order.id}>
                       <td>#{order.id}</td>
-                      {/* ✅ Cập nhật: Thêm giá trị mặc định nếu customer_name không tồn tại */}
-                      <td>{order.customer_name || 'Khách vãng lai'}</td>
                       <td>
                         <span className="badge" style={{
                           backgroundColor: ORDER_STATUS[order.status]?.color || '#6c757d',
@@ -255,7 +268,7 @@ const AdminDashboard = () => {
                       <td>{new Date(order.created_at).toLocaleDateString('vi-VN')}</td>
                     </tr>
                   )) : (
-                    <tr><td colSpan="5" className="text-center">Không có đơn hàng nào gần đây.</td></tr>
+                    <tr><td colSpan="4" className="text-center">Không có đơn hàng nào gần đây.</td></tr>
                   )}
                 </tbody>
               </table>

@@ -28,7 +28,14 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 // Các API Route cho Frontend React.js (News)
 // Các route này sẽ trả về dữ liệu JSON cho ứng dụng React.js của bạn
 
-
+// resources/routes/web.php
+Route::get('/orders/{orderId}', [CheckoutController::class, 'getOrderDetails'])
+     ->where('orderId', '[0-9]+');
+// Thêm đoạn code này vào cuối file routes/web.php
+Route::get('/thank-you', function () {
+    // Đây sẽ tìm kiếm một view có tên là 'thank-you.blade.php'
+    return view('thank-you');
+})->name('thank-you');
 // Thêm các API Route cho Dashboard Admin
 Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function () {
     // Route để lấy các số liệu thống kê dashboard
