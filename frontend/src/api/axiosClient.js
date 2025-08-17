@@ -51,34 +51,31 @@ axiosClient.interceptors.response.use(
 // Categories
 export const fetchCategories = () => axiosClient.get("/categories");
 export const addCategory = (data) => axiosClient.post("/categories", data);
-export const updateCategory = (id, data) =>
-  axiosClient.put(`/categories/${id}`, data);
-export const deleteCategory = (id) =>
-  axiosClient.delete(`/categories/${id}`);
+export const updateCategory = (id, data) => axiosClient.put(`/categories/${id}`, data);
+export const deleteCategory = (id) => axiosClient.delete(`/categories/${id}`);
 
 // Vouchers
 export const fetchVouchers = () => axiosClient.get("/vouchers");
 export const addVoucher = (data) => axiosClient.post("/vouchers", data);
-export const updateVoucher = (id, data) =>
-  axiosClient.put(`/vouchers/${id}`, data);
-export const deleteVoucher = (id) =>
-  axiosClient.delete(`/vouchers/${id}`);
+export const updateVoucher = (id, data) => axiosClient.put(`/vouchers/${id}`, data);
+export const deleteVoucher = (id) => axiosClient.delete(`/vouchers/${id}`);
 
 // News
 export const fetchNews = () => axiosClient.get("/news");
 export const addNews = (data) => axiosClient.post("/news", data);
-export const updateNews = (id, data) =>
-  axiosClient.put(`/news/${id}`, data);
-export const deleteNews = (id) =>
-  axiosClient.delete(`/news/${id}`);
-export const getOrdersByUser = (userId) => {
-  return axiosClient.get(`/orders/user/${userId}`);
-};
+export const updateNews = (id, data) => axiosClient.put(`/news/${id}`, data);
+export const deleteNews = (id) => axiosClient.delete(`/news/${id}`);
 
-export const cancelOrder = (orderId) => {
-  return axiosClient.put(`/orders/${orderId}/cancel`);
-};
-export const getOrderDetail = (orderId) => {
-    return axiosClient.get(`/orders/${orderId}`);
-};
+// Orders
+export const getOrdersByUser = (userId) => axiosClient.get(`/orders/user/${userId}`);
+export const cancelOrder = (orderId) => axiosClient.put(`/orders/${orderId}/cancel`);
+export const getOrderDetail = (orderId) => axiosClient.get(`/orders/${orderId}`);
+
+// ✅ Reviews (đánh giá)
+export const getReviews = () => axiosClient.get("/reviews");
+export const submitReview = (data) => axiosClient.post("/reviews", data);
+export const updateReview = (id, data) => axiosClient.put(`/reviews/${id}`, data);
+export const deleteReview = (id) => axiosClient.delete(`/reviews/${id}`);
+
+// ✅ Giữ nguyên export default
 export default axiosClient;

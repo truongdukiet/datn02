@@ -38,11 +38,14 @@ import AdminVoucher from "./pages/admin/vouchers/AdminVoucher";
 import AdminNews from "./pages/admin/news/AdminNews";
 import EditCategory from "./pages/admin/categories/EditCategory";
 import AddCategory from "./pages/admin/categories/AddCategory"; // ✅ Import AddCategory
+import AdminReview from "./pages/admin/reviews/AdminReview"; // ✅ Import quản lý đánh giá
+
 const App = () => {
   const user = JSON.parse(localStorage.getItem("user"));
-const isAdmin = user?.Role == 1;
+  const isAdmin = user?.Role == 1;
   console.log(isAdmin);
   console.log(user);
+
   // ✅ Route bảo vệ Admin
   const ProtectedAdminRoute = ({ children }) => {
     return isAdmin ? children : <Navigate to="/" />;
@@ -96,26 +99,27 @@ const isAdmin = user?.Role == 1;
             {
               path: "profile",
               element: (
-
                 <ProtectedUserRoute>
                   <ProfilePage />
                 </ProtectedUserRoute>
               ),
-            },{
+            },
+            {
               path: "myorder",
               element: (
                 <ProtectedUserRoute>
                   <MyOrder />
                 </ProtectedUserRoute>
               ),
-            },{
+            },
+            {
               path: "myorder/:orderId",
               element: (
                 <ProtectedUserRoute>
                   <MyOrderDetail />
                 </ProtectedUserRoute>
               ),
-            }
+            },
           ],
         },
 
@@ -165,20 +169,21 @@ const isAdmin = user?.Role == 1;
               ),
             },
             {
-              path: "add-category", // ✅ Route mới cho AddCategory
+              path: "add-category",
               element: (
                 <ProtectedAdminRoute>
                   <AddCategory />
                 </ProtectedAdminRoute>
               ),
             },
-          {  path: "edit-category/:id", // ✅ Route mới cho EditCategory
-      element: (
-        <ProtectedAdminRoute>
-          <EditCategory />
-        </ProtectedAdminRoute>
-      ),
-    },
+            {
+              path: "edit-category/:id",
+              element: (
+                <ProtectedAdminRoute>
+                  <EditCategory />
+                </ProtectedAdminRoute>
+              ),
+            },
             {
               path: "vouchers",
               element: (
@@ -192,6 +197,15 @@ const isAdmin = user?.Role == 1;
               element: (
                 <ProtectedAdminRoute>
                   <AdminNews />
+                </ProtectedAdminRoute>
+              ),
+            },
+            // ✅ Thêm route quản lý đánh giá
+            {
+              path: "reviews",
+              element: (
+                <ProtectedAdminRoute>
+                  <AdminReview />
                 </ProtectedAdminRoute>
               ),
             },

@@ -238,7 +238,7 @@ const Dashboard = () => {
                     }
                   }
                 }}
-                height={100}
+                height={70}
               />
             </div>
           </div>

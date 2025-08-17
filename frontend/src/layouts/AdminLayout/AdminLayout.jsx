@@ -9,6 +9,7 @@ import {
   FaTags,
   FaGift,
   FaNewspaper,
+  FaStar,
   FaSignOutAlt
 } from 'react-icons/fa';
 
@@ -17,7 +18,6 @@ const AdminLayout = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Lấy thông tin người dùng từ localStorage
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
@@ -39,7 +39,6 @@ const AdminLayout = () => {
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
-        {/* Đã bỏ ảnh, chỉ giữ lại tên và vai trò */}
         <div className="user-profile">
           <h4 className="user-name">{user?.name || 'Admin'}</h4>
           <p className="user-role">Quản trị viên</p>
@@ -79,6 +78,11 @@ const AdminLayout = () => {
             <li>
               <Link to="/admin/news">
                 <FaNewspaper /> Quản lý tin tức
+              </Link>
+            </li>
+            <li>
+              <Link to="/admin/reviews">
+                <FaStar /> Quản lý đánh giá
               </Link>
             </li>
             <li>
