@@ -38,6 +38,7 @@ import AdminVoucher from "./pages/admin/vouchers/AdminVoucher";
 import AdminNews from "./pages/admin/news/AdminNews";
 import EditCategory from "./pages/admin/categories/EditCategory";
 import AddCategory from "./pages/admin/categories/AddCategory"; // ✅ Import AddCategory
+import AdminProductVariant from "./pages/admin/ProductVariantList"; // ✅ Import ProductVariantList
 const App = () => {
   const user = JSON.parse(localStorage.getItem("user"));
 const isAdmin = user?.Role == 1;
@@ -192,6 +193,14 @@ const isAdmin = user?.Role == 1;
               element: (
                 <ProtectedAdminRoute>
                   <AdminNews />
+                </ProtectedAdminRoute>
+              ),
+            },
+            {
+              path: "product-variants/:productId?",
+              element: (
+                <ProtectedAdminRoute>
+                  <AdminProductVariant />
                 </ProtectedAdminRoute>
               ),
             },
