@@ -293,16 +293,18 @@ class OrderController extends Controller
                     'payment_method' => $order->paymentGateway->Name ?? null,
                     'voucher_code' => $order->voucher->Code ?? null
                 ],
-                'order_details' => $orderDetails->map(function($detail) {
-                    return [
-                        'product_name' => $detail->productVariant->product->Name ?? null,
-                        'variant_name' => $detail->productVariant->Name ?? null,
-                        'quantity' => $detail->Quantity,
-                        'Unit_price' => $detail->Unit_price,
-                        'Subtotal' => $detail->Subtotal,
-                        'Image' => $detail->productVariant->product->Image ?? null
-                    ];
-                })
+              'order_details' => $orderDetails->map(function($detail) {
+                return [
+                    'OrderDetailID'    => $detail->OrderDetailID,
+                    'ProductVariantID' => $detail->ProductVariantID,
+                    'product_name'     => $detail->productVariant->product->Name ?? null,
+                    'variant_name'     => $detail->productVariant->Name ?? null,
+                    'quantity'         => $detail->Quantity,
+                    'Unit_price'       => $detail->Unit_price,
+                    'Subtotal'         => $detail->Subtotal,
+                    'Image'            => $detail->productVariant->product->Image ?? null
+                ];
+            })
             ];
 
             return response()->json([

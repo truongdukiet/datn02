@@ -1,6 +1,7 @@
+// src/pages/client/Profile/MyOrderDetail.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getOrderDetail, cancelOrder } from '../../../api/axiosClient';
+import { getOrderDetail, cancelOrder, submitReview } from "../../../api/axiosClient"; // đường dẫn chuẩn
 import { message, Descriptions, Button, Spin, Tag, Divider, Image, Rate, Modal, Form, Input } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 
@@ -17,25 +18,17 @@ const MyOrderDetail = () => {
     const fetchOrderDetail = async () => {
         try {
             const response = await getOrderDetail(orderId);
-            console.log('Order detail response:', response.data);
-
             if (response.data.success) {
-                // Sắp xếp order_details để sản phẩm mới nhất lên đầu
                 const sortedOrder = {
                     ...response.data.data,
-                    order_details: [...(response.data.data.order_details || [])].sort((a, b) => {
-                        return new Date(b.created_at || b.CreatedAt) - new Date(a.created_at || a.CreatedAt);
-                    }),
-                    orderDetails: [...(response.data.data.orderDetails || [])].sort((a, b) => {
-                        return new Date(b.created_at || b.CreatedAt) - new Date(a.created_at || a.CreatedAt);
-                    })
+                    order_details: [...(response.data.data.order_details || [])].sort((a, b) => new Date(b.created_at || b.CreatedAt) - new Date(a.created_at || a.CreatedAt)),
+                    orderDetails: [...(response.data.data.orderDetails || [])].sort((a, b) => new Date(b.created_at || b.CreatedAt) - new Date(a.created_at || a.CreatedAt))
                 };
                 setOrder(sortedOrder);
             } else {
                 setError(response.data.message || 'Không thể tải chi tiết đơn hàng');
             }
         } catch (err) {
-            console.error('Lỗi khi tải chi tiết đơn hàng:', err);
             setError(err.response?.data?.message || 'Lỗi kết nối server');
         } finally {
             setLoading(false);
@@ -47,12 +40,11 @@ const MyOrderDetail = () => {
             const response = await cancelOrder(orderId);
             if (response.data.success) {
                 message.success('Đã hủy đơn hàng thành công');
-                fetchOrderDetail(); // Refresh data
+                fetchOrderDetail();
             } else {
                 message.error(response.data.message || 'Hủy đơn hàng thất bại');
             }
         } catch (err) {
-            console.error('Lỗi khi hủy đơn hàng:', err);
             message.error(err.response?.data?.message || 'Có lỗi xảy ra');
         }
     };
@@ -65,13 +57,19 @@ const MyOrderDetail = () => {
     const handleReviewSubmit = async () => {
         try {
             const values = await form.validateFields();
-            console.log('Review submitted:', values);
-            // Gọi API submit đánh giá ở đây
+            const payload = {
+                OrderDetailID: currentProduct.OrderDetailID,
+                ProductVariantID: currentProduct.ProductVariantID,
+                Star_rating: values.rating,
+                Comment: values.comment
+            };
+            await submitReview(payload);
             message.success('Đã gửi đánh giá thành công');
             setReviewModalVisible(false);
             form.resetFields();
         } catch (err) {
             console.error('Lỗi khi gửi đánh giá:', err);
+            message.error('Gửi đánh giá thất bại');
         }
     };
 
@@ -83,7 +81,8 @@ const MyOrderDetail = () => {
     if (error) return <div style={{ color: 'red', textAlign: 'center', marginTop: '20px' }}>Lỗi: {error}</div>;
     if (!order) return <div style={{ textAlign: 'center', marginTop: '20px' }}>Không tìm thấy đơn hàng</div>;
 
-    const canReview = order.order_info?.status === 'completed' || order.Status === 'completed';
+    const statusText = (order?.order_info?.status || order?.Status || '').toLowerCase();
+    const canReview = ['completed', 'shipped', 'delivered', 'đã giao', 'đã hoàn thành'].includes(statusText);
 
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
@@ -120,20 +119,14 @@ const MyOrderDetail = () => {
                     {order.order_info?.voucher_code || order.voucher?.Code || 'Không sử dụng'}
                 </Descriptions.Item>
                 <Descriptions.Item label="Tổng tiền">
-                    {new Intl.NumberFormat('vi-VN', {
-                        style: 'currency',
-                        currency: 'VND'
-                    }).format(order.order_info?.total_amount || order.Total_amount)}
+                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.order_info?.total_amount || order.Total_amount)}
                 </Descriptions.Item>
             </Descriptions>
 
             <Divider orientation="left">Danh sách sản phẩm</Divider>
 
             <div style={{ marginTop: '20px' }}>
-                {(order.order_details || order.orderDetails || [])
-                    .sort((a, b) => {
-                        return new Date(b.created_at || b.CreatedAt) - new Date(a.created_at || a.CreatedAt);
-                    })
+                {(order.order_details || order.orderDetails || []).sort((a, b) => new Date(b.created_at || b.CreatedAt) - new Date(a.created_at || a.CreatedAt))
                     .map((item, index) => (
                         <div key={index} style={{
                             display: 'flex',
@@ -158,31 +151,20 @@ const MyOrderDetail = () => {
                                 </div>
                                 <div>Số lượng: {item.quantity || item.Quantity}</div>
                                 <div>
-                                    Đơn giá: {new Intl.NumberFormat('vi-VN', {
-                                        style: 'currency',
-                                        currency: 'VND'
-                                    }).format(item.unit_price || item.Unit_price)}
+                                    Đơn giá: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.unit_price || item.Unit_price)}
                                 </div>
                                 <div style={{ fontWeight: 'bold', marginTop: '5px' }}>
-                                    Thành tiền: {new Intl.NumberFormat('vi-VN', {
-                                        style: 'currency',
-                                        currency: 'VND'
-                                    }).format(item.subtotal || item.Subtotal)}
+                                    Thành tiền: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.subtotal || item.Subtotal)}
                                 </div>
 
                                 {canReview && (
-                                    <Button
-                                        type="link"
-                                        style={{ padding: 0, marginTop: '10px' }}
-                                        onClick={() => handleReviewClick(item)}
-                                    >
+                                    <Button type="link" style={{ padding: 0, marginTop: '10px' }} onClick={() => handleReviewClick(item)}>
                                         Đánh giá sản phẩm
                                     </Button>
                                 )}
                             </div>
                         </div>
-                    ))
-                }
+                    ))}
             </div>
 
             {(order.order_info?.status === 'pending' || order.Status === 'pending') && (
