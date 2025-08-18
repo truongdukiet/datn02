@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getOrderDetail, cancelOrder, submitReview } from "../../../api/axiosClient";
-import { message, Descriptions, Button, Spin, Tag, Divider, Image, Rate, Modal, Form, Input } from 'antd';
+import { message, Descriptions, Button, Spin, Tag, Divider, Image, Rate, Modal, Form, Input, Steps } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
+
+const { Step } = Steps;
 
 const MyOrderDetail = () => {
     const { orderId } = useParams();
@@ -78,8 +80,7 @@ const MyOrderDetail = () => {
 
     const formatOrderDate = (dateString) => {
         if (!dateString) {
-            // Nếu không có ngày, lấy ngày hiện tại
-            dateString = new Date().toISOString();
+            return 'Đang cập nhật';
         }
 
         const date = new Date(dateString);
@@ -97,12 +98,33 @@ const MyOrderDetail = () => {
         return `${day}/${month}/${year} ${hours}:${minutes}`;
     };
 
+    const statusText = (order?.order_info?.status || order?.Status || '').toLowerCase();
+    const canReview = ['completed', 'shipped', 'delivered', 'đã giao', 'đã hoàn thành'].includes(statusText);
+
+    // Xác định trạng thái hiện tại cho Steps
+    const getStepStatus = () => {
+        switch (statusText) {
+            case 'pending':
+                return 0;
+            case 'processing':
+                return 1;
+            case 'shipped':
+                return 2;
+            case 'delivered':
+            case 'completed':
+                return 3;
+            default:
+                return -1; // Đã hủy hoặc không xác định
+        }
+    };
+
+    // Kiểm tra nếu đơn hàng bị hủy
+    const isCancelled = statusText === 'cancelled';
+
+    // Logic hiển thị
     if (loading) return <Spin size="large" style={{ display: 'flex', justifyContent: 'center', marginTop: '50px' }} />;
     if (error) return <div style={{ color: 'red', textAlign: 'center', marginTop: '20px' }}>Lỗi: {error}</div>;
     if (!order) return <div style={{ textAlign: 'center', marginTop: '20px' }}>Không tìm thấy đơn hàng</div>;
-
-    const statusText = (order?.order_info?.status || order?.Status || '').toLowerCase();
-    const canReview = ['completed', 'shipped', 'delivered', 'đã giao', 'đã hoàn thành'].includes(statusText);
 
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
@@ -142,6 +164,19 @@ const MyOrderDetail = () => {
                     {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.order_info?.total_amount || order.Total_amount)}
                 </Descriptions.Item>
             </Descriptions>
+
+            <Divider />
+
+            {/* Thêm Steps Component */}
+            <h3 style={{ marginBottom: '24px', textAlign: 'center' }}>Trạng thái đơn hàng</h3>
+            <div style={{ marginBottom: '40px' }}>
+                <Steps current={getStepStatus()} status={isCancelled ? 'error' : 'process'}>
+                    <Step title="Chờ xử lý" description="Đơn hàng đang chờ xác nhận." />
+                    <Step title="Đang xử lý" description="Đơn hàng đang được chuẩn bị." />
+                    <Step title="Đang giao hàng" description="Đơn hàng đang được vận chuyển." />
+                    <Step title="Đã hoàn thành" description="Đơn hàng đã được giao thành công." />
+                </Steps>
+            </div>
 
             <Divider orientation="left">Danh sách sản phẩm</Divider>
 
