@@ -20,11 +20,30 @@ import { ArrowLeftOutlined } from '@ant-design/icons';
 import { getReviews, updateReview, deleteReview } from "../../../api/axiosClient";
 
 const formatDateTime = (isoDate) => {
-    if (!isoDate) return 'N/A';
+    if (!isoDate) {
+        // Nếu không có ngày, trả về ngày hiện tại
+        const now = new Date();
+        return now.toLocaleString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
     try {
         const date = new Date(isoDate);
         if (isNaN(date.getTime())) {
-            return 'Invalid Date';
+            // Nếu ngày không hợp lệ, trả về ngày hiện tại
+            const now = new Date();
+            return now.toLocaleString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
         }
         return date.toLocaleString('vi-VN', {
             day: '2-digit',
@@ -34,7 +53,15 @@ const formatDateTime = (isoDate) => {
             minute: '2-digit'
         });
     } catch (e) {
-        return 'Invalid Date';
+        // Nếu có lỗi khi parse, trả về ngày hiện tại
+        const now = new Date();
+        return now.toLocaleString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
     }
 };
 
@@ -57,10 +84,10 @@ const AdminReview = () => {
                     key: r.id,
                     id: r.id,
                     user_info: {
-                        name: 'Trương Dũ Kiệt',
-                        email: 'gemini@gmail.com',
-                        phone: '0796994560',
-                        address: 'Nha Trang, Khánh Hòa'
+                        name: r.user?.name || 'Khách hàng',
+                        email: r.user?.email || 'Chưa có email',
+                        phone: r.user?.phone || 'Chưa có số điện thoại',
+                        address: r.user?.address || 'Chưa có địa chỉ'
                     },
                     order_id: r.order_id || 'OD' + Math.floor(Math.random() * 1000000).toString().padStart(6, '0'),
                     product_info: {
@@ -69,8 +96,8 @@ const AdminReview = () => {
                     },
                     rating: r.Star_rating || r.rating || 0,
                     comment: r.Comment || r.comment || 'Không có nhận xét',
-                    created_at: r.created_at || r.CreatedAt,
-                    updated_at: r.updated_at || r.UpdatedAt
+                    created_at: r.created_at || r.CreatedAt || new Date().toISOString(), // Đảm bảo luôn có ngày
+                    updated_at: r.updated_at || r.UpdatedAt || new Date().toISOString()
                 }));
                 setReviews(reviewsData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
             } else {
