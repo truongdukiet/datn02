@@ -104,7 +104,12 @@ Route::apiResource('categories', CategoryController::class);
     Route::put('/categories/{id}', [CategoryController::class, 'update']);
     Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 
-Route::apiResource(name: 'product-variants', controller: ProductVariantController::class); // Tuyến đường RESTful cho biến thể sản phẩm
+// routes/api.php
+Route::get('/product-variants', [ProductVariantController::class, 'index']);
+Route::get('/product-variants/{id}', [ProductVariantController::class, 'show']);
+Route::get('/products/{id}/variants', [ProductVariantController::class, 'getByProduct']); // Thêm route mới
+Route::put('/product-variants/{id}', [ProductVariantController::class, 'update']);
+Route::post('/product-variants', [ProductVariantController::class, 'store']);
 
 // Product routes (API public) - Cần xem xét lại nếu bạn đã dùng apiResource cho products ở dưới
 Route::get('/products', [ProductController::class, 'index']);

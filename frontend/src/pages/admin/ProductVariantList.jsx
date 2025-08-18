@@ -1,29 +1,50 @@
+// ProductVariantList.js
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import ProductVariantForm from './ProductVariantForm';
-import { useNavigate } from 'react-router-dom';
-import '../../../public/css/ProductVariantList.css'; // Giả sử bạn sẽ tạo file CSS riêng
+import { useNavigate, useParams } from 'react-router-dom'; // Thêm useParams
 
 const ProductVariantList = () => {
     const [variants, setVariants] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [editVariant, setEditVariant] = useState(null);
-
+    const [productName, setProductName] = useState(""); // Tên sản phẩm
+    
+    const { productId } = useParams(); // Lấy productId từ URL
     const API_BASE_URL = 'http://localhost:8000/api';
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchProducts();
-    }, []);
+        if (productId) {
+            fetchProductName();
+        }
+    }, [productId]);
 
     const fetchProducts = async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/product-variants`);
+            let url = `${API_BASE_URL}/product-variants`;
+            if (productId) {
+                url += `?product_id=${productId}`;
+            }
+            
+            const response = await axios.get(url);
             setVariants(response.data.data || []);
         } catch (err) {
             setError("Error fetching product variants");
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Lấy tên sản phẩm nếu có productId
+    const fetchProductName = async () => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/products/${productId}`);
+            setProductName(response.data.data?.Name || "");
+        } catch (error) {
+            console.error('Error fetching product name:', error);
         }
     };
 
@@ -48,10 +69,30 @@ const ProductVariantList = () => {
     if (loading) return <div className="loading">Loading...</div>;
     if (error) return <div className="error">{error}</div>;
 
+   if (loading) return <div className="loading">Loading...</div>;
+    if (error) return <div className="error">{error}</div>;
+
     return (
         <div className="product-variant-list">
-            <h1>Quản lý sản phẩm</h1>
-            <ProductVariantForm variant={editVariant} onSubmit={handleFormSubmit} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h1>
+                    {productId ? `Biến thể sản phẩm: ${productName}` : 'Quản lý sản phẩm'}
+                </h1>
+                {productId && (
+                    <button 
+                        onClick={() => navigate('/admin/products')}
+                        style={{ padding: '8px 16px', background: '#6c757d', color: 'white' }}
+                    >
+                        Quay lại
+                    </button>
+                )}
+            </div>
+            
+            <ProductVariantForm 
+                variant={editVariant} 
+                onSubmit={handleFormSubmit} 
+                productId={productId} // Truyền productId cho form
+            />
             <table className="variant-table">
                 <thead>
                     <tr>

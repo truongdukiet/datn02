@@ -11,6 +11,15 @@ const AdminOrder = () => {
     const [filterStatus, setFilterStatus] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
 
+    // Thứ tự ưu tiên sắp xếp theo trạng thái
+    const statusPriority = {
+        'pending': 1,
+        'processing': 2,
+        'shipped': 3,
+        'completed': 4,
+        'cancelled': 5
+    };
+
     const translateStatus = (status) => {
         switch (status) {
             case 'pending': return 'Chờ xử lý';
@@ -53,7 +62,6 @@ const AdminOrder = () => {
         fetchOrders();
     }, []);
 
-    // Hàm helper để tạo danh sách tùy chọn trạng thái động
     const getStatusOptions = (currentStatus) => {
         switch (currentStatus) {
             case 'pending':
@@ -62,14 +70,12 @@ const AdminOrder = () => {
                     { value: 'processing', label: 'Đang xử lý' },
                     { value: 'cancelled', label: 'Đã hủy' },
                 ];
-            // Đã loại bỏ tùy chọn "cancelled" cho trạng thái "processing"
             case 'processing':
                 return [
                     { value: 'processing', label: 'Đang xử lý' },
                     { value: 'shipped', label: 'Đang giao hàng' },
                 ];
             case 'shipped':
-                // Đơn hàng đang giao không được hủy
                 return [
                     { value: 'shipped', label: 'Đang giao hàng' },
                     { value: 'completed', label: 'Đã hoàn thành' },
@@ -83,13 +89,11 @@ const AdminOrder = () => {
         e.preventDefault();
         if (!editingOrder) return;
 
-        // Logic kiểm tra mới: Chỉ cho phép hủy khi trạng thái hiện tại là 'pending'
         if (editingOrder.Status !== 'pending' && status === 'cancelled') {
             alert('Đơn hàng chỉ có thể hủy khi ở trạng thái "Chờ xử lý".');
             return;
         }
 
-        // Cập nhật logic kiểm tra
         if (editingOrder.Status === 'completed' || editingOrder.Status === 'cancelled') {
             alert('Đơn hàng đã hoàn thành hoặc bị hủy, không thể cập nhật.');
             return;
@@ -120,6 +124,15 @@ const AdminOrder = () => {
             order.Receiver_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             order.Receiver_phone.includes(searchTerm);
         return matchStatus && matchSearch;
+    });
+
+    // Sắp xếp đơn hàng: ưu tiên trạng thái trước, sau đó sắp xếp theo ID giảm dần
+    const sortedAndFilteredOrders = filteredOrders.sort((a, b) => {
+        const statusComparison = statusPriority[a.Status] - statusPriority[b.Status];
+        if (statusComparison === 0) {
+            return b.OrderID - a.OrderID; // Sắp xếp ID giảm dần (mới nhất lên đầu)
+        }
+        return statusComparison;
     });
 
     if (loading) return <div>Đang tải...</div>;
@@ -208,8 +221,8 @@ const AdminOrder = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {filteredOrders.length > 0 ? (
-                        filteredOrders.map(item => (
+                    {sortedAndFilteredOrders.length > 0 ? (
+                        sortedAndFilteredOrders.map(item => (
                             <tr key={item.OrderID}>
                                 <td>{item.OrderID}</td>
                                 <td>{item.UserID}</td>

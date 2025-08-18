@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom"; // Thêm import này
 
 const AdminProducts = () => {
+  const navigate = useNavigate(); // Thêm hook navigate
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -333,9 +335,16 @@ const AdminProducts = () => {
                   </button>
                   <button
                     onClick={() => handleDeleteProduct(product.ProductID)}
-                    style={{ padding: "4px 8px", background: "#dc3545", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
+                    style={{ marginRight: 8, padding: "4px 8px", background: "#dc3545", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
                   >
                     Xóa
+                  </button>
+                  {/* Thêm nút Biến thể */}
+                  <button
+                    onClick={() => navigate(`/admin/product-variants/${product.ProductID}`)}
+                    style={{ padding: "4px 8px", background: "#0d6efd", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
+                  >
+                    Biến thể
                   </button>
                 </td>
               </tr>

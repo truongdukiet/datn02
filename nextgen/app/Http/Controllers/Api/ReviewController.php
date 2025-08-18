@@ -8,36 +8,40 @@ use App\Models\Review;
 
 class ReviewController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    // Lấy danh sách review
     public function index()
     {
         $reviews = Review::with(['user', 'productVariant.product'])->get();
         return response()->json(['success' => true, 'data' => $reviews]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // Thêm review mới
     public function store(Request $request)
     {
+        // Không cần UserID từ request nữa, vì backend tự lấy hoặc null
         $validated = $request->validate([
             'OrderDetailID' => 'required|integer|exists:orderdetail,OrderDetailID',
             'ProductVariantID' => 'required|integer|exists:productvariants,ProductVariantID',
-            'UserID' => 'required|integer|exists:users,UserID',
             'Star_rating' => 'required|integer|min:1|max:5',
             'Comment' => 'nullable|string',
             'Image' => 'nullable|string|max:255',
-            'Status' => 'nullable|boolean',
         ]);
+
+        // Nếu người dùng đã đăng nhập thì tự gán, còn nếu không thì có thể null
+        if (auth()->check()) {
+            $validated['UserID'] = auth()->id();
+        }
+
         $review = Review::create($validated);
-        return response()->json(['success' => true, 'data' => $review], 201);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Review created successfully',
+            'data' => $review
+        ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
+    // Xem 1 review
     public function show($id)
     {
         $review = Review::with(['user', 'productVariant.product'])->find($id);
@@ -47,31 +51,37 @@ class ReviewController extends Controller
         return response()->json(['success' => true, 'data' => $review]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+    // Cập nhật review
     public function update(Request $request, $id)
     {
         $review = Review::find($id);
         if (!$review) {
             return response()->json(['success' => false, 'message' => 'Review not found'], 404);
         }
+
         $validated = $request->validate([
             'OrderDetailID' => 'sometimes|integer|exists:orderdetail,OrderDetailID',
             'ProductVariantID' => 'sometimes|integer|exists:productvariants,ProductVariantID',
-            'UserID' => 'sometimes|integer|exists:users,UserID',
             'Star_rating' => 'sometimes|integer|min:1|max:5',
             'Comment' => 'nullable|string',
             'Image' => 'nullable|string|max:255',
             'Status' => 'nullable|boolean',
         ]);
+
+        if(auth()->check()) {
+            $validated['UserID'] = auth()->id();
+        }
+
         $review->update($validated);
-        return response()->json(['success' => true, 'data' => $review]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Review updated successfully',
+            'data' => $review
+        ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    // Xoá review
     public function destroy($id)
     {
         $review = Review::find($id);
@@ -79,6 +89,9 @@ class ReviewController extends Controller
             return response()->json(['success' => false, 'message' => 'Review not found'], 404);
         }
         $review->delete();
-        return response()->json(['success' => true, 'message' => 'Review deleted']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Review deleted'
+        ]);
     }
 }
