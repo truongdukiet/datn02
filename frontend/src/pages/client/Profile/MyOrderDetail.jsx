@@ -6,6 +6,24 @@ import { ArrowLeftOutlined } from '@ant-design/icons';
 
 const { Step } = Steps;
 
+const formatOrderDate = (dateString) => {
+    if (!dateString) {
+        return 'Chưa có thông tin';
+    }
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+        return 'Ngày không hợp lệ';
+    }
+
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+};
+
 const MyOrderDetail = () => {
     const { orderId } = useParams();
     const navigate = useNavigate();
@@ -78,30 +96,9 @@ const MyOrderDetail = () => {
         fetchOrderDetail();
     }, [orderId]);
 
-    const formatOrderDate = (dateString) => {
-        if (!dateString) {
-            return 'Đang cập nhật';
-        }
-
-        const date = new Date(dateString);
-
-        if (isNaN(date.getTime())) {
-            return 'Đang cập nhật';
-        }
-
-        const day = date.getDate().toString().padStart(2, '0');
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const year = date.getFullYear();
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-
-        return `${day}/${month}/${year} ${hours}:${minutes}`;
-    };
-
     const statusText = (order?.order_info?.status || order?.Status || '').toLowerCase();
     const canReview = ['completed', 'shipped', 'delivered', 'đã giao', 'đã hoàn thành'].includes(statusText);
 
-    // Xác định trạng thái hiện tại cho Steps
     const getStepStatus = () => {
         switch (statusText) {
             case 'pending':
@@ -114,14 +111,12 @@ const MyOrderDetail = () => {
             case 'completed':
                 return 3;
             default:
-                return -1; // Đã hủy hoặc không xác định
+                return -1;
         }
     };
 
-    // Kiểm tra nếu đơn hàng bị hủy
     const isCancelled = statusText === 'cancelled';
 
-    // Logic hiển thị
     if (loading) return <Spin size="large" style={{ display: 'flex', justifyContent: 'center', marginTop: '50px' }} />;
     if (error) return <div style={{ color: 'red', textAlign: 'center', marginTop: '20px' }}>Lỗi: {error}</div>;
     if (!order) return <div style={{ textAlign: 'center', marginTop: '20px' }}>Không tìm thấy đơn hàng</div>;
@@ -167,7 +162,6 @@ const MyOrderDetail = () => {
 
             <Divider />
 
-            {/* Thêm Steps Component */}
             <h3 style={{ marginBottom: '24px', textAlign: 'center' }}>Trạng thái đơn hàng</h3>
             <div style={{ marginBottom: '40px' }}>
                 <Steps current={getStepStatus()} status={isCancelled ? 'error' : 'process'}>
