@@ -110,6 +110,7 @@ Route::get('/product-variants/{id}', [ProductVariantController::class, 'show']);
 Route::get('/products/{id}/variants', [ProductVariantController::class, 'getByProduct']); // Thêm route mới
 Route::put('/product-variants/{id}', [ProductVariantController::class, 'update']);
 Route::post('/product-variants', [ProductVariantController::class, 'store']);
+Route::get('/product-variants/images', [ProductVariantController::class, 'getAvailableImages']);
 
 // Product routes (API public) - Cần xem xét lại nếu bạn đã dùng apiResource cho products ở dưới
 Route::get('/products', [ProductController::class, 'index']);

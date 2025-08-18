@@ -129,45 +129,61 @@ class ProductVariantController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // Log toàn bộ dữ liệu request
-        \Log::info('Update Variant Request Data:', [
-            'all' => $request->all(),
-            'attributes' => $request->input('attributes'),
-            'files' => $request->file() ? array_keys($request->file()) : []
-        ]);
-
         $variant = ProductVariant::findOrFail($id);
 
-        // Sửa validation để bao gồm attributes
-        $validated = $request->validate([
-            'Sku' => 'required|unique:productvariants,Sku,' . $id . ',ProductVariantID',
-            'Price' => 'required|numeric|min:0',
-            'Stock' => 'required|integer|min:0',
-            'Image' => 'nullable|image|max:2048',
-            'attributes' => 'required|array',
-            'attributes.*' => 'required|string|max:255'
-        ]);
+        // Kiểm tra content type để xử lý dữ liệu phù hợp
+        if ($request->isJson()) {
+            // Xử lý dữ liệu JSON
+            $validated = $request->validate([
+                'ProductID' => 'sometimes|exists:products,ProductID',
+                'Sku' => 'required|unique:productvariants,Sku,' . $id . ',ProductVariantID',
+                'Price' => 'required|numeric|min:0',
+                'Stock' => 'required|integer|min:0',
+                'attributes' => 'required|array',
+                'attributes.*' => 'required|string|max:255'
+            ]);
 
-        $variant->Sku = $validated['Sku'];
-        $variant->Price = $validated['Price'];
-        $variant->Stock = $validated['Stock'];
+            $variant->fill($validated);
+            $variant->save();
 
-        if ($request->hasFile('Image')) {
-            // Xóa ảnh cũ nếu có
-            if ($variant->Image) {
-                Storage::disk('public')->delete($variant->Image);
-            }
+            // Xử lý attributes
+            VariantAttribute::where('ProductVariantID', $variant->ProductVariantID)->delete();
             
-            $path = $request->file('Image')->store('product-variants', 'public');
-            $variant->Image = $path;
-        }
+            foreach ($validated['attributes'] as $attrId => $value) {
+                VariantAttribute::create([
+                    'ProductVariantID' => $variant->ProductVariantID,
+                    'AttributeID' => $attrId,
+                    'value' => $value
+                ]);
+            }
 
-        $variant->save();
+            return response()->json($variant);
+        } else {
+            // Xử lý form-data (cho trường hợp có upload ảnh)
+            $validated = $request->validate([
+                'Sku' => 'required|unique:productvariants,Sku,' . $id . ',ProductVariantID',
+                'Price' => 'required|numeric|min:0',
+                'Stock' => 'required|integer|min:0',
+                'Image' => 'nullable|image|max:2048',
+                'attributes' => 'required|array',
+                'attributes.*' => 'required|string|max:255'
+            ]);
 
-        // Xử lý attributes - xóa cũ và tạo mới
-        VariantAttribute::where('ProductVariantID', $variant->ProductVariantID)->delete();
-        
-        if ($request->has('attributes')) {
+            $variant->fill($validated);
+
+            if ($request->hasFile('Image')) {
+                if ($variant->Image) {
+                    Storage::disk('public')->delete($variant->Image);
+                }
+                $path = $request->file('Image')->store('product-variants', 'public');
+                $variant->Image = $path;
+            }
+
+            $variant->save();
+
+            // Xử lý attributes
+            VariantAttribute::where('ProductVariantID', $variant->ProductVariantID)->delete();
+            
             foreach ($request->input('attributes') as $attrId => $value) {
                 VariantAttribute::create([
                     'ProductVariantID' => $variant->ProductVariantID,
@@ -175,9 +191,9 @@ class ProductVariantController extends Controller
                     'value' => $value
                 ]);
             }
-        }
 
-        return response()->json($variant);
+            return response()->json($variant);
+        }
     }
 
     /**
@@ -212,6 +228,36 @@ class ProductVariantController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error deleting product variant: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getAvailableImages()
+    {
+        try {
+            $storagePath = 'storage/app/public/'; // Thư mục lưu trữ ảnh
+            $files = Storage::disk('public')->allFiles($storagePath);
+            
+            $images = [];
+            foreach ($files as $file) {
+                // Chỉ lấy file ảnh (có thể mở rộng kiểm tra extension)
+                if (preg_match('/\.(jpg|jpeg|png|gif)$/i', $file)) {
+                    $images[] = [
+                        'path' => $file,
+                        'name' => basename($file),
+                        'url' => Storage::disk('public')->url($file)
+                    ];
+                }
+            }
+            
+            return response()->json([
+                'success' => true,
+                'data' => $images
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching images: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -8,8 +8,9 @@ const ProductVariantForm = ({ variant, onSubmit, productId }) => {
         Sku: '',
         Price: '',
         Stock: '',
-        Image: null
+        ImagePath: '' // Thay Image bằng ImagePath để lưu đường dẫn
     });
+    const [availableImages, setAvailableImages] = useState([]); // State để lưu danh sách ảnh có sẵn
     const [attributes, setAttributes] = useState([]);
     const [selectedAttributes, setSelectedAttributes] = useState({});
     const [imagePreview, setImagePreview] = useState(null); // Thêm state cho ảnh preview
@@ -88,35 +89,51 @@ const ProductVariantForm = ({ variant, onSubmit, productId }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const formDataToSend = new FormData();
         
-        formDataToSend.append('ProductID', formData.ProductID);
-        formDataToSend.append('Sku', formData.Sku);
-        formDataToSend.append('Price', formData.Price);
-        formDataToSend.append('Stock', formData.Stock);
-        
-        if (formData.Image) {
-            formDataToSend.append('Image', formData.Image);
-        }
-
-        Object.keys(selectedAttributes).forEach(attrId => {
-            formDataToSend.append(`attributes[${attrId}]`, selectedAttributes[attrId]);
-        });
+        // Tạo object dữ liệu để gửi
+        const dataToSend = {
+            ProductID: formData.ProductID,
+            Sku: formData.Sku,
+            Price: formData.Price,
+            Stock: formData.Stock,
+            attributes: selectedAttributes
+        };
 
         try {
             if (variant) {
-                await axios.put(
+                // Nếu là chỉnh sửa, gửi dưới dạng JSON
+                const response = await axios.put(
                     `${API_BASE_URL}/product-variants/${variant.ProductVariantID}`,
-                    formDataToSend,
-                    { headers: { 'Content-Type': 'multipart/form-data' } }
+                    dataToSend,
+                    {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    }
                 );
             } else {
+                // Nếu là tạo mới, vẫn dùng FormData để hỗ trợ upload ảnh
+                const formDataToSend = new FormData();
+                formDataToSend.append('ProductID', formData.ProductID);
+                formDataToSend.append('Sku', formData.Sku);
+                formDataToSend.append('Price', formData.Price);
+                formDataToSend.append('Stock', formData.Stock);
+                
+                if (formData.Image) {
+                    formDataToSend.append('Image', formData.Image);
+                }
+
+                Object.keys(selectedAttributes).forEach(attrId => {
+                    formDataToSend.append(`attributes[${attrId}]`, selectedAttributes[attrId]);
+                });
+
                 await axios.post(
                     `${API_BASE_URL}/product-variants`,
                     formDataToSend,
                     { headers: { 'Content-Type': 'multipart/form-data' } }
                 );
             }
+            
             alert('Lưu biến thể thành công!');
             onSubmit();
         } catch (error) {
