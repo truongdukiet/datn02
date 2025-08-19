@@ -1,14 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Table, 
-  Input, 
-  Select, 
-  Button, 
-  message, 
-  Tag, 
+import {
+  Table,
+  Input,
+  Select,
+  Button,
+  message,
+  Tag,
   Spin,
-  Space  // Thêm import này
+  Space
 } from 'antd';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import { getOrdersByUser, cancelOrder } from '../../../api/axiosClient';
@@ -56,10 +57,17 @@ const MyOrder = () => {
         setLoading(true);
         try {
             const response = await getOrdersByUser(userId);
-            console.log('API response:', response);
-            
+            console.log('API orders data:', response.data.data); // Log dữ liệu nhận được
+
             if (response.data && response.data.success) {
-                setOrders(response.data.data || []);
+                const formattedOrders = response.data.data.map(order => ({
+                    ...order,
+                    // Kiểm tra và chuyển đổi thời gian
+                    created_at: order.created_at
+                        ? new Date(order.created_at).toISOString()
+                        : new Date().toISOString() // Nếu không có thì dùng thời gian hiện tại
+                }));
+                setOrders(formattedOrders);
                 setError(null);
             } else {
                 setError(response.data?.message || 'Không thể tải danh sách đơn hàng');
@@ -91,13 +99,44 @@ const MyOrder = () => {
         }
     };
 
+    const formatDateTime = (dateString) => {
+        try {
+            if (!dateString) {
+                console.warn('Empty date string');
+                return 'Đang cập nhật';
+            }
+
+            const date = new Date(dateString);
+
+            if (isNaN(date.getTime())) {
+                console.warn('Invalid date:', dateString);
+                return 'Đang cập nhật';
+            }
+
+            // Format date: dd/mm/yyyy
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const year = date.getFullYear();
+
+            // Format time: hh:mm:ss
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const seconds = date.getSeconds().toString().padStart(2, '0');
+
+            return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'Đang cập nhật';
+        }
+    };
+
     const filteredOrders = orders.filter(order => {
         const matchesStatus = filterStatus === 'all' || order.Status === filterStatus;
-        const matchesSearch = searchTerm === '' || 
+        const matchesSearch = searchTerm === '' ||
             (order.Receiver_name && order.Receiver_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (order.Receiver_phone && order.Receiver_phone.includes(searchTerm)) ||
             (order.OrderID && order.OrderID.toString().includes(searchTerm));
-        
+
         return matchesStatus && matchesSearch;
     });
 
@@ -124,9 +163,9 @@ const MyOrder = () => {
             title: 'Tổng tiền',
             dataIndex: 'Total_amount',
             key: 'Total_amount',
-            render: (amount) => amount ? new Intl.NumberFormat('vi-VN', { 
-                style: 'currency', 
-                currency: 'VND' 
+            render: (amount) => amount ? new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
             }).format(amount) : 'N/A',
         },
         {
@@ -143,15 +182,15 @@ const MyOrder = () => {
             title: 'Ngày đặt',
             dataIndex: 'created_at',
             key: 'created_at',
-            render: (date) => date ? new Date(date).toLocaleString('vi-VN') : 'N/A',
+            render: (date) => formatDateTime(date),
         },
         {
             title: 'Thao tác',
             key: 'action',
             render: (_, record) => (
                 <Space size="middle">
-                    <Button 
-                        type="link" 
+                    <Button
+                        type="link"
                         onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/myorder/${record.OrderID}`);
@@ -160,8 +199,8 @@ const MyOrder = () => {
                         Chi tiết
                     </Button>
                     {record.Status === 'pending' && (
-                        <Button 
-                            type="link" 
+                        <Button
+                            type="link"
                             danger
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -188,8 +227,8 @@ const MyOrder = () => {
         return (
             <div style={{ textAlign: 'center', padding: '50px' }}>
                 <p style={{ color: 'red', marginBottom: '20px' }}>{error}</p>
-                <Button 
-                    type="primary" 
+                <Button
+                    type="primary"
                     icon={<ReloadOutlined />}
                     onClick={fetchOrders}
                 >
@@ -201,9 +240,9 @@ const MyOrder = () => {
 
     return (
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
-            <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
                 marginBottom: '20px',
                 flexWrap: 'wrap',
                 gap: '15px'
@@ -230,7 +269,7 @@ const MyOrder = () => {
                         <Option value="completed">Hoàn thành</Option>
                         <Option value="cancelled">Đã hủy</Option>
                     </Select>
-                    <Button 
+                    <Button
                         icon={<ReloadOutlined />}
                         onClick={fetchOrders}
                     >
