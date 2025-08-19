@@ -21,6 +21,8 @@ import ResetPassword from "./pages/client/ResetPassword/ResetPassword";
 import Checkout from "./pages/client/Checkout/Checkout";
 import Cart from "./pages/client/Cart/Cart";
 import ThankYouPay from "./pages/client/ThankYou/ThankYouPay";
+import ChatWidget from "./components/ChatWidget/ChatWidget";
+
 // ✅ Favorites & Profile
 import Favorites from "./pages/client/Favorites/Favorites";
 import ProfilePage from "./pages/client/ProfilePage/ProfilePage";
@@ -226,6 +228,7 @@ const App = () => {
   ]);
 
   return <RouterProvider router={router} />;
+   <ChatWidget /> 
 };
 
 export default App;
