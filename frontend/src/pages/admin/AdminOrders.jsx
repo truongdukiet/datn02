@@ -11,7 +11,6 @@ const AdminOrder = () => {
     const [filterStatus, setFilterStatus] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Thứ tự ưu tiên sắp xếp theo trạng thái
     const statusPriority = {
         'pending': 1,
         'processing': 2,
@@ -46,11 +45,26 @@ const AdminOrder = () => {
         try {
             const response = await getOrders();
             if (response.data.success) {
-                // Đảm bảo mỗi đơn hàng có created_at và completed_at hợp lệ
                 const processedOrders = response.data.data.map(order => ({
                     ...order,
                     created_at: order.created_at || new Date().toISOString(),
-                    completed_at: order.Status === 'completed' ? (order.completed_at || new Date().toISOString()) : null
+                    // Cập nhật logic xử lý thời gian
+                    processing_at: order.processing_at ||
+                                 (['processing', 'shipped', 'completed'].includes(order.Status)
+                                  ? new Date().toISOString()
+                                  : null),
+                    shipped_at: order.shipped_at ||
+                              (['shipped', 'completed'].includes(order.Status)
+                               ? new Date().toISOString()
+                               : null),
+                    completed_at: order.completed_at ||
+                                (order.Status === 'completed'
+                                 ? new Date().toISOString()
+                                 : null),
+                    cancelled_at: order.cancelled_at ||
+                                (order.Status === 'cancelled'
+                                 ? new Date().toISOString()
+                                 : null)
                 }));
                 setOrders(processedOrders);
             } else {
@@ -106,19 +120,18 @@ const AdminOrder = () => {
         }
 
         try {
+            const now = new Date().toISOString();
             const updateData = {
                 Status: status,
-                // Đảm bảo giữ nguyên created_at khi cập nhật
-                created_at: editingOrder.created_at
+                created_at: editingOrder.created_at,
+                // Logic cập nhật thời gian chính xác
+                processing_at: status === 'processing' ? now :
+                             ['shipped', 'completed'].includes(status) ? editingOrder.processing_at : null,
+                shipped_at: status === 'shipped' ? now :
+                          status === 'completed' ? editingOrder.shipped_at : null,
+                completed_at: status === 'completed' ? now : null,
+                cancelled_at: status === 'cancelled' ? now : null
             };
-
-            // Nếu cập nhật thành completed, thêm thời gian hoàn thành
-            if (status === 'completed') {
-                updateData.completed_at = new Date().toISOString();
-            } else {
-                // Nếu không phải completed, đặt completed_at thành null
-                updateData.completed_at = null;
-            }
 
             const response = await updateOrder(editingOrder.OrderID, updateData);
             if (response.data.success) {
@@ -133,13 +146,10 @@ const AdminOrder = () => {
     };
 
     const formatDateTime = (dateString) => {
-        if (!dateString) return 'Chưa hoàn thành';
-
+        if (!dateString) return '';
         try {
             const date = new Date(dateString);
-            if (isNaN(date.getTime())) {
-                return 'Ngày không hợp lệ';
-            }
+            if (isNaN(date.getTime())) return 'Ngày không hợp lệ';
             return date.toLocaleString('vi-VN', {
                 day: '2-digit',
                 month: '2-digit',
@@ -167,12 +177,9 @@ const AdminOrder = () => {
         return matchStatus && matchSearch;
     });
 
-    // Sắp xếp đơn hàng: ưu tiên trạng thái trước, sau đó sắp xếp theo ID giảm dần
     const sortedAndFilteredOrders = filteredOrders.sort((a, b) => {
         const statusComparison = statusPriority[a.Status] - statusPriority[b.Status];
-        if (statusComparison === 0) {
-            return b.OrderID - a.OrderID; // Sắp xếp ID giảm dần (mới nhất lên đầu)
-        }
+        if (statusComparison === 0) return b.OrderID - a.OrderID;
         return statusComparison;
     });
 
@@ -183,7 +190,6 @@ const AdminOrder = () => {
         <div>
             <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Quản lý đơn hàng</h2>
 
-            {/* Lọc và tìm kiếm */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
                 <input
                     type="text"
@@ -206,7 +212,6 @@ const AdminOrder = () => {
                 </select>
             </div>
 
-            {/* Modal cập nhật */}
             {showModal && editingOrder && (
                 <div style={{
                     position: 'fixed',
@@ -225,9 +230,10 @@ const AdminOrder = () => {
                         <p><b>Số điện thoại:</b> {editingOrder.Receiver_phone}</p>
                         <p><b>Tổng số tiền:</b> {editingOrder.Total_amount}</p>
                         <p><b>Ngày tạo:</b> {formatDateTime(editingOrder.created_at)}</p>
-                        {editingOrder.completed_at && (
-                            <p><b>Ngày hoàn thành:</b> {formatDateTime(editingOrder.completed_at)}</p>
-                        )}
+                        <p><b>Ngày xử lý:</b> {formatDateTime(editingOrder.processing_at)}</p>
+                        <p><b>Ngày giao hàng:</b> {formatDateTime(editingOrder.shipped_at)}</p>
+                        <p><b>Ngày hoàn thành:</b> {formatDateTime(editingOrder.completed_at)}</p>
+                        <p><b>Ngày hủy:</b> {formatDateTime(editingOrder.cancelled_at)}</p>
                         <form onSubmit={handleSubmit}>
                             <div style={{ marginBottom: '15px' }}>
                                 <label>Trạng thái</label>
@@ -250,7 +256,6 @@ const AdminOrder = () => {
                 </div>
             )}
 
-            {/* Danh sách đơn hàng */}
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                     <tr style={{ background: '#f5f5f5' }}>
@@ -262,7 +267,10 @@ const AdminOrder = () => {
                         <th>Tổng số tiền</th>
                         <th>Trạng thái</th>
                         <th>Ngày tạo</th>
+                        <th>Ngày xử lý</th>
+                        <th>Ngày giao</th>
                         <th>Ngày hoàn thành</th>
+                        <th>Ngày hủy</th>
                         <th>Thao tác</th>
                     </tr>
                 </thead>
@@ -286,7 +294,14 @@ const AdminOrder = () => {
                                     {translateStatus(item.Status)}
                                 </td>
                                 <td>{formatDateTime(item.created_at)}</td>
-                                <td>{formatDateTime(item.completed_at)}</td>
+                                <td>{item.Status === 'processing' || item.Status === 'shipped' || item.Status === 'completed'
+                                     ? formatDateTime(item.processing_at) : ''}</td>
+                                <td>{item.Status === 'shipped' || item.Status === 'completed'
+                                     ? formatDateTime(item.shipped_at) : ''}</td>
+                                <td>{item.Status === 'completed'
+                                     ? formatDateTime(item.completed_at) : ''}</td>
+                                <td>{item.Status === 'cancelled'
+                                     ? formatDateTime(item.cancelled_at) : ''}</td>
                                 <td>
                                     {(item.Status !== 'completed' && item.Status !== 'cancelled') && (
                                         <button
@@ -301,7 +316,7 @@ const AdminOrder = () => {
                         ))
                     ) : (
                         <tr>
-                            <td colSpan="10" style={{ textAlign: 'center', padding: '20px' }}>Không tìm thấy đơn hàng phù hợp</td>
+                            <td colSpan="13" style={{ textAlign: 'center', padding: '20px' }}>Không tìm thấy đơn hàng phù hợp</td>
                         </tr>
                     )}
                 </tbody>

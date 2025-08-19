@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getOrderDetail, cancelOrder, submitReview } from "../../../api/axiosClient";
-import { message, Descriptions, Button, Spin, Tag, Divider, Image, Rate, Modal, Form, Input, Steps } from 'antd';
+import { message, Descriptions, Button, Spin, Tag, Divider, Image, Rate, Modal, Form, Input, Steps, Timeline, Card } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 
 const { Step } = Steps;
+const { Item } = Descriptions;
 
 const formatOrderDate = (dateString) => {
     if (!dateString) {
@@ -24,6 +25,8 @@ const formatOrderDate = (dateString) => {
     return `${day}/${month}/${year} ${hours}:${minutes}`;
 };
 
+const POLLING_INTERVAL = 5000; // 5 giây
+
 const MyOrderDetail = () => {
     const { orderId } = useParams();
     const navigate = useNavigate();
@@ -33,6 +36,7 @@ const MyOrderDetail = () => {
     const [reviewModalVisible, setReviewModalVisible] = useState(false);
     const [currentProduct, setCurrentProduct] = useState(null);
     const [form] = Form.useForm();
+    const [lastUpdated, setLastUpdated] = useState(null);
 
     const fetchOrderDetail = async () => {
         try {
@@ -44,6 +48,7 @@ const MyOrderDetail = () => {
                     orderDetails: [...(response.data.data.orderDetails || [])].sort((a, b) => new Date(b.created_at || b.CreatedAt) - new Date(a.created_at || a.CreatedAt))
                 };
                 setOrder(sortedOrder);
+                setLastUpdated(new Date());
             } else {
                 setError(response.data.message || 'Không thể tải chi tiết đơn hàng');
             }
@@ -53,6 +58,17 @@ const MyOrderDetail = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchOrderDetail();
+
+        // Thiết lập polling để cập nhật thời gian thực
+        const intervalId = setInterval(fetchOrderDetail, POLLING_INTERVAL);
+
+        return () => {
+            clearInterval(intervalId);
+        };
+    }, [orderId]);
 
     const handleCancelOrder = async (orderId) => {
         try {
@@ -92,10 +108,6 @@ const MyOrderDetail = () => {
         }
     };
 
-    useEffect(() => {
-        fetchOrderDetail();
-    }, [orderId]);
-
     const statusText = (order?.order_info?.status || order?.Status || '').toLowerCase();
     const canReview = ['completed', 'shipped', 'delivered', 'đã giao', 'đã hoàn thành'].includes(statusText);
 
@@ -117,6 +129,98 @@ const MyOrderDetail = () => {
 
     const isCancelled = statusText === 'cancelled';
 
+    const getStatusTimeline = () => {
+        const statusHistory = order?.status_history || order?.StatusHistory || [];
+
+        if (statusHistory.length === 0) {
+            const items = [
+                {
+                    status: 'pending',
+                    description: 'Đơn hàng đã được đặt',
+                    timestamp: order?.order_info?.created_at || order?.CreatedAt || 'Chưa có thông tin'
+                }
+            ];
+
+            if (statusText === 'processing' || statusText === 'shipped' || statusText === 'delivered' || statusText === 'completed') {
+                items.push({
+                    status: 'processing',
+                    description: 'Đơn hàng đang được xử lý',
+                    timestamp: order?.order_info?.updated_at || order?.UpdatedAt || 'Chưa có thông tin'
+                });
+            }
+
+            if (statusText === 'shipped' || statusText === 'delivered' || statusText === 'completed') {
+                items.push({
+                    status: 'shipped',
+                    description: 'Đơn hàng đã được vận chuyển',
+                    timestamp: order?.order_info?.shipped_at || order?.ShippedAt || 'Chưa có thông tin'
+                });
+            }
+
+            if (statusText === 'delivered' || statusText === 'completed') {
+                items.push({
+                    status: 'delivered',
+                    description: 'Đơn hàng đã được giao',
+                    timestamp: order?.order_info?.delivered_at || order?.DeliveredAt || 'Chưa có thông tin'
+                });
+            }
+
+            if (statusText === 'cancelled') {
+                items.push({
+                    status: 'cancelled',
+                    description: 'Đơn hàng đã bị hủy',
+                    timestamp: order?.order_info?.cancelled_at || order?.CancelledAt || 'Chưa có thông tin'
+                });
+            }
+
+            return items;
+        }
+
+        return statusHistory.map(item => ({
+            status: item.status,
+            description: getStatusDescription(item.status),
+            timestamp: item.created_at || item.timestamp || 'Chưa có thông tin'
+        }));
+    };
+
+    const getStatusDescription = (status) => {
+        switch (status.toLowerCase()) {
+            case 'pending':
+                return 'Đơn hàng đã được đặt';
+            case 'processing':
+                return 'Đơn hàng đang được xử lý';
+            case 'shipped':
+                return 'Đơn hàng đã được vận chuyển';
+            case 'delivered':
+                return 'Đơn hàng đã được giao thành công';
+            case 'completed':
+                return 'Đơn hàng đã hoàn thành';
+            case 'cancelled':
+                return 'Đơn hàng đã bị hủy';
+            default:
+                return 'Cập nhật trạng thái đơn hàng';
+        }
+    };
+
+    const renderProductImage = (imagePath) => {
+        if (!imagePath) {
+            return (
+                <div style={{
+                    width: 80,
+                    height: 80,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#f0f0f0',
+                    color: '#999'
+                }}>
+                    Không có ảnh
+                </div>
+            );
+        }
+        return <Image width={80} src={`http://localhost:8000/storage/${imagePath}`} />;
+    };
+
     if (loading) return <Spin size="large" style={{ display: 'flex', justifyContent: 'center', marginTop: '50px' }} />;
     if (error) return <div style={{ color: 'red', textAlign: 'center', marginTop: '20px' }}>Lỗi: {error}</div>;
     if (!order) return <div style={{ textAlign: 'center', marginTop: '20px' }}>Không tìm thấy đơn hàng</div>;
@@ -132,32 +236,39 @@ const MyOrderDetail = () => {
                 Quay lại
             </Button>
 
-            <h2 style={{ marginBottom: '24px' }}>Chi tiết đơn hàng #{order.order_info?.id || order.OrderID}</h2>
+            <h2 style={{ marginBottom: '24px' }}>Chi tiết đơn hàng #{order.order_info?.id || order.OrderID || 'Chưa có thông tin'}</h2>
+
+            <div style={{ textAlign: 'right', marginBottom: '10px', color: '#666', fontSize: '0.9em' }}>
+                Cập nhật lần cuối: {lastUpdated ? formatOrderDate(lastUpdated) : 'Đang tải...'}
+            </div>
 
             <Descriptions bordered column={1} size="middle">
-                <Descriptions.Item label="Mã đơn hàng">{order.order_info?.id || order.OrderID}</Descriptions.Item>
-                <Descriptions.Item label="Ngày đặt hàng">
+                <Item label="Mã đơn hàng">{order.order_info?.id || order.OrderID || 'Chưa có thông tin'}</Item>
+                <Item label="Ngày đặt hàng">
                     {formatOrderDate(order.order_info?.created_at || order.created_at || order.CreatedAt)}
-                </Descriptions.Item>
-                <Descriptions.Item label="Trạng thái">
+                </Item>
+                <Item label="Trạng thái">
                     <Tag color={getStatusColor(order.order_info?.status || order.Status)}>
-                        {translateStatus(order.order_info?.status || order.Status)}
+                        {translateStatus(order.order_info?.status || order.Status) || 'Chưa có thông tin'}
                     </Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label="Thông tin người nhận">
-                    <div>Tên: {order.order_info?.receiver_name || order.Receiver_name}</div>
-                    <div>SĐT: {order.order_info?.receiver_phone || order.Receiver_phone}</div>
-                    <div>Địa chỉ: {order.order_info?.shipping_address || order.Shipping_address}</div>
-                </Descriptions.Item>
-                <Descriptions.Item label="Phương thức thanh toán">
+                    <Tag color="processing" style={{ marginLeft: '8px' }}>Đang cập nhật thời gian thực</Tag>
+                </Item>
+                <Item label="Thông tin người nhận">
+                    <div>Tên: {order.order_info?.receiver_name || order.Receiver_name || 'Chưa có thông tin'}</div>
+                    <div>SĐT: {order.order_info?.receiver_phone || order.Receiver_phone || 'Chưa có thông tin'}</div>
+                    <div>Địa chỉ: {order.order_info?.shipping_address || order.Shipping_address || 'Chưa có thông tin'}</div>
+                </Item>
+                <Item label="Phương thức thanh toán">
                     {order.order_info?.payment_method || order.paymentGateway?.Name || 'Chưa xác định'}
-                </Descriptions.Item>
-                <Descriptions.Item label="Mã giảm giá">
+                </Item>
+                <Item label="Mã giảm giá">
                     {order.order_info?.voucher_code || order.voucher?.Code || 'Không sử dụng'}
-                </Descriptions.Item>
-                <Descriptions.Item label="Tổng tiền">
-                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.order_info?.total_amount || order.Total_amount)}
-                </Descriptions.Item>
+                </Item>
+                <Item label="Tổng tiền">
+                    {order.order_info?.total_amount || order.Total_amount
+                        ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.order_info?.total_amount || order.Total_amount)
+                        : 'Chưa có thông tin'}
+                </Item>
             </Descriptions>
 
             <Divider />
@@ -172,50 +283,72 @@ const MyOrderDetail = () => {
                 </Steps>
             </div>
 
+            <Divider orientation="left">Lịch sử trạng thái</Divider>
+            <Card style={{ marginBottom: '24px' }}>
+                <Timeline mode="left" pending="Đang cập nhật...">
+                    {getStatusTimeline().map((item, index) => (
+                        <Timeline.Item
+                            key={index}
+                            label={formatOrderDate(item.timestamp)}
+                            color={getStatusColor(item.status)}
+                        >
+                            <strong>{translateStatus(item.status)}</strong>
+                            <p>{item.description}</p>
+                        </Timeline.Item>
+                    ))}
+                </Timeline>
+            </Card>
+
             <Divider orientation="left">Danh sách sản phẩm</Divider>
 
             <div style={{ marginTop: '20px' }}>
-                {(order.order_details || order.orderDetails || []).map((item, index) => (
-                    <div key={index} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        marginBottom: '20px',
-                        paddingBottom: '20px',
-                        borderBottom: '1px solid #f0f0f0'
-                    }}>
-                        <Image
-                            width={80}
-                            src={`http://localhost:8000/storage/${item.Image || item.productVariant?.product?.Image}`}
-                            alt={item.product_name || item.productVariant?.product?.Name}
-                        />
-                        <div style={{ marginLeft: '20px', flex: 1 }}>
-                            <h4 style={{ marginBottom: '5px' }}>
-                                {item.product_name || item.productVariant?.product?.Name}
-                            </h4>
-                            <div style={{ color: '#666', marginBottom: '5px' }}>
-                                Phân loại: {item.variant_name || item.productVariant?.Name}
-                                {item.color && ` - Màu: ${item.color}`}
-                                {item.size && ` - Size: ${item.size}`}
-                            </div>
-                            <div>Số lượng: {item.quantity || item.Quantity}</div>
-                            <div>
-                                Đơn giá: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.unit_price || item.Unit_price)}
-                            </div>
-                            <div style={{ fontWeight: 'bold', marginTop: '5px' }}>
-                                Thành tiền: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.subtotal || item.Subtotal)}
-                            </div>
-                            <div style={{ color: '#888', fontSize: '0.9em', marginTop: '5px' }}>
-                                Ngày đặt: {formatOrderDate(item.created_at || item.CreatedAt)}
-                            </div>
+                {(order.order_details || order.orderDetails || []).length > 0 ? (
+                    (order.order_details || order.orderDetails || []).map((item, index) => (
+                        <div key={index} style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            marginBottom: '20px',
+                            paddingBottom: '20px',
+                            borderBottom: '1px solid #f0f0f0'
+                        }}>
+                            {renderProductImage(item.Image || item.productVariant?.product?.Image)}
+                            <div style={{ marginLeft: '20px', flex: 1 }}>
+                                <h4 style={{ marginBottom: '5px' }}>
+                                    {item.product_name || item.productVariant?.product?.Name || 'Chưa có tên sản phẩm'}
+                                </h4>
+                                <div style={{ color: '#666', marginBottom: '5px' }}>
+                                    Phân loại: {item.variant_name || item.productVariant?.Name || 'Chưa có thông tin'}
+                                    {item.color && ` - Màu: ${item.color}`}
+                                    {item.size && ` - Size: ${item.size}`}
+                                </div>
+                                <div>Số lượng: {item.quantity || item.Quantity || '0'}</div>
+                                <div>
+                                    Đơn giá: {item.unit_price || item.Unit_price
+                                        ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.unit_price || item.Unit_price)
+                                        : 'Chưa có thông tin'}
+                                </div>
+                                <div style={{ fontWeight: 'bold', marginTop: '5px' }}>
+                                    Thành tiền: {item.subtotal || item.Subtotal
+                                        ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.subtotal || item.Subtotal)
+                                        : 'Chưa có thông tin'}
+                                </div>
+                                <div style={{ color: '#888', fontSize: '0.9em', marginTop: '5px' }}>
+                                    Ngày đặt: {formatOrderDate(item.created_at || item.CreatedAt)}
+                                </div>
 
-                            {canReview && (
-                                <Button type="link" style={{ padding: 0, marginTop: '10px' }} onClick={() => handleReviewClick(item)}>
-                                    Đánh giá sản phẩm
-                                </Button>
-                            )}
+                                {canReview && (
+                                    <Button type="link" style={{ padding: 0, marginTop: '10px' }} onClick={() => handleReviewClick(item)}>
+                                        Đánh giá sản phẩm
+                                    </Button>
+                                )}
+                            </div>
                         </div>
+                    ))
+                ) : (
+                    <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                        Không có sản phẩm nào trong đơn hàng này
                     </div>
-                ))}
+                )}
             </div>
 
             {(order.order_info?.status === 'pending' || order.Status === 'pending') && (
@@ -235,7 +368,7 @@ const MyOrderDetail = () => {
             )}
 
             <Modal
-                title={`Đánh giá sản phẩm ${currentProduct?.product_name || currentProduct?.productVariant?.product?.Name}`}
+                title={`Đánh giá sản phẩm ${currentProduct?.product_name || currentProduct?.productVariant?.product?.Name || 'Chưa có tên sản phẩm'}`}
                 visible={reviewModalVisible}
                 onOk={handleReviewSubmit}
                 onCancel={() => {
