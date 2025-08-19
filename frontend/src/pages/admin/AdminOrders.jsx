@@ -46,7 +46,13 @@ const AdminOrder = () => {
         try {
             const response = await getOrders();
             if (response.data.success) {
-                setOrders(response.data.data);
+                // Đảm bảo mỗi đơn hàng có created_at và completed_at hợp lệ
+                const processedOrders = response.data.data.map(order => ({
+                    ...order,
+                    created_at: order.created_at || new Date().toISOString(),
+                    completed_at: order.Status === 'completed' ? (order.completed_at || new Date().toISOString()) : null
+                }));
+                setOrders(processedOrders);
             } else {
                 setError('Không thể tải danh sách đơn hàng');
             }
@@ -100,7 +106,21 @@ const AdminOrder = () => {
         }
 
         try {
-            const response = await updateOrder(editingOrder.OrderID, { Status: status });
+            const updateData = {
+                Status: status,
+                // Đảm bảo giữ nguyên created_at khi cập nhật
+                created_at: editingOrder.created_at
+            };
+
+            // Nếu cập nhật thành completed, thêm thời gian hoàn thành
+            if (status === 'completed') {
+                updateData.completed_at = new Date().toISOString();
+            } else {
+                // Nếu không phải completed, đặt completed_at thành null
+                updateData.completed_at = null;
+            }
+
+            const response = await updateOrder(editingOrder.OrderID, updateData);
             if (response.data.success) {
                 setShowModal(false);
                 fetchOrders();
@@ -109,6 +129,27 @@ const AdminOrder = () => {
             }
         } catch (err) {
             alert('Có lỗi khi cập nhật trạng thái');
+        }
+    };
+
+    const formatDateTime = (dateString) => {
+        if (!dateString) return 'Chưa hoàn thành';
+
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) {
+                return 'Ngày không hợp lệ';
+            }
+            return date.toLocaleString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            console.error('Lỗi định dạng ngày:', e);
+            return 'Ngày không hợp lệ';
         }
     };
 
@@ -183,6 +224,10 @@ const AdminOrder = () => {
                         <p><b>Tên người nhận:</b> {editingOrder.Receiver_name}</p>
                         <p><b>Số điện thoại:</b> {editingOrder.Receiver_phone}</p>
                         <p><b>Tổng số tiền:</b> {editingOrder.Total_amount}</p>
+                        <p><b>Ngày tạo:</b> {formatDateTime(editingOrder.created_at)}</p>
+                        {editingOrder.completed_at && (
+                            <p><b>Ngày hoàn thành:</b> {formatDateTime(editingOrder.completed_at)}</p>
+                        )}
                         <form onSubmit={handleSubmit}>
                             <div style={{ marginBottom: '15px' }}>
                                 <label>Trạng thái</label>
@@ -217,6 +262,7 @@ const AdminOrder = () => {
                         <th>Tổng số tiền</th>
                         <th>Trạng thái</th>
                         <th>Ngày tạo</th>
+                        <th>Ngày hoàn thành</th>
                         <th>Thao tác</th>
                     </tr>
                 </thead>
@@ -239,17 +285,8 @@ const AdminOrder = () => {
                                 }}>
                                     {translateStatus(item.Status)}
                                 </td>
-                                <td>
-                                    {item.created_at
-                                        ? new Date(item.created_at).toLocaleString('vi-VN', {
-                                            day: '2-digit',
-                                            month: '2-digit',
-                                            year: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        })
-                                        : 'Không có dữ liệu'}
-                                </td>
+                                <td>{formatDateTime(item.created_at)}</td>
+                                <td>{formatDateTime(item.completed_at)}</td>
                                 <td>
                                     {(item.Status !== 'completed' && item.Status !== 'cancelled') && (
                                         <button
@@ -264,7 +301,7 @@ const AdminOrder = () => {
                         ))
                     ) : (
                         <tr>
-                            <td colSpan="9" style={{ textAlign: 'center', padding: '20px' }}>Không tìm thấy đơn hàng phù hợp</td>
+                            <td colSpan="10" style={{ textAlign: 'center', padding: '20px' }}>Không tìm thấy đơn hàng phù hợp</td>
                         </tr>
                     )}
                 </tbody>
