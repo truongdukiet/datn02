@@ -54,21 +54,27 @@ const Cart = () => {
 
   const handleUpdateItem = async (productVariantId, quantity) => {
     try {
-      if (quantity < 1) {
-        message.warning("Số lượng phải lớn hơn 0.");
+      // ✅ Thêm parseInt() để đảm bảo quantity là số nguyên
+      const newQuantity = parseInt(quantity);
+      if (isNaN(newQuantity) || newQuantity < 1) {
+        message.warning("Số lượng phải là một số và lớn hơn 0.");
         return;
       }
+
       await apiClient.put("/api/carts", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`, // Thêm token vào tiêu đề
         },
         ProductVariantID: productVariantId,
-        Quantity: quantity,
+        Quantity: newQuantity, // ✅ Sử dụng giá trị đã chuyển đổi
       });
       message.success("Số lượng sản phẩm đã được cập nhật.");
-      setCartItems(cartItems.map(item =>
-        item.ProductVariantID === productVariantId ? { ...item, Quantity: quantity } : item
-      ));
+
+      setCartItems(prevItems =>
+        prevItems.map(item =>
+          item.ProductVariantID === productVariantId ? { ...item, Quantity: newQuantity } : item
+        )
+      );
     } catch (error) {
       message.error("Có lỗi xảy ra khi cập nhật sản phẩm.");
     }
@@ -129,7 +135,7 @@ const Cart = () => {
           ) : (
             <div className="tw-grid tw-grid-cols-12 tw-gap-6 tw-mt-8">
               <div className="tw-col-span-7">
-                <div className="tw-border tw-border-solid tw-border-[#EEEEEE] tw-rounded tw-p-4">
+                <div className="tw-border tw-solid tw-border-[#EEEEEE] tw-rounded tw-p-4">
                   <Checkbox
                     checked={selectedItems.length === cartItems.length && cartItems.length > 0}
                     indeterminate={selectedItems.length > 0 && selectedItems.length < cartItems.length}
@@ -171,7 +177,7 @@ const Cart = () => {
                             type="number"
                             value={item.Quantity}
                             className="tw-text-center tw-bg-transparent tw-outline-none tw-border-none tw-w-8 tw-text-black"
-                            onChange={(e) => handleUpdateItem(item.ProductVariantID, parseInt(e.target.value))}
+                            onChange={(e) => handleUpdateItem(item.ProductVariantID, e.target.value)}
                           />
                           <div className="tw-pr-4 tw-pl-2 tw-cursor-pointer" onClick={() => handleUpdateItem(item.ProductVariantID, item.Quantity + 1)}>
                             <i className="fa-solid fa-plus"></i>
