@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getOrderDetail, cancelOrder, submitReview } from "../../../api/axiosClient";
-import { message, Descriptions, Button, Spin, Tag, Divider, Image, Rate, Modal, Form, Input, Steps, Timeline, Card } from 'antd';
+import { message, Descriptions, Button, Spin, Tag, Divider, Image, Rate, Modal, Form, Input, Steps, Card } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 
 const { Step } = Steps;
@@ -9,7 +9,7 @@ const { Item } = Descriptions;
 
 // Hàm định dạng ngày tháng
 const formatOrderDate = (dateString) => {
-    if (!dateString || dateString === 'Chưa có thông tin') {
+    if (!dateString || dateString === 'Chưa có thông tin' || dateString === 'undefined') {
         return 'Chưa có thông tin';
     }
 
@@ -55,18 +55,22 @@ const MyOrderDetail = () => {
                     order_info: {
                         ...orderData.order_info,
                         // Giữ nguyên ngày tạo đơn hàng ban đầu
-                        created_at: orderData.order_info?.created_at || new Date().toISOString(),
+                        created_at: orderData.order_info?.created_at || orderData.created_at || new Date().toISOString(),
                         // Cập nhật thời gian thực cho các trạng thái
                         processing_at: orderData.order_info?.processing_at ||
-                                     (['processing', 'shipped', 'completed'].includes(orderData.order_info?.Status)
+                                     (['processing', 'shipped', 'completed', 'delivered'].includes(orderData.order_info?.Status)
                                       ? new Date().toISOString()
                                       : null),
                         shipped_at: orderData.order_info?.shipped_at ||
-                                  (['shipped', 'completed'].includes(orderData.order_info?.Status)
+                                  (['shipped', 'completed', 'delivered'].includes(orderData.order_info?.Status)
                                    ? new Date().toISOString()
                                    : null),
                         completed_at: orderData.order_info?.completed_at ||
                                     (orderData.order_info?.Status === 'completed'
+                                     ? new Date().toISOString()
+                                     : null),
+                        delivered_at: orderData.order_info?.delivered_at ||
+                                    (orderData.order_info?.Status === 'delivered'
                                      ? new Date().toISOString()
                                      : null),
                         cancelled_at: orderData.order_info?.cancelled_at ||
@@ -106,7 +110,7 @@ const MyOrderDetail = () => {
             const response = await cancelOrder(orderId);
             if (response.data.success) {
                 message.success('Đã hủy đơn hàng thành công');
-                fetchOrderDetail();
+                fetchOrderDetail(); // Tải lại dữ liệu sau khi hủy
             } else {
                 message.error(response.data.message || 'Hủy đơn hàng thất bại');
             }
@@ -131,13 +135,18 @@ const MyOrderDetail = () => {
                 Star_rating: values.rating,
                 Comment: values.comment
             };
-            await submitReview(payload);
-            message.success('Đã gửi đánh giá thành công');
-            setReviewModalVisible(false);
-            form.resetFields();
+            const response = await submitReview(payload);
+            if(response.data.success){
+                message.success('Đã gửi đánh giá thành công');
+                setReviewModalVisible(false);
+                form.resetFields();
+                fetchOrderDetail(); // Tải lại dữ liệu sau khi gửi đánh giá
+            } else {
+                message.error(response.data.message || 'Gửi đánh giá thất bại');
+            }
         } catch (err) {
             console.error('Lỗi khi gửi đánh giá:', err);
-            message.error('Gửi đánh giá thất bại');
+            message.error(err.response?.data?.message || 'Gửi đánh giá thất bại');
         }
     };
 
@@ -168,7 +177,7 @@ const MyOrderDetail = () => {
     };
 
     const statusText = (order?.order_info?.status || order?.Status || '').toLowerCase();
-    const canReview = ['completed', 'shipped', 'delivered', 'đã giao', 'đã hoàn thành'].includes(statusText);
+    const canReview = ['completed', 'delivered'].includes(statusText);
 
     // Xác định bước hiện tại trong tiến trình đơn hàng
     const getStepStatus = () => {
@@ -184,90 +193,48 @@ const MyOrderDetail = () => {
 
     const isCancelled = statusText === 'cancelled';
 
-    // Tạo timeline lịch sử trạng thái
-    const getStatusTimeline = () => {
-        const statusHistory = order?.status_history || order?.StatusHistory || [];
-        const orderInfo = order?.order_info || order || {};
-        const currentStatus = orderInfo.status || orderInfo.Status;
-
-        // Ưu tiên sử dụng lịch sử từ API nếu có
-        if (statusHistory.length > 0) {
-            return statusHistory
-                .map(item => ({
-                    status: item.status,
-                    description: getStatusDescription(item.status),
-                    timestamp: item.created_at || item.timestamp || 'Chưa có thông tin'
-                }))
-                .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    // Mô tả chi tiết cho từng trạng thái, bao gồm cả mốc thời gian
+    const getStatusDescription = (status, timestamp) => {
+        const time = formatOrderDate(timestamp);
+        switch (status?.toLowerCase()) {
+            case 'pending': return (
+                <>
+                    Đơn hàng đã được đặt
+                    <br />
+                    <span style={{ fontSize: '0.8em', color: '#888' }}>{time}</span>
+                </>
+            );
+            case 'processing': return (
+                <>
+                    Đơn hàng đang được chuẩn bị
+                    <br />
+                    <span style={{ fontSize: '0.8em', color: '#888' }}>{time}</span>
+                </>
+            );
+            case 'shipped': return (
+                <>
+                    Đơn hàng đã được vận chuyển
+                    <br />
+                    <span style={{ fontSize: '0.8em', color: '#888' }}>{time}</span>
+                </>
+            );
+            case 'delivered':
+            case 'completed': return (
+                <>
+                    Đơn hàng đã được giao thành công
+                    <br />
+                    <span style={{ fontSize: '0.8em', color: '#888' }}>{time}</span>
+                </>
+            );
+            case 'cancelled': return (
+                <>
+                    Đơn hàng đã bị hủy
+                    <br />
+                    <span style={{ fontSize: '0.8em', color: '#888' }}>{time}</span>
+                </>
+            );
+            default: return `Chưa có thông tin`;
         }
-
-        // Tạo timeline từ các mốc thời gian nếu không có lịch sử từ API
-        const items = [];
-
-        // Mốc tạo đơn hàng (luôn có)
-        if (orderInfo.created_at || orderInfo.CreatedAt) {
-            items.push({
-                status: 'pending',
-                description: 'Đơn hàng đã được đặt',
-                timestamp: orderInfo.created_at || orderInfo.CreatedAt
-            });
-        }
-
-        // Thêm các mốc thời gian khác theo trạng thái hiện tại
-        if (orderInfo.processing_at && ['processing', 'shipped', 'delivered', 'completed'].includes(currentStatus)) {
-            items.push({
-                status: 'processing',
-                description: 'Đơn hàng đang được xử lý',
-                timestamp: orderInfo.processing_at
-            });
-        }
-
-        if (orderInfo.shipped_at && ['shipped', 'delivered', 'completed'].includes(currentStatus)) {
-            items.push({
-                status: 'shipped',
-                description: 'Đơn hàng đã được vận chuyển',
-                timestamp: orderInfo.shipped_at
-            });
-        }
-
-        if (orderInfo.delivered_at && ['delivered', 'completed'].includes(currentStatus)) {
-            items.push({
-                status: 'delivered',
-                description: 'Đơn hàng đã được giao',
-                timestamp: orderInfo.delivered_at
-            });
-        }
-
-        if (orderInfo.completed_at && currentStatus === 'completed') {
-            items.push({
-                status: 'completed',
-                description: 'Đơn hàng đã hoàn thành',
-                timestamp: orderInfo.completed_at
-            });
-        }
-
-        if (orderInfo.cancelled_at && currentStatus === 'cancelled') {
-            items.push({
-                status: 'cancelled',
-                description: 'Đơn hàng đã bị hủy',
-                timestamp: orderInfo.cancelled_at
-            });
-        }
-
-        return items;
-    };
-
-    // Mô tả chi tiết cho từng trạng thái
-    const getStatusDescription = (status) => {
-        return translateStatus(status) + ' - ' + (
-            status?.toLowerCase() === 'pending' ? 'Đơn hàng đã được đặt' :
-            status?.toLowerCase() === 'processing' ? 'Đơn hàng đang được xử lý' :
-            status?.toLowerCase() === 'shipped' ? 'Đơn hàng đã được vận chuyển' :
-            status?.toLowerCase() === 'delivered' ? 'Đơn hàng đã được giao thành công' :
-            status?.toLowerCase() === 'completed' ? 'Đơn hàng đã hoàn thành' :
-            status?.toLowerCase() === 'cancelled' ? 'Đơn hàng đã bị hủy' :
-            'Cập nhật trạng thái đơn hàng'
-        );
     };
 
     // Hiển thị ảnh sản phẩm
@@ -299,6 +266,8 @@ const MyOrderDetail = () => {
     // Hiển thị thông báo nếu không tìm thấy đơn hàng
     if (!order) return <div style={{ textAlign: 'center', marginTop: '20px' }}>Không tìm thấy đơn hàng</div>;
 
+    const orderInfo = order?.order_info || order || {};
+
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
             {/* Nút quay lại */}
@@ -312,7 +281,7 @@ const MyOrderDetail = () => {
             </Button>
 
             {/* Tiêu đề */}
-            <h2 style={{ marginBottom: '24px' }}>Chi tiết đơn hàng #{order.order_info?.id || order.OrderID || 'Chưa có thông tin'}</h2>
+            <h2 style={{ marginBottom: '24px' }}>Chi tiết đơn hàng #{orderInfo.id || orderInfo.OrderID || 'Chưa có thông tin'}</h2>
 
             {/* Thời gian cập nhật cuối */}
             <div style={{ textAlign: 'right', marginBottom: '10px', color: '#666', fontSize: '0.9em' }}>
@@ -321,67 +290,57 @@ const MyOrderDetail = () => {
 
             {/* Thông tin chung đơn hàng */}
             <Descriptions bordered column={1} size="middle">
-                <Item label="Mã đơn hàng">{order.order_info?.id || order.OrderID || 'Chưa có thông tin'}</Item>
+                <Item label="Mã đơn hàng">{orderInfo.id || orderInfo.OrderID || 'Chưa có thông tin'}</Item>
                 <Item label="Ngày đặt hàng">
-                    {formatOrderDate(order.order_info?.created_at || order.created_at || order.CreatedAt)}
+                    {formatOrderDate(orderInfo.created_at || orderInfo.CreatedAt)}
                 </Item>
                 <Item label="Trạng thái">
-                    <Tag color={getStatusColor(order.order_info?.status || order.Status)}>
-                        {translateStatus(order.order_info?.status || order.Status)}
+                    <Tag color={getStatusColor(orderInfo.status || orderInfo.Status)}>
+                        {translateStatus(orderInfo.status || orderInfo.Status)}
                     </Tag>
                 </Item>
                 <Item label="Thông tin người nhận">
-                    <div>Tên: {order.order_info?.receiver_name || order.Receiver_name || 'Chưa có thông tin'}</div>
-                    <div>SĐT: {order.order_info?.receiver_phone || order.Receiver_phone || 'Chưa có thông tin'}</div>
-                    <div>Địa chỉ: {order.order_info?.shipping_address || order.Shipping_address || 'Chưa có thông tin'}</div>
+                    <div>Tên: {orderInfo.receiver_name || orderInfo.Receiver_name || 'Chưa có thông tin'}</div>
+                    <div>SĐT: {orderInfo.receiver_phone || orderInfo.Receiver_phone || 'Chưa có thông tin'}</div>
+                    <div>Địa chỉ: {orderInfo.shipping_address || orderInfo.Shipping_address || 'Chưa có thông tin'}</div>
                 </Item>
                 <Item label="Phương thức thanh toán">
-                    {order.order_info?.payment_method || order.paymentGateway?.Name || 'Chưa xác định'}
+                    {orderInfo.payment_method || order.paymentGateway?.Name || 'Chưa xác định'}
                 </Item>
                 <Item label="Mã giảm giá">
-                    {order.order_info?.voucher_code || order.voucher?.Code || 'Không sử dụng'}
+                    {orderInfo.voucher_code || order.voucher?.Code || 'Không sử dụng'}
                 </Item>
                 <Item label="Tổng tiền">
-                    {order.order_info?.total_amount || order.Total_amount
-                        ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.order_info?.total_amount || order.Total_amount)
+                    {orderInfo.total_amount || orderInfo.Total_amount
+                        ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(orderInfo.total_amount || orderInfo.Total_amount)
                         : 'Chưa có thông tin'}
                 </Item>
             </Descriptions>
 
             <Divider />
 
-            {/* Trạng thái đơn hàng dưới dạng Steps */}
-            <h3 style={{ marginBottom: '24px', textAlign: 'center' }}>Trạng thái đơn hàng</h3>
+            {/* Trạng thái đơn hàng dưới dạng Steps với mốc thời gian */}
+            <h3 style={{ marginBottom: '24px', textAlign: 'center' }}>Tiến trình đơn hàng</h3>
             <div style={{ marginBottom: '40px' }}>
                 <Steps current={getStepStatus()} status={isCancelled ? 'error' : 'process'}>
-                    <Step title="Chờ xử lý" description="Đơn hàng đang chờ xác nhận." />
-                    <Step title="Đang xử lý" description="Đơn hàng đang được chuẩn bị." />
-                    <Step title="Đang giao hàng" description="Đơn hàng đang được vận chuyển." />
-                    <Step title="Đã hoàn thành" description="Đơn hàng đã được giao thành công." />
+                    <Step
+                        title="Chờ xử lý"
+                        description={getStatusDescription('pending', orderInfo.created_at || orderInfo.CreatedAt)}
+                    />
+                    <Step
+                        title="Đang xử lý"
+                        description={getStatusDescription('processing', orderInfo.processing_at)}
+                    />
+                    <Step
+                        title="Đang giao hàng"
+                        description={getStatusDescription('shipped', orderInfo.shipped_at)}
+                    />
+                    <Step
+                        title="Đã hoàn thành"
+                        description={getStatusDescription('completed', orderInfo.completed_at || orderInfo.delivered_at)}
+                    />
                 </Steps>
             </div>
-
-            {/* Timeline lịch sử trạng thái */}
-            <Divider orientation="left">Lịch sử trạng thái</Divider>
-            <Card style={{ marginBottom: '24px' }}>
-                <Timeline mode="left" pending={statusText !== 'completed' && statusText !== 'cancelled' ? "Đang cập nhật..." : false}>
-                    {getStatusTimeline().map((item, index) => (
-                        <Timeline.Item
-                            key={index}
-                            label={formatOrderDate(item.timestamp)}
-                            color={getStatusColor(item.status)}
-                        >
-                            <strong>{translateStatus(item.status)}</strong>
-                            <p>{item.description}</p>
-                            {item.timestamp && item.timestamp !== 'Chưa có thông tin' && (
-                                <div style={{ color: '#888', fontSize: '0.85em' }}>
-                                    {formatOrderDate(item.timestamp)}
-                                </div>
-                            )}
-                        </Timeline.Item>
-                    ))}
-                </Timeline>
-            </Card>
 
             {/* Danh sách sản phẩm */}
             <Divider orientation="left">Danh sách sản phẩm</Divider>
@@ -437,14 +396,14 @@ const MyOrderDetail = () => {
             </div>
 
             {/* Nút hủy đơn hàng (chỉ hiện khi đơn ở trạng thái pending) */}
-            {(order.order_info?.status === 'pending' || order.Status === 'pending') && (
+            {(orderInfo.status === 'pending' || orderInfo.Status === 'pending') && (
                 <div style={{ marginTop: '20px', textAlign: 'right' }}>
                     <Button
                         type="primary"
                         danger
                         onClick={() => {
                             if (window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
-                                handleCancelOrder(order.order_info?.id || order.OrderID);
+                                handleCancelOrder(orderInfo.id || orderInfo.OrderID);
                             }
                         }}
                     >
