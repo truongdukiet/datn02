@@ -8,12 +8,11 @@ import apiClient from "../../../api/api";
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedItems, setSelectedItems] = useState([]); // Thêm state cho các sản phẩm được chọn
-  const user = JSON.parse(localStorage.getItem("user")); // Lấy thông tin người dùng từ localStorage
+  const [selectedItems, setSelectedItems] = useState([]);
+  const user = JSON.parse(localStorage.getItem("user"));
 
-  // Kiểm tra nếu người dùng chưa đăng nhập
   if (!user) {
-    return <Navigate to="/login" />; // Chuyển hướng đến trang đăng nhập nếu chưa đăng nhập
+    return <Navigate to="/login" />;
   }
 
   useEffect(() => {
@@ -21,10 +20,14 @@ const Cart = () => {
       try {
         const response = await apiClient.get("/api/carts", {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`, // Thêm token vào tiêu đề
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
         setCartItems(response.data.cart_items);
+
+        // Tự động chọn tất cả sản phẩm khi giỏ hàng được tải
+        const allItemIds = response.data.cart_items.map(item => item.ProductVariantID);
+        setSelectedItems(allItemIds);
       } catch (error) {
         message.error("Có lỗi xảy ra khi tải giỏ hàng.");
       } finally {
@@ -35,16 +38,52 @@ const Cart = () => {
     fetchCartItems();
   }, []);
 
+  // Hàm để thêm sản phẩm mới vào danh sách chọn
+  const addToSelectedItems = (productVariantId) => {
+    if (!selectedItems.includes(productVariantId)) {
+      setSelectedItems([...selectedItems, productVariantId]);
+    }
+  };
+
+  // Giả sử bạn có một hàm để thêm sản phẩm vào giỏ hàng
+  // Tôi sẽ thêm một hàm mẫu ở đây để minh họa
+  const handleAddToCart = async (productVariantId, quantity = 1) => {
+    try {
+      await apiClient.post("/api/carts", {
+        ProductVariantID: productVariantId,
+        Quantity: quantity
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      // Sau khi thêm thành công, tự động chọn sản phẩm mới
+      addToSelectedItems(productVariantId);
+
+      // Cập nhật lại giỏ hàng
+      const response = await apiClient.get("/api/carts", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      setCartItems(response.data.cart_items);
+
+      message.success("Sản phẩm đã được thêm vào giỏ hàng.");
+    } catch (error) {
+      message.error("Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng.");
+    }
+  };
+
   const handleRemoveItem = async (productVariantId) => {
     try {
       await apiClient.delete("/api/carts/item", {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`, // Thêm token vào tiêu đề
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         data: { ProductVariantID: productVariantId },
       });
       setCartItems(cartItems.filter(item => item.ProductVariantID !== productVariantId));
-      // Xóa sản phẩm khỏi danh sách chọn nếu có
       setSelectedItems(selectedItems.filter(id => id !== productVariantId));
       message.success("Sản phẩm đã được xóa khỏi giỏ hàng.");
     } catch (error) {
@@ -54,7 +93,6 @@ const Cart = () => {
 
   const handleUpdateItem = async (productVariantId, quantity) => {
     try {
-      // ✅ Thêm parseInt() để đảm bảo quantity là số nguyên
       const newQuantity = parseInt(quantity);
       if (isNaN(newQuantity) || newQuantity < 1) {
         message.warning("Số lượng phải là một số và lớn hơn 0.");
@@ -62,11 +100,12 @@ const Cart = () => {
       }
 
       await apiClient.put("/api/carts", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`, // Thêm token vào tiêu đề
-        },
         ProductVariantID: productVariantId,
-        Quantity: newQuantity, // ✅ Sử dụng giá trị đã chuyển đổi
+        Quantity: newQuantity,
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
       message.success("Số lượng sản phẩm đã được cập nhật.");
 
@@ -80,7 +119,6 @@ const Cart = () => {
     }
   };
 
-  // Hàm xử lý chọn/bỏ chọn sản phẩm
   const handleSelectItem = (productVariantId) => {
     if (selectedItems.includes(productVariantId)) {
       setSelectedItems(selectedItems.filter(id => id !== productVariantId));
@@ -89,7 +127,6 @@ const Cart = () => {
     }
   };
 
-  // Hàm chọn tất cả sản phẩm
   const handleSelectAll = () => {
     if (selectedItems.length === cartItems.length) {
       setSelectedItems([]);
@@ -98,7 +135,6 @@ const Cart = () => {
     }
   };
 
-  // Tính tổng tiền chỉ cho các sản phẩm được chọn
   const selectedTotalAmount = cartItems.reduce((total, item) => {
     if (selectedItems.includes(item.ProductVariantID)) {
       const price = item.product_variant?.Price || 0;
@@ -108,7 +144,6 @@ const Cart = () => {
     return total;
   }, 0);
 
-  // Lấy danh sách sản phẩm được chọn để thanh toán
   const getSelectedItems = () => {
     return cartItems.filter(item => selectedItems.includes(item.ProductVariantID));
   };
