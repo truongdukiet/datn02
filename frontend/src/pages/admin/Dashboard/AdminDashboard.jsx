@@ -1,6 +1,6 @@
 // ... phần import giữ nguyên
 import React, { useState, useEffect } from 'react';
-import { Bar, Line, Pie } from 'react-chartjs-2';
+import { Bar, Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -15,8 +15,8 @@ import {
 } from 'chart.js';
 import axios from 'axios';
 import { Spinner, Alert } from 'react-bootstrap';
+import { Rate, Statistic } from 'antd';
 
-// Đăng ký ChartJS
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -44,7 +44,8 @@ const AdminDashboard = () => {
     userGrowth: [],
     revenueData: [],
     recentOrders: [],
-    orderStatus: {}
+    orderStatus: {},
+    ratings: { average: 0, total: 0, distribution: {} } // ✅ thêm chỗ chứa rating
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -65,7 +66,8 @@ const AdminDashboard = () => {
           userGrowth: data.user_growth || [],
           revenueData: data.revenue || [],
           recentOrders: data.recent_orders || [],
-          orderStatus: data.order_status || {}
+          orderStatus: data.order_status || {},
+          ratings: data.ratings_summary || { average: 0, total: 0, distribution: {} } // ✅ lấy từ API
         });
       } catch (err) {
         console.error('Lỗi lấy dữ liệu dashboard:', err);
@@ -75,7 +77,8 @@ const AdminDashboard = () => {
           userGrowth: [],
           revenueData: [],
           recentOrders: [],
-          orderStatus: {}
+          orderStatus: {},
+          ratings: { average: 0, total: 0, distribution: {} }
         });
       } finally {
         setLoading(false);
@@ -97,7 +100,6 @@ const AdminDashboard = () => {
     }]
   };
 
-  // Dữ liệu biểu đồ tổng doanh thu
   const totalRevenueChart = {
     labels: ['Tổng doanh thu'],
     datasets: [{
@@ -144,18 +146,28 @@ const AdminDashboard = () => {
     <div className="container-fluid py-4">
       <h1 className="mb-4 text-primary">Bảng Điều Khiển Quản Trị</h1>
 
-      {/* Summary Cards đã được cập nhật */}
+      {/* Summary Cards */}
       <div className="row mb-4">
         {[
           { title: 'Tổng người dùng', value: dashboardData.summary.total_users, icon: 'users', color: 'primary' },
           { title: 'Tổng sản phẩm', value: dashboardData.summary.total_products, icon: 'boxes', color: 'success' },
           { title: 'Tổng đơn hàng', value: dashboardData.summary.total_orders, icon: 'shopping-cart', color: 'info' },
-          // Card "Doanh thu tháng này" đã bị xóa hoàn toàn khỏi danh sách
           {
             title: 'Tổng doanh thu',
             value: dashboardData.summary.total_revenue?.toLocaleString('vi-VN') + ' VNĐ',
             icon: 'dollar-sign',
             color: 'warning'
+          },
+          {
+            title: 'Tổng đánh giá',
+            value: (
+              <>
+                <div>{dashboardData.ratings.total || 0} đánh giá</div>
+                <small>⭐ {dashboardData.ratings.average?.toFixed(1) || 0} / 5</small>
+              </>
+            ),
+            icon: 'star',
+            color: 'danger'
           }
         ].map((card, index) => (
           <div key={index} className="col-xl-3 col-md-6 mb-4">
@@ -180,7 +192,7 @@ const AdminDashboard = () => {
       <div className="row mb-4">
         <div className="col-xl-6">
           <div className="card shadow rounded mb-4">
-            <div className="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+            <div className="card-header py-3 bg-light">
               <h6 className="m-0 font-weight-bold text-primary">Tăng trưởng người dùng</h6>
             </div>
             <div className="card-body">
@@ -191,7 +203,7 @@ const AdminDashboard = () => {
 
         <div className="col-xl-6">
           <div className="card shadow rounded mb-4">
-            <div className="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+            <div className="card-header py-3 bg-light">
               <h6 className="m-0 font-weight-bold text-primary">Tổng doanh thu</h6>
             </div>
             <div className="card-body">
@@ -209,37 +221,24 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Orders Status + Recent Orders */}
+      {/* Orders Status + Recent Orders + Ratings */}
       <div className="row">
         {/* Pie Chart */}
-        <div className="col-xl-5">
+        <div className="col-xl-4">
           <div className="card shadow rounded mb-4">
-            <div className="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+            <div className="card-header py-3 bg-light">
               <h6 className="m-0 font-weight-bold text-primary">Phân bố trạng thái đơn hàng</h6>
             </div>
             <div className="card-body">
-              <Pie data={orderStatusChart} options={{
-                plugins: {
-                  tooltip: {
-                    callbacks: {
-                      label: (context) => {
-                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                        const value = context.raw;
-                        const percentage = ((value / total) * 100).toFixed(1);
-                        return `${context.label}: ${value} đơn (${percentage}%)`;
-                      }
-                    }
-                  }
-                }
-              }} height={250} />
+              <Pie data={orderStatusChart} height={250} />
             </div>
           </div>
         </div>
 
         {/* Recent Orders */}
-        <div className="col-xl-7">
+        <div className="col-xl-4">
           <div className="card shadow rounded mb-4">
-            <div className="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+            <div className="card-header py-3 bg-light">
               <h6 className="m-0 font-weight-bold text-primary">Đơn hàng gần đây</h6>
             </div>
             <div className="card-body table-responsive">
@@ -272,6 +271,36 @@ const AdminDashboard = () => {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+
+        {/* ✅ Ratings Summary */}
+        <div className="col-xl-4">
+          <div className="card shadow rounded mb-4">
+            <div className="card-header py-3 bg-light">
+              <h6 className="m-0 font-weight-bold text-primary">Thống kê đánh giá</h6>
+            </div>
+            <div className="card-body">
+              <Statistic
+                title="Điểm trung bình"
+                value={dashboardData.ratings.average?.toFixed(1) || 0}
+                suffix="/ 5"
+              />
+              <Rate disabled allowHalf value={dashboardData.ratings.average || 0} />
+
+              <p className="mt-3"><b>Tổng số đánh giá:</b> {dashboardData.ratings.total || 0}</p>
+              <div>
+                {[5, 4, 3, 2, 1].map(star => {
+                  const count = dashboardData.ratings.distribution?.[star] || 0;
+                  return (
+                    <div key={star} className="d-flex align-items-center mb-1">
+                      <Rate disabled defaultValue={star} />
+                      <span className="ms-2">({count})</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

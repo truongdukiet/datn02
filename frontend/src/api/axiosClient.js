@@ -77,5 +77,9 @@ export const submitReview = (data) => axiosClient.post("/reviews", data);
 export const updateReview = (id, data) => axiosClient.put(`/reviews/${id}`, data);
 export const deleteReview = (id) => axiosClient.delete(`/reviews/${id}`);
 
+// Thêm các API mới cho quản lý đánh giá
+export const approveReview = (reviewId) => axiosClient.post(`/admin/reviews/${reviewId}/approve`);
+export const hideReview = (reviewId) => axiosClient.post(`/admin/reviews/${reviewId}/hide`);
+
 // ✅ Giữ nguyên export default
 export default axiosClient;

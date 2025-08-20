@@ -10,96 +10,160 @@ import {
     Input,
     Rate,
     Button,
-    Image,
     Descriptions,
     Divider,
     Empty,
-    Card
+    Card,
+    Space,
+    Switch,
+    Select,
+    Row,
+    Col,
+    Statistic
 } from "antd";
-import { ArrowLeftOutlined } from '@ant-design/icons';
-import { getReviews, updateReview, deleteReview } from "../../../api/axiosClient";
+import {
+    ArrowLeftOutlined,
+    EyeOutlined,
+    EditOutlined,
+    UserOutlined,
+    PhoneOutlined,
+    MailOutlined,
+    ShopOutlined,
+    StarOutlined,
+    CalendarOutlined
+} from '@ant-design/icons';
+import { getReviews, updateReview } from "../../../api/axiosClient";
 
-const formatDateTime = (isoDate) => {
-    if (!isoDate) {
-        // Nếu không có ngày, trả về ngày hiện tại
-        const now = new Date();
-        return now.toLocaleString('vi-VN', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+// Hàm định dạng ngày tháng
+const formatDateTime = (dateString) => {
+    if (!dateString || dateString === 'Chưa có thông tin' || dateString === 'undefined') {
+        return 'Chưa có thông tin';
     }
 
     try {
-        const date = new Date(isoDate);
-        if (isNaN(date.getTime())) {
-            // Nếu ngày không hợp lệ, trả về ngày hiện tại
-            const now = new Date();
-            return now.toLocaleString('vi-VN', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-        return date.toLocaleString('vi-VN', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'Ngày không hợp lệ';
+
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
     } catch (e) {
-        // Nếu có lỗi khi parse, trả về ngày hiện tại
-        const now = new Date();
-        return now.toLocaleString('vi-VN', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        console.error('Lỗi định dạng ngày:', e);
+        return 'Ngày không hợp lệ';
     }
 };
 
 const AdminReview = () => {
     const navigate = useNavigate();
     const [reviews, setReviews] = useState([]);
+    const [filteredReviews, setFilteredReviews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
+    const [detailModalVisible, setDetailModalVisible] = useState(false);
     const [currentReview, setCurrentReview] = useState(null);
     const [form] = Form.useForm();
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [searchText, setSearchText] = useState('');
+
+    // Thống kê
+    const stats = {
+        total: reviews.length,
+        approved: reviews.filter(r => r.status === 'approved').length,
+        pending: reviews.filter(r => r.status === 'pending').length,
+        hidden: reviews.filter(r => r.status === 'hidden').length
+    };
 
     const fetchReviews = async () => {
         setLoading(true);
         try {
             const response = await getReviews();
             if (response.data.success) {
-                const reviewsData = response.data.data.map((r) => ({
-                    ...r,
-                    key: r.id,
-                    id: r.id,
-                    user_info: {
-                        name: r.user?.name || 'Khách hàng',
-                        email: r.user?.email || 'Chưa có email',
-                        phone: r.user?.phone || 'Chưa có số điện thoại',
-                        address: r.user?.address || 'Chưa có địa chỉ'
-                    },
-                    order_id: r.order_id || 'OD' + Math.floor(Math.random() * 1000000).toString().padStart(6, '0'),
-                    product_info: {
-                        name: r.product?.Name || r.product_name || 'Sản phẩm không xác định',
-                        image: r.product?.Image || r.productVariant?.product?.Image || r.product_image
-                    },
-                    rating: r.Star_rating || r.rating || 0,
-                    comment: r.Comment || r.comment || 'Không có nhận xét',
-                    created_at: r.created_at || r.CreatedAt || new Date().toISOString(), // Đảm bảo luôn có ngày
-                    updated_at: r.updated_at || r.UpdatedAt || new Date().toISOString()
-                }));
-                setReviews(reviewsData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+                const reviewsData = response.data.data.map((review) => {
+                    // Xác định thông tin người dùng với xử lý lỗi tốt hơn
+                    let userInfo = {
+                        name: 'Khách hàng',
+                        phone: 'Chưa có số điện thoại',
+                        email: 'Chưa có email'
+                    };
+
+                    // Kiểm tra và lấy thông tin user từ các vị trí khác nhau
+                    if (review.user && (review.user.name || review.user.phone || review.user.email)) {
+                        userInfo = {
+                            name: review.user.name || 'Khách hàng',
+                            phone: review.user.phone || 'Chưa có số điện thoại',
+                            email: review.user.email || 'Chưa có email'
+                        };
+                    } else if (review.order && review.order.user) {
+                        userInfo = {
+                            name: review.order.user.name || 'Khách hàng',
+                            phone: review.order.user.phone || 'Chưa có số điện thoại',
+                            email: review.order.user.email || 'Chưa có email'
+                        };
+                    } else if (review.order_detail && review.order_detail.order && review.order_detail.order.user) {
+                        userInfo = {
+                            name: review.order_detail.order.user.name || 'Khách hàng',
+                            phone: review.order_detail.order.user.phone || 'Chưa có số điện thoại',
+                            email: review.order_detail.order.user.email || 'Chưa có email'
+                        };
+                    }
+
+                    // Xác định thông tin sản phẩm
+                    let productName = 'Sản phẩm không xác định';
+                    let productId = null;
+
+                    if (review.product && review.product.Name) {
+                        productName = review.product.Name;
+                        productId = review.product.id || review.product.ID;
+                    } else if (review.product_name) {
+                        productName = review.product_name;
+                    } else if (review.productVariant && review.productVariant.product && review.productVariant.product.Name) {
+                        productName = review.productVariant.product.Name;
+                        productId = review.productVariant.product.id || review.productVariant.product.ID;
+                    } else if (review.order_detail && review.order_detail.productVariant && review.order_detail.productVariant.product) {
+                        productName = review.order_detail.productVariant.product.Name;
+                        productId = review.order_detail.productVariant.product.id || review.order_detail.productVariant.product.ID;
+                    } else if (review.product_id) {
+                        productId = review.product_id;
+                    }
+
+                    // Xác định đánh giá và bình luận
+                    const rating = review.Star_rating || review.rating || 0;
+                    const comment = review.Comment || review.comment || 'Không có nhận xét';
+
+                    // Xác định thời gian
+                    const createdAt = review.created_at || review.CreatedAt || new Date().toISOString();
+
+                    // Trạng thái đánh giá
+                    const isApproved = review.is_approved !== undefined ? review.is_approved : true;
+                    const isHidden = review.is_hidden || false;
+
+                    return {
+                        ...review,
+                        key: review.id,
+                        id: review.id,
+                        user_info: userInfo,
+                        product_info: {
+                            id: productId,
+                            name: productName
+                        },
+                        rating: rating,
+                        comment: comment,
+                        created_at: createdAt,
+                        updated_at: review.updated_at || review.UpdatedAt || new Date().toISOString(),
+                        is_approved: isApproved,
+                        is_hidden: isHidden,
+                        status: isHidden ? 'hidden' : (isApproved ? 'approved' : 'pending')
+                    };
+                });
+
+                const sortedReviews = reviewsData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                setReviews(sortedReviews);
+                setFilteredReviews(sortedReviews);
             } else {
                 setError(response.data.message || "Không thể tải danh sách đánh giá");
             }
@@ -114,11 +178,39 @@ const AdminReview = () => {
         fetchReviews();
     }, []);
 
+    // Lọc đánh giá theo trạng thái và từ khóa tìm kiếm
+    useEffect(() => {
+        let result = reviews;
+
+        if (statusFilter !== 'all') {
+            result = result.filter(review => review.status === statusFilter);
+        }
+
+        if (searchText) {
+            const lowerSearch = searchText.toLowerCase();
+            result = result.filter(review =>
+                review.user_info.name.toLowerCase().includes(lowerSearch) ||
+                review.user_info.phone.toLowerCase().includes(lowerSearch) ||
+                review.user_info.email.toLowerCase().includes(lowerSearch) ||
+                review.product_info.name.toLowerCase().includes(lowerSearch) ||
+                review.comment.toLowerCase().includes(lowerSearch)
+            );
+        }
+
+        setFilteredReviews(result);
+    }, [statusFilter, searchText, reviews]);
+
+    const handleViewDetails = (review) => {
+        setCurrentReview(review);
+        setDetailModalVisible(true);
+    };
+
     const handleEdit = (review) => {
         setCurrentReview(review);
         form.setFieldsValue({
             rating: review.rating,
-            comment: review.comment
+            comment: review.comment,
+            status: review.status
         });
         setModalVisible(true);
     };
@@ -126,10 +218,26 @@ const AdminReview = () => {
     const handleUpdate = async () => {
         try {
             const values = await form.validateFields();
-            await updateReview(currentReview.id, {
+
+            // Chuẩn bị dữ liệu cập nhật
+            const updateData = {
                 Star_rating: values.rating,
                 Comment: values.comment
-            });
+            };
+
+            // Xử lý trạng thái
+            if (values.status === 'approved') {
+                updateData.is_approved = true;
+                updateData.is_hidden = false;
+            } else if (values.status === 'hidden') {
+                updateData.is_approved = false;
+                updateData.is_hidden = true;
+            } else if (values.status === 'pending') {
+                updateData.is_approved = false;
+                updateData.is_hidden = false;
+            }
+
+            await updateReview(currentReview.id, updateData);
             message.success("Cập nhật đánh giá thành công");
             setModalVisible(false);
             fetchReviews();
@@ -138,80 +246,82 @@ const AdminReview = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        Modal.confirm({
-            title: "Bạn có chắc muốn xóa đánh giá này?",
-            content: "Hành động này không thể hoàn tác",
-            okText: "Xóa",
-            okType: "danger",
-            cancelText: "Hủy",
-            onOk: async () => {
-                try {
-                    await deleteReview(id);
-                    message.success("Đã xóa đánh giá");
-                    fetchReviews();
-                } catch (err) {
-                    message.error(err.response?.data?.message || "Xóa thất bại");
-                }
-            },
-        });
+    const handleStatusChange = async (review, newStatus) => {
+        try {
+            const updateData = {};
+
+            if (newStatus === 'approved') {
+                updateData.is_approved = true;
+                updateData.is_hidden = false;
+            } else if (newStatus === 'hidden') {
+                updateData.is_approved = false;
+                updateData.is_hidden = true;
+            }
+
+            await updateReview(review.id, updateData);
+            message.success("Cập nhật trạng thái thành công");
+            fetchReviews();
+        } catch (err) {
+            message.error(err.response?.data?.message || "Cập nhật thất bại");
+        }
+    };
+
+    const getStatusTag = (status) => {
+        switch (status) {
+            case 'approved':
+                return <Tag color="green">Đã duyệt</Tag>;
+            case 'pending':
+                return <Tag color="orange">Chờ duyệt</Tag>;
+            case 'hidden':
+                return <Tag color="red">Đã ẩn</Tag>;
+            default:
+                return <Tag>Không xác định</Tag>;
+        }
     };
 
     const columns = [
         {
-            title: "Mã đơn hàng",
-            dataIndex: "order_id",
-            key: "order_id",
-            sorter: (a, b) => a.order_id.localeCompare(b.order_id),
-            width: 120,
-            align: 'center'
-        },
-        {
-            title: "Thông tin người đánh giá",
+            title: "Người đánh giá",
             key: "user_info",
             render: (_, record) => (
-                <Card size="small" style={{ backgroundColor: '#fafafa' }}>
-                    <div>
-                        <div><strong>👤 {record.user_info.name}</strong></div>
-                        <div>✉️ {record.user_info.email}</div>
-                        <div>📞 {record.user_info.phone}</div>
-                        <div>🏠 {record.user_info.address}</div>
+                <div>
+                    <div style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+                        <UserOutlined style={{ marginRight: 5, color: '#1890ff' }} />
+                        {record.user_info.name}
                     </div>
-                </Card>
+                    <div style={{ display: 'flex', alignItems: 'center', fontSize: '12px', color: '#666' }}>
+                        <PhoneOutlined style={{ marginRight: 5 }} />
+                        {record.user_info.phone}
+                    </div>
+                </div>
             ),
-            width: 250
+            width: 180
         },
         {
             title: "Sản phẩm",
+            dataIndex: ["product_info", "name"],
             key: "product",
-            render: (_, record) => (
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <Image
-                        width={60}
-                        height={60}
-                        style={{
-                            objectFit: 'cover',
-                            borderRadius: '4px',
-                            border: '1px solid #f0f0f0'
-                        }}
-                        src={record.product_info.image
-                            ? `http://localhost:8000/storage/${record.product_info.image}`
-                            : 'https://via.placeholder.com/60'}
-                        alt={record.product_info.name}
-                        fallback="https://via.placeholder.com/60"
-                        preview={false}
-                    />
-                    <span style={{ fontWeight: 500 }}>{record.product_info.name}</span>
+            render: (name, record) => (
+                <div>
+                    <div style={{ fontWeight: 500, display: 'flex', alignItems: 'center' }}>
+                        <ShopOutlined style={{ marginRight: 5, color: '#52c41a' }} />
+                        {name}
+                    </div>
+                    {record.product_info.id && (
+                        <div style={{ fontSize: '12px', color: '#888', marginLeft: '20px' }}>
+                            ID: {record.product_info.id}
+                        </div>
+                    )}
                 </div>
             ),
-            width: 250
+            width: 200
         },
         {
             title: "Đánh giá",
             dataIndex: "rating",
             key: "rating",
             render: (rating) => (
-                <div style={{ display: 'flex', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Rate
                         disabled
                         defaultValue={rating}
@@ -225,12 +335,26 @@ const AdminReview = () => {
             align: 'center'
         },
         {
+            title: "Trạng thái",
+            dataIndex: "status",
+            key: "status",
+            render: (status) => getStatusTag(status),
+            width: 120,
+            align: 'center',
+            filters: [
+                { text: 'Đã duyệt', value: 'approved' },
+                { text: 'Chờ duyệt', value: 'pending' },
+                { text: 'Đã ẩn', value: 'hidden' }
+            ],
+            onFilter: (value, record) => record.status === value
+        },
+        {
             title: "Nhận xét",
             dataIndex: "comment",
             key: "comment",
             render: (text) => (
                 <div style={{
-                    maxWidth: 300,
+                    maxWidth: 250,
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
@@ -244,35 +368,54 @@ const AdminReview = () => {
             dataIndex: "created_at",
             key: "created_at",
             render: (date) => (
-                <Tag color="blue">
+                <Tag color="blue" style={{ display: 'flex', alignItems: 'center' }}>
+                    <CalendarOutlined style={{ marginRight: 5 }} />
                     {formatDateTime(date)}
                 </Tag>
             ),
             sorter: (a, b) => new Date(a.created_at) - new Date(b.created_at),
-            width: 180
+            width: 160
         },
         {
             title: "Thao tác",
             key: "action",
             fixed: 'right',
-            width: 120,
+            width: 180,
             render: (_, record) => (
-                <div style={{ display: "flex", gap: "8px" }}>
+                <Space>
                     <Button
                         size="small"
+                        icon={<EyeOutlined />}
+                        onClick={() => handleViewDetails(record)}
+                    >
+                        Xem
+                    </Button>
+                    <Button
+                        size="small"
+                        icon={<EditOutlined />}
                         onClick={() => handleEdit(record)}
-                        style={{ backgroundColor: '#1890ff', color: '#fff' }}
                     >
                         Sửa
                     </Button>
-                    <Button
-                        size="small"
-                        danger
-                        onClick={() => handleDelete(record.id)}
-                    >
-                        Xóa
-                    </Button>
-                </div>
+                    {record.status !== 'approved' && (
+                        <Button
+                            size="small"
+                            type="primary"
+                            onClick={() => handleStatusChange(record, 'approved')}
+                        >
+                            Duyệt
+                        </Button>
+                    )}
+                    {record.status !== 'hidden' && (
+                        <Button
+                            size="small"
+                            danger
+                            onClick={() => handleStatusChange(record, 'hidden')}
+                        >
+                            Ẩn
+                        </Button>
+                    )}
+                </Space>
             )
         }
     ];
@@ -285,7 +428,7 @@ const AdminReview = () => {
                 alignItems: 'center',
                 height: '60vh'
             }}>
-                <Spin size="large" />
+                <Spin size="large" tip="Đang tải dữ liệu..." />
             </div>
         );
     }
@@ -351,11 +494,85 @@ const AdminReview = () => {
                 <div style={{ width: '100px' }}></div>
             </div>
 
-            {reviews.length === 0 ? (
+            {/* Thống kê */}
+            <Row gutter={16} style={{ marginBottom: 24 }}>
+                <Col span={6}>
+                    <Card>
+                        <Statistic
+                            title="Tổng số đánh giá"
+                            value={stats.total}
+                            prefix={<StarOutlined />}
+                            valueStyle={{ color: '#1890ff' }}
+                        />
+                    </Card>
+                </Col>
+                <Col span={6}>
+                    <Card>
+                        <Statistic
+                            title="Đã duyệt"
+                            value={stats.approved}
+                            valueStyle={{ color: '#52c41a' }}
+                        />
+                    </Card>
+                </Col>
+                <Col span={6}>
+                    <Card>
+                        <Statistic
+                            title="Chờ duyệt"
+                            value={stats.pending}
+                            valueStyle={{ color: '#faad14' }}
+                        />
+                    </Card>
+                </Col>
+                <Col span={6}>
+                    <Card>
+                        <Statistic
+                            title="Đã ẩn"
+                            value={stats.hidden}
+                            valueStyle={{ color: '#ff4d4f' }}
+                        />
+                    </Card>
+                </Col>
+            </Row>
+
+            {/* Bộ lọc và tìm kiếm */}
+            <Card style={{ marginBottom: 16 }}>
+                <Row gutter={16} align="middle">
+                    <Col span={8}>
+                        <Input
+                            placeholder="Tìm kiếm theo tên, sđt, email, sản phẩm hoặc nhận xét..."
+                            value={searchText}
+                            onChange={(e) => setSearchText(e.target.value)}
+                            allowClear
+                        />
+                    </Col>
+                    <Col span={8}>
+                        <Select
+                            value={statusFilter}
+                            onChange={setStatusFilter}
+                            style={{ width: '100%' }}
+                        >
+                            <Select.Option value="all">Tất cả trạng thái</Select.Option>
+                            <Select.Option value="approved">Đã duyệt</Select.Option>
+                            <Select.Option value="pending">Chờ duyệt</Select.Option>
+                            <Select.Option value="hidden">Đã ẩn</Select.Option>
+                        </Select>
+                    </Col>
+                    <Col span={8} style={{ textAlign: 'right' }}>
+                        <Button type="primary" onClick={fetchReviews}>
+                            Làm mới
+                        </Button>
+                    </Col>
+                </Row>
+            </Card>
+
+            {filteredReviews.length === 0 ? (
                 <Empty
                     description={
                         <span style={{ color: '#666', fontSize: '16px' }}>
-                            Chưa có đánh giá nào
+                            {reviews.length === 0
+                                ? "Chưa có đánh giá nào"
+                                : "Không tìm thấy đánh giá phù hợp"}
                         </span>
                     }
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -368,16 +585,17 @@ const AdminReview = () => {
                 />
             ) : (
                 <Table
-                    dataSource={reviews}
+                    dataSource={filteredReviews}
                     columns={columns}
                     rowKey="id"
                     bordered
                     pagination={{
                         pageSize: 10,
                         showSizeChanger: true,
-                        showTotal: (total) => `Tổng ${total} đánh giá`
+                        showTotal: (total) => `Tổng ${total} đánh giá`,
+                        showQuickJumper: true
                     }}
-                    scroll={{ x: 1500 }}
+                    scroll={{ x: 1300 }}
                     locale={{
                         emptyText: 'Không có dữ liệu đánh giá'
                     }}
@@ -389,15 +607,108 @@ const AdminReview = () => {
                 />
             )}
 
+            {/* Modal xem chi tiết đánh giá */}
             <Modal
                 title={`Chi tiết đánh giá #${currentReview?.id || ''}`}
+                visible={detailModalVisible}
+                onCancel={() => setDetailModalVisible(false)}
+                footer={[
+                    <Button key="close" onClick={() => setDetailModalVisible(false)}>
+                        Đóng
+                    </Button>,
+                    <Button
+                        key="edit"
+                        type="primary"
+                        onClick={() => {
+                            setDetailModalVisible(false);
+                            handleEdit(currentReview);
+                        }}
+                    >
+                        Chỉnh sửa
+                    </Button>
+                ]}
+                width={700}
+            >
+                {currentReview && (
+                    <Descriptions
+                        bordered
+                        column={1}
+                        size="small"
+                        labelStyle={{
+                            fontWeight: '500',
+                            width: '120px',
+                            backgroundColor: '#fafafa'
+                        }}
+                    >
+                        <Descriptions.Item label="Người đánh giá">
+                            <div>
+                                <div style={{ fontWeight: 'bold', marginBottom: 5 }}>
+                                    <UserOutlined style={{ marginRight: 5 }} />
+                                    {currentReview.user_info.name}
+                                </div>
+                                <div style={{ marginBottom: 3 }}>
+                                    <PhoneOutlined style={{ marginRight: 5 }} />
+                                    {currentReview.user_info.phone}
+                                </div>
+                                <div>
+                                    <MailOutlined style={{ marginRight: 5 }} />
+                                    {currentReview.user_info.email}
+                                </div>
+                            </div>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Sản phẩm">
+                            <div>
+                                <div style={{ fontWeight: 500 }}>
+                                    <ShopOutlined style={{ marginRight: 5 }} />
+                                    {currentReview.product_info.name}
+                                </div>
+                                {currentReview.product_info.id && (
+                                    <div style={{ fontSize: '12px', color: '#888', marginLeft: 20 }}>
+                                        ID: {currentReview.product_info.id}
+                                    </div>
+                                )}
+                            </div>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Trạng thái">
+                            {getStatusTag(currentReview.status)}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Ngày đánh giá">
+                            <CalendarOutlined style={{ marginRight: 5 }} />
+                            {formatDateTime(currentReview.created_at)}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Đánh giá">
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <Rate disabled defaultValue={currentReview.rating} />
+                                <span style={{ marginLeft: 8, color: '#faad14', fontWeight: 500 }}>
+                                    {currentReview.rating}.0
+                                </span>
+                            </div>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Nhận xét">
+                            <div style={{
+                                padding: '12px',
+                                backgroundColor: '#f9f9f9',
+                                borderRadius: '4px',
+                                maxHeight: '200px',
+                                overflowY: 'auto',
+                                lineHeight: 1.6
+                            }}>
+                                {currentReview.comment}
+                            </div>
+                        </Descriptions.Item>
+                    </Descriptions>
+                )}
+            </Modal>
+
+            {/* Modal chỉnh sửa đánh giá */}
+            <Modal
+                title={`Chỉnh sửa đánh giá #${currentReview?.id || ''}`}
                 visible={modalVisible}
                 onOk={handleUpdate}
                 onCancel={() => setModalVisible(false)}
                 okText="Cập nhật"
                 cancelText="Hủy"
                 width={700}
-                bodyStyle={{ padding: '24px' }}
             >
                 {currentReview && (
                     <>
@@ -407,54 +718,46 @@ const AdminReview = () => {
                             size="small"
                             labelStyle={{
                                 fontWeight: '500',
-                                width: '120px'
+                                width: '120px',
+                                backgroundColor: '#fafafa'
                             }}
                         >
                             <Descriptions.Item label="Người đánh giá">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <div style={{
-                                        width: '40px',
-                                        height: '40px',
-                                        borderRadius: '50%',
-                                        backgroundColor: '#1890ff',
-                                        color: '#fff',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontWeight: 'bold'
-                                    }}>
-                                        {currentReview.user_info.name.charAt(0).toUpperCase()}
+                                <div>
+                                    <div style={{ fontWeight: 'bold', marginBottom: 5 }}>
+                                        <UserOutlined style={{ marginRight: 5 }} />
+                                        {currentReview.user_info.name}
+                                    </div>
+                                    <div style={{ marginBottom: 3 }}>
+                                        <PhoneOutlined style={{ marginRight: 5 }} />
+                                        {currentReview.user_info.phone}
                                     </div>
                                     <div>
-                                        <div><strong>{currentReview.user_info.name}</strong></div>
-                                        <div style={{ color: '#666', fontSize: '13px' }}>{currentReview.user_info.email}</div>
+                                        <MailOutlined style={{ marginRight: 5 }} />
+                                        {currentReview.user_info.email}
                                     </div>
                                 </div>
                             </Descriptions.Item>
                             <Descriptions.Item label="Sản phẩm">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <Image
-                                        width={60}
-                                        height={60}
-                                        style={{
-                                            objectFit: 'cover',
-                                            borderRadius: '4px',
-                                            border: '1px solid #f0f0f0'
-                                        }}
-                                        src={currentReview.product_info.image
-                                            ? `http://localhost:8000/storage/${currentReview.product_info.image}`
-                                            : 'https://via.placeholder.com/60'}
-                                        alt={currentReview.product_info.name}
-                                    />
-                                    <span style={{ fontWeight: 500 }}>{currentReview.product_info.name}</span>
+                                <div>
+                                    <div style={{ fontWeight: 500 }}>
+                                        <ShopOutlined style={{ marginRight: 5 }} />
+                                        {currentReview.product_info.name}
+                                    </div>
+                                    {currentReview.product_info.id && (
+                                        <div style={{ fontSize: '12px', color: '#888', marginLeft: 20 }}>
+                                            ID: {currentReview.product_info.id}
+                                        </div>
+                                    )}
                                 </div>
                             </Descriptions.Item>
                             <Descriptions.Item label="Ngày đánh giá">
+                                <CalendarOutlined style={{ marginRight: 5 }} />
                                 {formatDateTime(currentReview.created_at)}
                             </Descriptions.Item>
                         </Descriptions>
 
-                        <Divider orientation="left" style={{ margin: '24px 0 16px' }}>Nội dung đánh giá</Divider>
+                        <Divider />
 
                         <Form form={form} layout="vertical">
                             <Form.Item
@@ -474,6 +777,17 @@ const AdminReview = () => {
                                     style={{ width: '100%' }}
                                     placeholder="Nhập nội dung nhận xét..."
                                 />
+                            </Form.Item>
+                            <Form.Item
+                                name="status"
+                                label="Trạng thái"
+                                rules={[{ required: true, message: 'Vui lòng chọn trạng thái' }]}
+                            >
+                                <Select placeholder="Chọn trạng thái">
+                                    <Select.Option value="approved">Đã duyệt</Select.Option>
+                                    <Select.Option value="pending">Chờ duyệt</Select.Option>
+                                    <Select.Option value="hidden">Đã ẩn</Select.Option>
+                                </Select>
                             </Form.Item>
                         </Form>
                     </>
