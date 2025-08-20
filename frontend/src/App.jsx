@@ -227,8 +227,12 @@ const App = () => {
     },
   ]);
 
-  return <RouterProvider router={router} />;
-   <ChatWidget /> 
+  return (
+  <>
+    <RouterProvider router={router} />
+    <ChatWidget />
+  </>
+);
 };
 
 export default App;
