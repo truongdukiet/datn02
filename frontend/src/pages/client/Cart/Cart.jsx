@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import ClientHeader from "../../../layouts/MainLayout/ClientHeader";
 import { Link, Navigate } from "react-router-dom";
 import { Checkbox, message } from "antd";
@@ -37,43 +37,6 @@ const Cart = () => {
 
     fetchCartItems();
   }, []);
-
-  // Hàm để thêm sản phẩm mới vào danh sách chọn
-  const addToSelectedItems = (productVariantId) => {
-    if (!selectedItems.includes(productVariantId)) {
-      setSelectedItems([...selectedItems, productVariantId]);
-    }
-  };
-
-  // Giả sử bạn có một hàm để thêm sản phẩm vào giỏ hàng
-  // Tôi sẽ thêm một hàm mẫu ở đây để minh họa
-  const handleAddToCart = async (productVariantId, quantity = 1) => {
-    try {
-      await apiClient.post("/api/carts", {
-        ProductVariantID: productVariantId,
-        Quantity: quantity
-      }, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      // Sau khi thêm thành công, tự động chọn sản phẩm mới
-      addToSelectedItems(productVariantId);
-
-      // Cập nhật lại giỏ hàng
-      const response = await apiClient.get("/api/carts", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      setCartItems(response.data.cart_items);
-
-      message.success("Sản phẩm đã được thêm vào giỏ hàng.");
-    } catch (error) {
-      message.error("Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng.");
-    }
-  };
 
   const handleRemoveItem = async (productVariantId) => {
     try {
@@ -119,40 +82,46 @@ const Cart = () => {
     }
   };
 
-  const handleSelectItem = (productVariantId) => {
+  const handleSelectItem = useCallback((productVariantId) => {
     if (selectedItems.includes(productVariantId)) {
       setSelectedItems(selectedItems.filter(id => id !== productVariantId));
     } else {
       setSelectedItems([...selectedItems, productVariantId]);
     }
-  };
+  }, [selectedItems]);
 
-  const handleSelectAll = () => {
+  const handleSelectAll = useCallback(() => {
     if (selectedItems.length === cartItems.length) {
       setSelectedItems([]);
     } else {
       setSelectedItems(cartItems.map(item => item.ProductVariantID));
     }
-  };
+  }, [selectedItems, cartItems]);
 
-  const selectedTotalAmount = cartItems.reduce((total, item) => {
-    if (selectedItems.includes(item.ProductVariantID)) {
+  const selectedTotalAmount = useMemo(() => {
+    return cartItems.reduce((total, item) => {
+      if (selectedItems.includes(item.ProductVariantID)) {
+        const price = item.product_variant?.Price || 0;
+        const quantity = item.Quantity || 0;
+        return total + (price * quantity);
+      }
+      return total;
+    }, 0);
+  }, [cartItems, selectedItems]);
+
+  const totalAmount = useMemo(() => {
+    return cartItems.reduce((total, item) => {
       const price = item.product_variant?.Price || 0;
       const quantity = item.Quantity || 0;
       return total + (price * quantity);
-    }
-    return total;
-  }, 0);
+    }, 0);
+  }, [cartItems]);
 
-  const getSelectedItems = () => {
+  const getSelectedItems = useCallback(() => {
     return cartItems.filter(item => selectedItems.includes(item.ProductVariantID));
-  };
+  }, [cartItems, selectedItems]);
 
-  const totalAmount = cartItems.reduce((total, item) => {
-    const price = item.product_variant?.Price || 0;
-    const quantity = item.Quantity || 0;
-    return total + (price * quantity);
-  }, 0);
+  const hasSelectedItems = selectedItems.length > 0;
 
   return (
     <>
@@ -234,13 +203,13 @@ const Cart = () => {
                     <div className="tw-flex tw-items-center tw-justify-between">
                       <p className="tw-m-0">Tổng đơn hàng</p>
                       <p className="tw-m-0 tw-font-bold tw-text-xl tw-text-[#1A1C20]">
-                        {formatPrice(selectedItems.length > 0 ? selectedTotalAmount : totalAmount)}
+                        {formatPrice(hasSelectedItems ? selectedTotalAmount : totalAmount)}
                       </p>
                     </div>
                     <div className="tw-flex tw-items-center tw-justify-between">
                       <p className="tw-m-0">Số sản phẩm</p>
                       <p className="tw-m-0 tw-text-[#1A1C20]">
-                        {selectedItems.length > 0 ? `${selectedItems.length} sản phẩm được chọn` : `${cartItems.length} sản phẩm`}
+                        {hasSelectedItems ? `${selectedItems.length} sản phẩm được chọn` : `${cartItems.length} sản phẩm`}
                       </p>
                     </div>
                   </div>
@@ -248,16 +217,16 @@ const Cart = () => {
                   <Link
                     to="/checkout"
                     state={{
-                      cartItems: selectedItems.length > 0 ? getSelectedItems() : cartItems,
-                      totalAmount: selectedItems.length > 0 ? selectedTotalAmount : totalAmount
+                      cartItems: hasSelectedItems ? getSelectedItems() : cartItems,
+                      totalAmount: hasSelectedItems ? selectedTotalAmount : totalAmount
                     }}
                     className={`tw-bg-[#99CCD0] tw-text-white tw-font-medium tw-px-4 tw-h-12 tw-uppercase tw-flex tw-items-center tw-justify-center tw-w-full tw-mt-6 ${
-                      cartItems.length === 0 ? "tw-opacity-50 tw-cursor-not-allowed" : "tw-cursor-pointer"
+                      !hasSelectedItems ? "tw-opacity-50 tw-cursor-not-allowed" : "tw-cursor-pointer"
                     }`}
                     onClick={(e) => {
-                      if (cartItems.length === 0) {
+                      if (!hasSelectedItems) {
                         e.preventDefault();
-                        message.warning("Giỏ hàng của bạn đang trống");
+                        message.warning("Vui lòng chọn ít nhất một sản phẩm để thanh toán");
                       }
                     }}
                   >
