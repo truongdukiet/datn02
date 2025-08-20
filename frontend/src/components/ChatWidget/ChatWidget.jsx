@@ -12,7 +12,7 @@ export default function ChatWidget() {
           position: "fixed",
           bottom: "24px",
           right: "24px",
-          backgroundColor: "#8B5E3C", // nâu gỗ sang trọng
+          backgroundColor: "#8B5E3C", 
           color: "white",
           border: "none",
           borderRadius: "50%",
@@ -37,11 +37,11 @@ export default function ChatWidget() {
             right: "24px",
             width: "380px",
             height: "520px",
-            border: "1px solid #D4AF37", // vàng đồng
+            border: "1px solid #D4AF37", 
             borderRadius: "16px",
             overflow: "hidden",
             boxShadow: "0 8px 25px rgba(0,0,0,0.2)",
-            backgroundColor: "#FAF9F6", // nền trắng kem
+            backgroundColor: "#FAF9F6", 
             display: "flex",
             flexDirection: "column",
             zIndex: 9999,
@@ -57,10 +57,10 @@ export default function ChatWidget() {
               fontSize: "16px",
             }}
           >
-            🪑 Trợ lý Nội Thất NextGen
+           Trợ lý Nội Thất NextGen
           </div>
 
-          {/* Iframe Chatbase (full, có input chat) */}
+          {}
           <iframe
             src="https://www.chatbase.co/chatbot-iframe/DAmb9BsvS0IcV4R_4yauW"
             style={{
