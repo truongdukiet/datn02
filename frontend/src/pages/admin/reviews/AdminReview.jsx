@@ -88,42 +88,20 @@ const AdminReview = () => {
                         email: 'Chưa có email'
                     };
 
-                    if (review.user && (review.user.name || review.user.phone || review.user.email)) {
+                    if (review.user && (review.user.Name || review.user.Phone || review.user.Email)) {
                         userInfo = {
-                            name: review.user.name || 'Khách hàng',
-                            phone: review.user.phone || 'Chưa có số điện thoại',
-                            email: review.user.email || 'Chưa có email'
-                        };
-                    } else if (review.order && review.order.user) {
-                        userInfo = {
-                            name: review.order.user.name || 'Khách hàng',
-                            phone: review.order.user.phone || 'Chưa có số điện thoại',
-                            email: review.order.user.email || 'Chưa có email'
-                        };
-                    } else if (review.order_detail && review.order_detail.order && review.order_detail.order.user) {
-                        userInfo = {
-                            name: review.order_detail.order.user.name || 'Khách hàng',
-                            phone: review.order_detail.order.user.phone || 'Chưa có số điện thoại',
-                            email: review.order_detail.order.user.email || 'Chưa có email'
+                            name: review.user.Name || 'Khách hàng',
+                            phone: review.user.Phone || 'Chưa có số điện thoại',
+                            email: review.user.Email || 'Chưa có email'
                         };
                     }
 
                     let productName = 'Sản phẩm không xác định';
                     let productId = null;
 
-                    if (review.product && review.product.Name) {
-                        productName = review.product.Name;
-                        productId = review.product.id || review.product.ID;
-                    } else if (review.product_name) {
-                        productName = review.product_name;
-                    } else if (review.productVariant && review.productVariant.product && review.productVariant.product.Name) {
-                        productName = review.productVariant.product.Name;
-                        productId = review.productVariant.product.id || review.productVariant.product.ID;
-                    } else if (review.order_detail && review.order_detail.productVariant && review.order_detail.productVariant.product) {
-                        productName = review.order_detail.productVariant.product.Name;
-                        productId = review.order_detail.productVariant.product.id || review.order_detail.productVariant.product.ID;
-                    } else if (review.product_id) {
-                        productId = review.product_id;
+                    if (review.product_variant?.product?.Name) {
+                        productName = review.product_variant?.product?.Name;
+                        productId = review.product_variant?.product?.id || review.product_variant?.product?.ID;
                     }
 
                     const rating = review.Star_rating || review.rating || 0;
