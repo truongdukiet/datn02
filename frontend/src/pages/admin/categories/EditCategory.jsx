@@ -24,7 +24,7 @@ const EditCategory = () => {
                     Name: category.Name || "",
                     Description: category.Description || "",
                     Image: category.Image || "",
-                    Status: category.Status || "inactive"
+                    Status: category.Status || "active" // Sửa thành "active" để đồng bộ
                 });
                 setLoading(false);
             } catch (err) {

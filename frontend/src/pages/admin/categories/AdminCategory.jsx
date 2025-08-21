@@ -39,32 +39,10 @@ const AdminCategory = () => {
         }
     };
 
-    const handleToggleStatus = async (id) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/categories/toggle-status/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                fetchCategories();
-            } else {
-                alert(result.message || "Không thể chuyển đổi trạng thái");
-            }
-        } catch (error) {
-            alert("Lỗi chuyển đổi trạng thái");
-        }
-    };
-
     const filteredCategories = categories.filter((category) => {
         const matchesSearch = category.Name.toLowerCase().includes(searchTerm.toLowerCase());
-        // Giả sử Status từ API là 'active' và 'inactive'
-        const matchesStatus = statusFilter === 'all' || category.Status === statusFilter;
-        return matchesSearch && matchesStatus;
+        // Vì tất cả đều hiển thị là "Hoạt động", nên bỏ lọc theo status
+        return matchesSearch;
     });
 
     if (loading) return <div className="admin-category-loading">Đang tải dữ liệu...</div>;
@@ -84,14 +62,7 @@ const AdminCategory = () => {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
-                <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                    <option value="all">Tất cả trạng thái</option>
-                    <option value="active">Hoạt động</option>
-                    <option value="inactive">Không hoạt động</option>
-                </select>
+                {/* Ẩn bộ lọc trạng thái vì tất cả đều là "Hoạt động" */}
             </div>
 
             <table className="admin-category-table">
@@ -122,12 +93,10 @@ const AdminCategory = () => {
                             <td>{category.Description}</td>
                             <td>
                                 <span
-                                    className={`status-tag ${category.Status === 'active' ? 'active' : 'inactive'}`}
-                                    onClick={() => handleToggleStatus(category.CategoryID)}
-                                    style={{ cursor: 'pointer' }}
-                                    title="Nhấn để đổi trạng thái"
+                                    className="status-tag active"
+                                    title="Trạng thái"
                                 >
-                                    {category.Status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
+                                    Hoạt động
                                 </span>
                             </td>
                             <td>
