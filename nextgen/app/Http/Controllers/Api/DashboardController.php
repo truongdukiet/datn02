@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\Review; // ✅ Thêm dòng này để sử dụng Review Model
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
@@ -16,43 +17,44 @@ class DashboardController extends Controller
      * Get all dashboard data in a single endpoint
      */
     public function index(): JsonResponse
-{
-    \Log::info('Attempting to fetch dashboard data'); // Thêm dòng này
-    
-    try {
-        $data = [
-            'summary' => $this->getSummaryStats(),
-            'user_growth' => $this->getUserGrowthData(),
-            'revenue_data' => $this->getRevenueData(),
-            'recent_orders' => $this->getRecentOrdersData(),
-            'order_status' => $this->getOrderStatusDistribution()
-        ];
+    {
+        \Log::info('Attempting to fetch dashboard data');
 
-        \Log::info('Dashboard data fetched successfully', ['data' => $data]); // Thêm dòng này
-        
-        return response()->json([
-            'success' => true,
-            'data' => $data
-        ]);
-        
-    } catch (\Exception $e) {
-        \Log::error('Dashboard ERROR: '.$e->getMessage(), [
-            'exception' => $e,
-            'trace' => $e->getTraceAsString(),
-            'request' => request()->all()
-        ]);
-        
-        return response()->json([
-            'success' => false,
-            'message' => 'An error occurred while fetching dashboard data',
-            'error' => config('app.debug') ? [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine()
-            ] : null
-        ], 500);
+        try {
+            $data = [
+                'summary' => $this->getSummaryStats(),
+                'user_growth' => $this->getUserGrowthData(),
+                'revenue_data' => $this->getRevenueData(),
+                'recent_orders' => $this->getRecentOrdersData(),
+                'order_status' => $this->getOrderStatusDistribution(),
+                'ratings_summary' => $this->getRatingsSummary() // ✅ Thêm thống kê đánh giá vào đây
+            ];
+
+            \Log::info('Dashboard data fetched successfully', ['data' => $data]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $data
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Dashboard ERROR: '.$e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString(),
+                'request' => request()->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while fetching dashboard data',
+                'error' => config('app.debug') ? [
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ] : null
+            ], 500);
+        }
     }
-}
 
     /**
      * Get summary statistics
@@ -147,10 +149,10 @@ class DashboardController extends Controller
     private function getUserGrowthData(): array
     {
         return User::select([
-                DB::raw('DATE_FORMAT(Created_at, "%Y-%m") as month'), // Sửa thành Created_at
+                DB::raw('DATE_FORMAT(Created_at, "%Y-%m") as month'),
                 DB::raw('COUNT(*) as count')
             ])
-            ->where('Created_at', '>=', now()->subMonths(6)) // Sửa ở đây
+            ->where('Created_at', '>=', now()->subMonths(6))
             ->groupBy('month')
             ->orderBy('month')
             ->get()
@@ -166,10 +168,10 @@ class DashboardController extends Controller
     private function getRevenueData(): array
     {
         return Order::select([
-                DB::raw('DATE_FORMAT(Create_at, "%Y-%m") as month'), // Sửa created_at -> Create_at
-                DB::raw('SUM(Total_amount) as amount') // Đảm bảo viết hoa Total_amount
+                DB::raw('DATE_FORMAT(Create_at, "%Y-%m") as month'),
+                DB::raw('SUM(Total_amount) as amount')
             ])
-            ->where('Status', 'completed') // Đảm bảo viết hoa Status
+            ->where('Status', 'completed')
             ->where('Create_at', '>=', now()->subMonths(6))
             ->groupBy('month')
             ->orderBy('month')
@@ -186,14 +188,14 @@ class DashboardController extends Controller
     private function getRecentOrdersData(): array
     {
         return Order::with(['user:UserID,username'])
-            ->select(['OrderID', 'UserID', 'Status', 'Total_amount', 'Create_at']) // Sửa tên cột
-            ->orderBy('Create_at', 'desc') // Sửa ở đây
+            ->select(['OrderID', 'UserID', 'Status', 'Total_amount', 'Create_at'])
+            ->orderBy('Create_at', 'desc')
             ->limit(5)
             ->get()
             ->map(function ($order) {
                 return [
                     'id' => $order->OrderID,
-                    'customer_name' => $order->Receiver_name, // Sử dụng Receiver_name thay vì user->name
+                    'customer_name' => $order->Receiver_name,
                     'status' => $order->Status,
                     'total_amount' => (float) $order->Total_amount,
                     'created_at' => $order->Create_at ? Carbon::parse($order->Create_at)->format('Y-m-d H:i:s') : null
@@ -212,6 +214,40 @@ class DashboardController extends Controller
             ->get()
             ->pluck('count', 'status')
             ->toArray();
+    }
+
+    /**
+     * ✅ Lấy dữ liệu thống kê đánh giá
+     */
+    private function getRatingsSummary(): array
+    {
+        // Lấy tổng số đánh giá
+        $totalRatings = Review::count();
+
+        // Lấy điểm trung bình
+        $averageRating = Review::avg('Star_rating');
+
+        // Lấy phân bố đánh giá (số lượng đánh giá cho mỗi số sao)
+        $distribution = Review::select('Star_rating', DB::raw('COUNT(*) as count'))
+            ->groupBy('Star_rating')
+            ->orderBy('Star_rating', 'desc')
+            ->get()
+            ->pluck('count', 'Star_rating')
+            ->toArray();
+
+        // Đảm bảo có đủ các mức sao từ 1 đến 5, nếu không có thì gán 0
+        for ($i = 1; $i <= 5; $i++) {
+            if (!isset($distribution[$i])) {
+                $distribution[$i] = 0;
+            }
+        }
+        // Sắp xếp lại distribution theo thứ tự tăng dần của sao nếu cần (frontend đã xử lý)
+
+        return [
+            'average' => (float) number_format($averageRating, 1), // Làm tròn 1 chữ số thập phân
+            'total' => (int) $totalRatings,
+            'distribution' => $distribution
+        ];
     }
 
     private function handleError(\Exception $e): JsonResponse
