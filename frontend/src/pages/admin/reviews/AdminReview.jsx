@@ -15,11 +15,10 @@ import {
     Empty,
     Card,
     Space,
-    Switch,
-    Select,
     Row,
     Col,
-    Statistic
+    Statistic,
+    Select
 } from "antd";
 import {
     ArrowLeftOutlined,
@@ -70,7 +69,6 @@ const AdminReview = () => {
     const [statusFilter, setStatusFilter] = useState('all');
     const [searchText, setSearchText] = useState('');
 
-    // Thống kê
     const stats = {
         total: reviews.length,
         approved: reviews.filter(r => r.status === 'approved').length,
@@ -84,14 +82,12 @@ const AdminReview = () => {
             const response = await getReviews();
             if (response.data.success) {
                 const reviewsData = response.data.data.map((review) => {
-                    // Xác định thông tin người dùng với xử lý lỗi tốt hơn
                     let userInfo = {
                         name: 'Khách hàng',
                         phone: 'Chưa có số điện thoại',
                         email: 'Chưa có email'
                     };
 
-                    // Kiểm tra và lấy thông tin user từ các vị trí khác nhau
                     if (review.user && (review.user.name || review.user.phone || review.user.email)) {
                         userInfo = {
                             name: review.user.name || 'Khách hàng',
@@ -112,7 +108,6 @@ const AdminReview = () => {
                         };
                     }
 
-                    // Xác định thông tin sản phẩm
                     let productName = 'Sản phẩm không xác định';
                     let productId = null;
 
@@ -131,14 +126,9 @@ const AdminReview = () => {
                         productId = review.product_id;
                     }
 
-                    // Xác định đánh giá và bình luận
                     const rating = review.Star_rating || review.rating || 0;
                     const comment = review.Comment || review.comment || 'Không có nhận xét';
-
-                    // Xác định thời gian
                     const createdAt = review.created_at || review.CreatedAt || new Date().toISOString();
-
-                    // Trạng thái đánh giá
                     const isApproved = review.is_approved !== undefined ? review.is_approved : true;
                     const isHidden = review.is_hidden || false;
 
@@ -178,7 +168,6 @@ const AdminReview = () => {
         fetchReviews();
     }, []);
 
-    // Lọc đánh giá theo trạng thái và từ khóa tìm kiếm
     useEffect(() => {
         let result = reviews;
 
@@ -208,8 +197,6 @@ const AdminReview = () => {
     const handleEdit = (review) => {
         setCurrentReview(review);
         form.setFieldsValue({
-            rating: review.rating,
-            comment: review.comment,
             status: review.status
         });
         setModalVisible(true);
@@ -218,27 +205,22 @@ const AdminReview = () => {
     const handleUpdate = async () => {
         try {
             const values = await form.validateFields();
+            const newStatus = values.status;
 
-            // Chuẩn bị dữ liệu cập nhật
-            const updateData = {
-                Star_rating: values.rating,
-                Comment: values.comment
-            };
-
-            // Xử lý trạng thái
-            if (values.status === 'approved') {
+            const updateData = {};
+            if (newStatus === 'approved') {
                 updateData.is_approved = true;
                 updateData.is_hidden = false;
-            } else if (values.status === 'hidden') {
+            } else if (newStatus === 'hidden') {
                 updateData.is_approved = false;
                 updateData.is_hidden = true;
-            } else if (values.status === 'pending') {
+            } else if (newStatus === 'pending') {
                 updateData.is_approved = false;
                 updateData.is_hidden = false;
             }
 
             await updateReview(currentReview.id, updateData);
-            message.success("Cập nhật đánh giá thành công");
+            message.success("Cập nhật trạng thái thành công");
             setModalVisible(false);
             fetchReviews();
         } catch (err) {
@@ -249,7 +231,6 @@ const AdminReview = () => {
     const handleStatusChange = async (review, newStatus) => {
         try {
             const updateData = {};
-
             if (newStatus === 'approved') {
                 updateData.is_approved = true;
                 updateData.is_hidden = false;
@@ -494,7 +475,6 @@ const AdminReview = () => {
                 <div style={{ width: '100px' }}></div>
             </div>
 
-            {/* Thống kê */}
             <Row gutter={16} style={{ marginBottom: 24 }}>
                 <Col span={6}>
                     <Card>
@@ -535,7 +515,6 @@ const AdminReview = () => {
                 </Col>
             </Row>
 
-            {/* Bộ lọc và tìm kiếm */}
             <Card style={{ marginBottom: 16 }}>
                 <Row gutter={16} align="middle">
                     <Col span={8}>
@@ -607,7 +586,6 @@ const AdminReview = () => {
                 />
             )}
 
-            {/* Modal xem chi tiết đánh giá */}
             <Modal
                 title={`Chi tiết đánh giá #${currentReview?.id || ''}`}
                 visible={detailModalVisible}
@@ -700,15 +678,15 @@ const AdminReview = () => {
                 )}
             </Modal>
 
-            {/* Modal chỉnh sửa đánh giá */}
+            {/* Modal chỉnh sửa đánh giá (đã được sửa đổi) */}
             <Modal
-                title={`Chỉnh sửa đánh giá #${currentReview?.id || ''}`}
+                title={`Chỉnh sửa trạng thái đánh giá #${currentReview?.id || ''}`}
                 visible={modalVisible}
                 onOk={handleUpdate}
                 onCancel={() => setModalVisible(false)}
-                okText="Cập nhật"
+                okText="Cập nhật trạng thái"
                 cancelText="Hủy"
-                width={700}
+                width={500}
             >
                 {currentReview && (
                     <>
@@ -722,62 +700,27 @@ const AdminReview = () => {
                                 backgroundColor: '#fafafa'
                             }}
                         >
-                            <Descriptions.Item label="Người đánh giá">
-                                <div>
-                                    <div style={{ fontWeight: 'bold', marginBottom: 5 }}>
-                                        <UserOutlined style={{ marginRight: 5 }} />
-                                        {currentReview.user_info.name}
-                                    </div>
-                                    <div style={{ marginBottom: 3 }}>
-                                        <PhoneOutlined style={{ marginRight: 5 }} />
-                                        {currentReview.user_info.phone}
-                                    </div>
-                                    <div>
-                                        <MailOutlined style={{ marginRight: 5 }} />
-                                        {currentReview.user_info.email}
-                                    </div>
+                            <Descriptions.Item label="Đánh giá">
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    <Rate disabled defaultValue={currentReview.rating} />
+                                    <span style={{ marginLeft: 8, color: '#faad14', fontWeight: 500 }}>
+                                        {currentReview.rating}.0
+                                    </span>
                                 </div>
                             </Descriptions.Item>
-                            <Descriptions.Item label="Sản phẩm">
-                                <div>
-                                    <div style={{ fontWeight: 500 }}>
-                                        <ShopOutlined style={{ marginRight: 5 }} />
-                                        {currentReview.product_info.name}
-                                    </div>
-                                    {currentReview.product_info.id && (
-                                        <div style={{ fontSize: '12px', color: '#888', marginLeft: 20 }}>
-                                            ID: {currentReview.product_info.id}
-                                        </div>
-                                    )}
+                            <Descriptions.Item label="Nhận xét">
+                                <div style={{
+                                    padding: '12px',
+                                    backgroundColor: '#f9f9f9',
+                                    borderRadius: '4px',
+                                    lineHeight: 1.6
+                                }}>
+                                    {currentReview.comment}
                                 </div>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="Ngày đánh giá">
-                                <CalendarOutlined style={{ marginRight: 5 }} />
-                                {formatDateTime(currentReview.created_at)}
                             </Descriptions.Item>
                         </Descriptions>
-
                         <Divider />
-
                         <Form form={form} layout="vertical">
-                            <Form.Item
-                                name="rating"
-                                label="Đánh giá (sao)"
-                                rules={[{ required: true, message: 'Vui lòng chọn số sao' }]}
-                            >
-                                <Rate style={{ fontSize: 24 }} />
-                            </Form.Item>
-                            <Form.Item
-                                name="comment"
-                                label="Nhận xét"
-                                rules={[{ required: true, message: 'Vui lòng nhập nhận xét' }]}
-                            >
-                                <Input.TextArea
-                                    rows={5}
-                                    style={{ width: '100%' }}
-                                    placeholder="Nhập nội dung nhận xét..."
-                                />
-                            </Form.Item>
                             <Form.Item
                                 name="status"
                                 label="Trạng thái"
