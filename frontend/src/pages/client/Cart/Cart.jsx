@@ -203,13 +203,13 @@ const Cart = () => {
                     <div className="tw-flex tw-items-center tw-justify-between">
                       <p className="tw-m-0">Tổng đơn hàng</p>
                       <p className="tw-m-0 tw-font-bold tw-text-xl tw-text-[#1A1C20]">
-                        {formatPrice(hasSelectedItems ? selectedTotalAmount : totalAmount)}
+                        {hasSelectedItems ? formatPrice(selectedTotalAmount) : "0₫"}
                       </p>
                     </div>
                     <div className="tw-flex tw-items-center tw-justify-between">
                       <p className="tw-m-0">Số sản phẩm</p>
                       <p className="tw-m-0 tw-text-[#1A1C20]">
-                        {hasSelectedItems ? `${selectedItems.length} sản phẩm được chọn` : `${cartItems.length} sản phẩm`}
+                        {hasSelectedItems ? `${selectedItems.length} sản phẩm được chọn` : "0 sản phẩm được chọn"}
                       </p>
                     </div>
                   </div>
@@ -217,8 +217,8 @@ const Cart = () => {
                   <Link
                     to="/checkout"
                     state={{
-                      cartItems: hasSelectedItems ? getSelectedItems() : cartItems,
-                      totalAmount: hasSelectedItems ? selectedTotalAmount : totalAmount
+                      cartItems: hasSelectedItems ? getSelectedItems() : [],
+                      totalAmount: hasSelectedItems ? selectedTotalAmount : 0
                     }}
                     className={`tw-bg-[#99CCD0] tw-text-white tw-font-medium tw-px-4 tw-h-12 tw-uppercase tw-flex tw-items-center tw-justify-center tw-w-full tw-mt-6 ${
                       !hasSelectedItems ? "tw-opacity-50 tw-cursor-not-allowed" : "tw-cursor-pointer"
