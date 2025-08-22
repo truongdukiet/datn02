@@ -27,7 +27,9 @@ class DashboardController extends Controller
                 'revenue_data' => $this->getRevenueData(),
                 'recent_orders' => $this->getRecentOrdersData(),
                 'order_status' => $this->getOrderStatusDistribution(),
-                'ratings_summary' => $this->getRatingsSummary() // ✅ Thêm thống kê đánh giá vào đây
+                'ratings_summary' => $this->getRatingsSummary(), // ✅ Thêm thống kê đánh giá vào đây
+                'monthly_sales_2025' => $this->getMonthlySalesData(2025), // ✅ Thêm lượt bán 2025
+                'monthly_revenue_2025' => $this->getMonthlyRevenueData(2025) // ✅ Thêm doanh thu 2025
             ];
 
             \Log::info('Dashboard data fetched successfully', ['data' => $data]);
@@ -249,6 +251,59 @@ class DashboardController extends Controller
             'distribution' => $distribution
         ];
     }
+
+    /**
+     * ✅ Lấy dữ liệu lượt bán theo tháng cho một năm cụ thể
+     */
+    private function getMonthlySalesData(int $year): array
+    {
+        $salesData = Order::select([
+                DB::raw('DATE_FORMAT(Create_at, "%Y-%m") as month'),
+                DB::raw('COUNT(*) as count')
+            ])
+            ->whereYear('Create_at', $year)
+            ->where('Status', 'completed')
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        // Khởi tạo mảng 12 tháng với giá trị 0
+        $monthlyCounts = array_fill(0, 12, 0);
+
+        foreach ($salesData as $item) {
+            $monthIndex = (int) Carbon::createFromFormat('Y-m', $item->month)->format('n') - 1; // 'n' cho tháng không có số 0 ở đầu
+            $monthlyCounts[$monthIndex] = $item->count;
+        }
+
+        return $monthlyCounts; // Trả về mảng 12 phần tử (số lượt bán mỗi tháng)
+    }
+
+    /**
+     * ✅ Lấy dữ liệu doanh thu theo tháng cho một năm cụ thể
+     */
+    private function getMonthlyRevenueData(int $year): array
+    {
+        $revenueData = Order::select([
+                DB::raw('DATE_FORMAT(Create_at, "%Y-%m") as month'),
+                DB::raw('SUM(Total_amount) as amount')
+            ])
+            ->whereYear('Create_at', $year)
+            ->where('Status', 'completed')
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        // Khởi tạo mảng 12 tháng với giá trị 0
+        $monthlyAmounts = array_fill(0, 12, 0.0);
+
+        foreach ($revenueData as $item) {
+            $monthIndex = (int) Carbon::createFromFormat('Y-m', $item->month)->format('n') - 1;
+            $monthlyAmounts[$monthIndex] = (float) $item->amount;
+        }
+
+        return $monthlyAmounts; // Trả về mảng 12 phần tử (doanh thu mỗi tháng)
+    }
+
 
     private function handleError(\Exception $e): JsonResponse
     {
