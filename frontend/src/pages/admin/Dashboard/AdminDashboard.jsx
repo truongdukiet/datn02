@@ -72,6 +72,19 @@ const AdminDashboard = () => {
                 const res = await axios.get(`${API_BASE_URL}/dashboard`);
                 const data = res.data?.data || {};
 
+                // Kiểm tra và xử lý dữ liệu monthly_sales_2025 và monthly_revenue_2025
+                let monthlySalesData = data.monthly_sales_2025 || [];
+                let monthlyRevenueData = data.monthly_revenue_2025 || [];
+
+                // Nếu dữ liệu không phải là mảng 12 phần tử, tạo mảng mặc định
+                if (!Array.isArray(monthlySalesData) || monthlySalesData.length !== 12) {
+                    monthlySalesData = new Array(12).fill(0);
+                }
+
+                if (!Array.isArray(monthlyRevenueData) || monthlyRevenueData.length !== 12) {
+                    monthlyRevenueData = new Array(12).fill(0);
+                }
+
                 // Cập nhật state với dữ liệu từ API
                 setDashboardData(prevState => ({
                     ...prevState,
@@ -81,8 +94,8 @@ const AdminDashboard = () => {
                     recentOrders: data.recent_orders || [],
                     orderStatus: data.order_status || {},
                     ratings: data.ratings_summary || { average: 0, total: 0, distribution: {} },
-                    monthlySales: data.monthly_sales_2025 || [], // Lấy từ API
-                    monthlyRevenue: data.monthly_revenue_2025 || [] // Lấy từ API
+                    monthlySales: monthlySalesData,
+                    monthlyRevenue: monthlyRevenueData
                 }));
 
                 // Lấy dữ liệu sản phẩm để tính tồn kho
@@ -460,7 +473,9 @@ const AdminDashboard = () => {
                             </h6>
                         </Card.Header>
                         <Card.Body style={{ position: 'relative', height: '200px' }}>
-                            {dashboardData.monthlySales.some(sales => sales > 0) || dashboardData.monthlyRevenue.some(revenue => revenue > 0) ? (
+                            {dashboardData.monthlySales && dashboardData.monthlyRevenue &&
+                             (dashboardData.monthlySales.some(sales => sales > 0) ||
+                              dashboardData.monthlyRevenue.some(revenue => revenue > 0)) ? (
                                 <Bar
                                     data={monthlyDataChart}
                                     options={chartOptions}
