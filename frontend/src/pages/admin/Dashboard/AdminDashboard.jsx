@@ -389,7 +389,7 @@ const AdminDashboard = () => {
                                 Tăng trưởng người dùng
                             </h6>
                         </Card.Header>
-                        <Card.Body style={{ position: 'relative', height: '200px' }}>
+                        <Card.Body style={{ position: 'relative', height: '500px' }}>
                             {dashboardData.userGrowth && dashboardData.userGrowth.length > 0 ? (
                                 <Bar
                                     data={{
@@ -422,7 +422,7 @@ const AdminDashboard = () => {
                                 Doanh thu theo tháng
                             </h6>
                         </Card.Header>
-                        <Card.Body style={{ position: 'relative', height: '200px' }}>
+                        <Card.Body style={{ position: 'relative', height: '500px' }}>
                             {dashboardData.revenueData && dashboardData.revenueData.length > 0 ? (
                                 <Bar
                                     data={{
@@ -472,7 +472,7 @@ const AdminDashboard = () => {
                                 Lượt bán và Doanh thu theo tháng (2025)
                             </h6>
                         </Card.Header>
-                        <Card.Body style={{ position: 'relative', height: '200px' }}>
+                        <Card.Body style={{ position: 'relative', height: '500px' }}>
                             {dashboardData.monthlySales && dashboardData.monthlyRevenue &&
                              (dashboardData.monthlySales.some(sales => sales > 0) ||
                               dashboardData.monthlyRevenue.some(revenue => revenue > 0)) ? (
@@ -492,10 +492,9 @@ const AdminDashboard = () => {
                 </Col>
             </Row>
 
-            {/* Third Row - Order Status, Inventory, Ratings */}
+            {/* Order Status Chart - Full Width */}
             <Row className="mb-4">
-                {/* Order Status */}
-                <Col xl={4} className="mb-4">
+                <Col xl={12} className="mb-4">
                     <Card className="shadow-sm h-100">
                         <Card.Header className="py-3 bg-light">
                             <h6 className="m-0 fw-bold text-primary">
@@ -503,18 +502,26 @@ const AdminDashboard = () => {
                                 Phân bố trạng thái đơn hàng
                             </h6>
                         </Card.Header>
-                        <Card.Body className="d-flex align-items-center justify-content-center" style={{ minHeight: '400px' }}>
+                        <Card.Body className="d-flex align-items-center justify-content-center" style={{ minHeight: '600px' }}>
                             {Object.values(dashboardData.orderStatus).length > 0 ? (
-                                <div style={{ width: '1200px', maxWidth: '1200px' }}>
-                                    <Doughnut data={orderStatusChart} options={{
-                                        plugins: {
-                                            legend: {
-                                                position: 'bottom',
-                                                labels: { font: { size: 11 } }
-                                            }
-                                        },
-                                        maintainAspectRatio: false
-                                    }} />
+                                <div style={{ width: '100%', maxWidth: '1000px' }}>
+                                    <Doughnut
+                                        data={orderStatusChart}
+                                        options={{
+                                            plugins: {
+                                                legend: {
+                                                    position: 'bottom',
+                                                    labels: {
+                                                        font: {
+                                                            size: 14,
+                                                            family: "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            maintainAspectRatio: false
+                                        }}
+                                    />
                                 </div>
                             ) : (
                                 <div className="text-center py-5">
@@ -525,9 +532,11 @@ const AdminDashboard = () => {
                         </Card.Body>
                     </Card>
                 </Col>
+            </Row>
 
-                {/* Low Stock Alert and Recent Orders */}
-                <Col xl={8} className="mb-4">
+            {/* Low Stock Alert - Full Width */}
+            <Row className="mb-4">
+                <Col xl={12} className="mb-4">
                     <Card className="shadow-sm h-100">
                         <Card.Header className="py-3 bg-light d-flex align-items-center">
                             <FaExclamationTriangle className="me-2 text-warning" />
@@ -535,7 +544,7 @@ const AdminDashboard = () => {
                         </Card.Header>
                         <Card.Body className="p-0">
                             {dashboardData.lowStockProducts.length > 0 ? (
-                                <div className="table-responsive" style={{ maxHeight: '1200px', overflowY: 'auto' }}>
+                                <div className="table-responsive" style={{ maxHeight: '800px', overflowY: 'auto' }}>
                                     <Table hover className="mb-0">
                                         <thead className="bg-light">
                                             <tr>
@@ -554,23 +563,23 @@ const AdminDashboard = () => {
                                                                 <img
                                                                     src={product.image}
                                                                     alt={product.name}
-                                                                    style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 4 }}
-                                                                    className="me-2"
+                                                                    style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 4 }}
+                                                                    className="me-3"
                                                                 />
                                                             )}
                                                             <div className="ms-2">
-                                                                <p className="fw-bold mb-0" style={{ fontSize: '0.9rem' }}>{product.name}</p>
+                                                                <p className="fw-bold mb-0" style={{ fontSize: '1rem' }}>{product.name}</p>
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td>{product.sku}</td>
+                                                    <td style={{ fontSize: '1rem' }}>{product.sku}</td>
                                                     <td>
-                                                        <span className={`fw-bold ${product.stock_quantity === 0 ? 'text-danger' : 'text-warning'}`}>
+                                                        <span className={`fw-bold ${product.stock_quantity === 0 ? 'text-danger' : 'text-warning'}`} style={{ fontSize: '1.1rem' }}>
                                                             {product.stock_quantity}
                                                         </span>
                                                     </td>
                                                     <td>
-                                                        <Badge bg={product.stock_quantity === 0 ? 'danger' : 'warning'}>
+                                                        <Badge bg={product.stock_quantity === 0 ? 'danger' : 'warning'} style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}>
                                                             {product.stock_quantity === 0 ? 'Hết hàng' : 'Sắp hết'}
                                                         </Badge>
                                                     </td>
@@ -624,7 +633,7 @@ const AdminDashboard = () => {
                                     return (
                                         <div key={star} className="mb-2">
                                             <div className="d-flex justify-content-between align-items-center">
-                                                <div className="d-flex align-items-center" style={{ width: '50px' }}>
+                                                <div className="d-flex align-items-center" style={{ width: '200px' }}>
                                                     <Rate disabled defaultValue={1} count={1} className="me-1" />
                                                     <span>{star}</span>
                                                 </div>
@@ -635,9 +644,9 @@ const AdminDashboard = () => {
                                                         '0%': '#ffc107',
                                                         '100%': '#ffc107',
                                                     }}
-                                                    style={{ width: '60%', margin: '0 10px' }}
+                                                    style={{ width: '100%', margin: '0 15px' }}
                                                 />
-                                                <span style={{ width: '40px', textAlign: 'right' }}>{count}</span>
+                                                <span style={{ width: '200px', textAlign: 'right' }}>{count}</span>
                                             </div>
                                         </div>
                                     );
@@ -657,7 +666,7 @@ const AdminDashboard = () => {
                             </h6>
                         </Card.Header>
                         <Card.Body className="p-0">
-                            <div className="table-responsive" style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                            <div className="table-responsive" style={{ maxHeight: '1000px', overflowY: 'auto' }}>
                                 <Table hover className="mb-0">
                                     <thead className="bg-light">
                                         <tr>
