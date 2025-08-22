@@ -184,6 +184,7 @@ const AdminDashboard = () => {
         ]
     };
 
+    // Cập nhật: Chuyển đổi biểu đồ trạng thái đơn hàng từ Doughnut sang Bar
     const orderStatusChart = {
         labels: Object.keys(dashboardData.orderStatus).map(status => {
             const statusLabels = {
@@ -196,6 +197,7 @@ const AdminDashboard = () => {
             return statusLabels[status] || status;
         }),
         datasets: [{
+            label: 'Số lượng đơn hàng',
             data: Object.values(dashboardData.orderStatus),
             backgroundColor: [
                 'rgba(255, 193, 7, 0.8)', // pending
@@ -223,7 +225,7 @@ const AdminDashboard = () => {
                 position: 'top',
                 labels: {
                     font: {
-                        size: 11,
+                        size: 15,
                         family: "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif"
                     }
                 }
@@ -234,7 +236,7 @@ const AdminDashboard = () => {
                 beginAtZero: true,
                 ticks: {
                     font: {
-                        size: 10,
+                        size: 13,
                         family: "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif"
                     }
                 },
@@ -246,7 +248,7 @@ const AdminDashboard = () => {
             x: {
                 ticks: {
                     font: {
-                        size: 10,
+                        size: 13,
                         family: "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif"
                     }
                 },
@@ -257,10 +259,10 @@ const AdminDashboard = () => {
         },
         layout: {
             padding: {
-                top: 10,
-                bottom: 10,
-                left: 10,
-                right: 10
+                top: 13,
+                bottom: 13,
+                left: 13,
+                right: 13
             }
         }
     };
@@ -379,90 +381,7 @@ const AdminDashboard = () => {
                 ))}
             </Row>
 
-            {/* Charts - First Row */}
-            <Row className="mb-4">
-                <Col xl={6} className="mb-4">
-                    <Card className="shadow-sm h-100">
-                        <Card.Header className="py-3 bg-light d-flex justify-content-between align-items-center">
-                            <h6 className="m-0 fw-bold text-primary">
-                                <FaChartLine className="me-2" />
-                                Tăng trưởng người dùng
-                            </h6>
-                        </Card.Header>
-                        <Card.Body style={{ position: 'relative', height: '500px' }}>
-                            {dashboardData.userGrowth && dashboardData.userGrowth.length > 0 ? (
-                                <Bar
-                                    data={{
-                                        labels: dashboardData.userGrowth.map(item => item.month),
-                                        datasets: [{
-                                            label: 'Người dùng mới',
-                                            data: dashboardData.userGrowth.map(item => item.count),
-                                            backgroundColor: 'rgba(54, 162, 235, 0.8)',
-                                            borderColor: 'rgba(54, 162, 235, 1)',
-                                            borderWidth: 1
-                                        }]
-                                    }}
-                                    options={chartOptions}
-                                />
-                            ) : (
-                                <div className="text-center py-5">
-                                    <FaExclamationTriangle className="text-warning mb-3" size={48} />
-                                    <h6 className="text-muted">Chưa có dữ liệu tăng trưởng người dùng</h6>
-                                </div>
-                            )}
-                        </Card.Body>
-                    </Card>
-                </Col>
-
-                <Col xl={6} className="mb-4">
-                    <Card className="shadow-sm h-100">
-                        <Card.Header className="py-3 bg-light d-flex justify-content-between align-items-center">
-                            <h6 className="m-0 fw-bold text-primary">
-                                <FaMoneyBillWave className="me-2" />
-                                Doanh thu theo tháng
-                            </h6>
-                        </Card.Header>
-                        <Card.Body style={{ position: 'relative', height: '500px' }}>
-                            {dashboardData.revenueData && dashboardData.revenueData.length > 0 ? (
-                                <Bar
-                                    data={{
-                                        labels: dashboardData.revenueData.map(item => item.month),
-                                        datasets: [{
-                                            label: 'Doanh thu theo tháng (VND)',
-                                            data: dashboardData.revenueData.map(item => item.amount),
-                                            backgroundColor: 'rgba(75, 192, 192, 0.5)',
-                                            borderColor: 'rgba(75, 192, 192, 1)',
-                                            borderWidth: 1
-                                        }]
-                                    }}
-                                    options={{
-                                        ...chartOptions,
-                                        scales: {
-                                            y: {
-                                                beginAtZero: true,
-                                                ticks: {
-                                                    callback: value => value.toLocaleString('vi-VN') + ' VNĐ',
-                                                    font: { size: 9 }
-                                                }
-                                            },
-                                            x: {
-                                                ticks: { font: { size: 9 } }
-                                            }
-                                        }
-                                    }}
-                                />
-                            ) : (
-                                <div className="text-center py-5">
-                                    <FaExclamationTriangle className="text-warning mb-3" size={48} />
-                                    <h6 className="text-muted">Chưa có dữ liệu doanh thu</h6>
-                                </div>
-                            )}
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
-
-            {/* Second Row - Monthly Sales & Revenue (2025) */}
+            {/* Monthly Sales & Revenue (2025) - Now full width */}
             <Row className="mb-4">
                 <Col xl={12} className="mb-4">
                     <Card className="shadow-sm h-100">
@@ -502,27 +421,12 @@ const AdminDashboard = () => {
                                 Phân bố trạng thái đơn hàng
                             </h6>
                         </Card.Header>
-                        <Card.Body className="d-flex align-items-center justify-content-center" style={{ minHeight: '600px' }}>
+                        <Card.Body style={{ position: 'relative', height: '500px' }}>
                             {Object.values(dashboardData.orderStatus).length > 0 ? (
-                                <div style={{ width: '100%', maxWidth: '1000px' }}>
-                                    <Doughnut
-                                        data={orderStatusChart}
-                                        options={{
-                                            plugins: {
-                                                legend: {
-                                                    position: 'bottom',
-                                                    labels: {
-                                                        font: {
-                                                            size: 14,
-                                                            family: "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif"
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            maintainAspectRatio: false
-                                        }}
-                                    />
-                                </div>
+                                <Bar
+                                    data={orderStatusChart}
+                                    options={chartOptions}
+                                />
                             ) : (
                                 <div className="text-center py-5">
                                     <FaExclamationTriangle className="text-warning mb-3" size={48} />

@@ -214,7 +214,7 @@ const Dashboard = () => {
               <h6 className="m-0 font-weight-bold text-primary">Tăng trưởng người dùng</h6>
             </div>
             <div className="card-body">
-              <Line data={userGrowthChart} options={chartOptions} height={100} />
+              <Line data={userGrowthChart} options={chartOptions} height={300} />
             </div>
           </div>
         </div>
@@ -254,7 +254,7 @@ const Dashboard = () => {
             </div>
             <div className="card-body">
               <div className="chart-pie pt-4 pb-2">
-                <Pie data={orderStatusChart} options={chartOptions} height={200} />
+                <Pie data={orderStatusChart} options={chartOptions} height={400} />
               </div>
               <div className="mt-4 text-center small">
                 {Object.entries(dashboardData.orderStatus).map(([status, count]) => (
