@@ -1,4 +1,3 @@
-// ... phần import giữ nguyên
 import React, { useState, useEffect } from 'react';
 import { Bar, Pie, Doughnut } from 'react-chartjs-2';
 import {
@@ -82,17 +81,21 @@ const AdminDashboard = () => {
         const ordersRes = await axios.get(`${API_BASE_URL}/orders`);
         const orders = ordersRes.data.data || [];
 
-        // Tính toán lượt bán và doanh thu theo tháng
-        const currentYear = new Date().getFullYear();
+        // TÍNH TOÁN LƯỢT BÁN VÀ DOANH THU THEO THÁNG - CHỈ NĂM 2025 VÀ CHỈ ĐƠN HOÀN THÀNH
+        const TARGET_YEAR = 2025; // Chỉ lấy dữ liệu năm 2025
         const monthlySalesData = Array(12).fill(0);
         const monthlyRevenueData = Array(12).fill(0);
 
         orders.forEach(order => {
           if (order.created_at) {
             const orderDate = new Date(order.created_at);
-            if (orderDate.getFullYear() === currentYear) {
+
+            // CHỈ TÍNH KHI ĐƠN HÀNG ĐÃ HOÀN THÀNH (status = 'completed')
+            const isCompletedOrder = order.status === 'completed' || order.Status === 'completed';
+
+            if (orderDate.getFullYear() === TARGET_YEAR && isCompletedOrder) {
               const month = orderDate.getMonth();
-              monthlySalesData[month] += 1;
+              monthlySalesData[month] += 1; // Tăng lượt bán
               if (order.total_amount) {
                 monthlyRevenueData[month] += parseFloat(order.total_amount);
               }
@@ -184,26 +187,30 @@ const AdminDashboard = () => {
     }]
   };
 
-  // Biểu đồ lượt bán theo tháng
+  // Biểu đồ lượt bán theo tháng NĂM 2025 - CẬP NHẬT
   const monthlySalesChart = {
     labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
              'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
     datasets: [{
-      label: 'Lượt bán theo tháng',
-      data: dashboardData.monthlySales,
+      label: 'Lượt bán theo tháng (2025)',
+      data: dashboardData.monthlySales.some(sales => sales > 0)
+        ? dashboardData.monthlySales
+        : Array(12).fill(0), // Hiển thị toàn 0 nếu không có dữ liệu
       backgroundColor: 'rgba(255, 99, 132, 0.5)',
       borderColor: 'rgba(255, 99, 132, 1)',
       borderWidth: 1
     }]
   };
 
-  // Biểu đồ doanh thu theo tháng
+  // Biểu đồ doanh thu theo tháng NĂM 2025 - CẬP NHẬT
   const monthlyRevenueChart = {
     labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
              'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
     datasets: [{
-      label: 'Doanh thu theo tháng (VND)',
-      data: dashboardData.monthlyRevenue,
+      label: 'Doanh thu theo tháng (2025) - VND',
+      data: dashboardData.monthlyRevenue.some(revenue => revenue > 0)
+        ? dashboardData.monthlyRevenue
+        : Array(12).fill(0), // Hiển thị toàn 0 nếu không có dữ liệu
       backgroundColor: 'rgba(75, 192, 192, 0.5)',
       borderColor: 'rgba(75, 192, 192, 1)',
       borderWidth: 1
@@ -369,18 +376,20 @@ const AdminDashboard = () => {
             subtitle: `${dashboardData.summary.low_stock_count || 0} SP sắp hết, ${dashboardData.summary.out_of_stock_count || 0} SP hết hàng`
           },
           {
-            title: 'Tổng lượt bán',
-            value: dashboardData.summary.total_sales || 0,
+            title: 'Tổng lượt bán (2025)',
+            value: dashboardData.summary.total_sales > 0 ? dashboardData.summary.total_sales : 'Chưa có dữ liệu',
             icon: <FaTags size={24} />,
             color: 'info',
-            subtitle: `Năm ${new Date().getFullYear()}`
+            subtitle: `Năm 2025 (Chỉ đơn hoàn thành)`
           },
           {
-            title: 'Doanh thu tháng này',
-            value: dashboardData.summary.monthly_revenue?.toLocaleString('vi-VN') + ' VNĐ' || '0 VNĐ',
+            title: 'Tổng doanh thu (2025)',
+            value: dashboardData.summary.monthly_revenue > 0
+              ? dashboardData.summary.monthly_revenue.toLocaleString('vi-VN') + ' VNĐ'
+              : 'Chưa có dữ liệu',
             icon: <FaCalendarAlt size={24} />,
             color: 'success',
-            subtitle: `Tháng ${new Date().getMonth() + 1}`
+            subtitle: `Năm 2025 (Chỉ đơn hoàn thành)`
           }
         ].map((card, index) => (
           <Col key={index} xl={2} md={4} sm={6} className="mb-4">
@@ -470,18 +479,26 @@ const AdminDashboard = () => {
         </Col>
       </Row>
 
-      {/* Second Row - Monthly Sales and Revenue */}
+      {/* Second Row - Monthly Sales and Revenue for 2025 */}
       <Row className="mb-4">
         <Col xl={6} className="mb-4">
           <Card className="shadow-sm h-100">
             <Card.Header className="py-3 bg-light d-flex justify-content-between align-items-center">
               <h6 className="m-0 fw-bold text-primary">
                 <FaTags className="me-2" />
-                Lượt bán theo tháng ({new Date().getFullYear()})
+                Lượt bán theo tháng (2025)
               </h6>
             </Card.Header>
             <Card.Body>
-              <Bar data={monthlySalesChart} options={chartOptions} height={250} />
+              {dashboardData.monthlySales.some(sales => sales > 0) ? (
+                <Bar data={monthlySalesChart} options={chartOptions} height={250} />
+              ) : (
+                <div className="text-center py-5">
+                  <FaExclamationTriangle className="text-warning mb-3" size={48} />
+                  <h6 className="text-muted">Chưa có dữ liệu lượt bán năm 2025</h6>
+                  <p className="text-muted small">Dữ liệu sẽ được hiển thị khi có đơn hàng hoàn thành trong năm 2025</p>
+                </div>
+              )}
             </Card.Body>
           </Card>
         </Col>
@@ -491,31 +508,39 @@ const AdminDashboard = () => {
             <Card.Header className="py-3 bg-light d-flex justify-content-between align-items-center">
               <h6 className="m-0 fw-bold text-primary">
                 <FaCalendarAlt className="me-2" />
-                Doanh thu theo tháng ({new Date().getFullYear()})
+                Doanh thu theo tháng (2025)
               </h6>
             </Card.Header>
             <Card.Body>
-              <Bar data={monthlyRevenueChart} options={{
-                ...chartOptions,
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    ticks: {
-                      callback: value => value.toLocaleString('vi-VN') + ' VNĐ',
-                      font: {
-                        size: 11
+              {dashboardData.monthlyRevenue.some(revenue => revenue > 0) ? (
+                <Bar data={monthlyRevenueChart} options={{
+                  ...chartOptions,
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      ticks: {
+                        callback: value => value.toLocaleString('vi-VN') + ' VNĐ',
+                        font: {
+                          size: 11
+                        }
                       }
-                    }
-                  },
-                  x: {
-                    ticks: {
-                      font: {
-                        size: 11
+                    },
+                    x: {
+                      ticks: {
+                        font: {
+                          size: 11
+                        }
                       }
                     }
                   }
-                }
-              }} height={250} />
+                }} height={250} />
+              ) : (
+                <div className="text-center py-5">
+                  <FaExclamationTriangle className="text-warning mb-3" size={48} />
+                  <h6 className="text-muted">Chưa có dữ liệu doanh thu năm 2025</h6>
+                  <p className="text-muted small">Dữ liệu sẽ được hiển thị khi có đơn hàng hoàn thành trong năm 2025</p>
+                </div>
+              )}
             </Card.Body>
           </Card>
         </Col>
