@@ -16,7 +16,7 @@ const ProductDetail = () => {
   const [newReview, setNewReview] = useState({ rating: 0, comment: "" });
   const [mainImage, setMainImage] = useState(null);
   const [thumbnailImages, setThumbnailImages] = useState([]);
-  
+
   const noMatchingVariantRef = useRef(false);
   const navigate = useNavigate();
   const { id } = useParams();
@@ -233,7 +233,7 @@ const ProductDetail = () => {
       if (matchingVariant) {
         setSelectedVariant(matchingVariant);
         noMatchingVariantRef.current = false;
-        
+
         // Cập nhật ảnh khi chọn biến thể mới
         const variantImages = product.media.filter(
           (img) => img.variant_id === matchingVariant.ProductVariantID
@@ -559,103 +559,7 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* Đánh giá sản phẩm */}
-        <section className="tw-mt-16 tw-mb-12">
-          <h2 className="tw-text-2xl tw-font-bold tw-mb-6">Đánh giá sản phẩm</h2>
 
-          {product.reviews?.length > 0 ? (
-            <div className="tw-space-y-6">
-              {product.reviews.map((review, index) => (
-                <div key={index} className="tw-border-b tw-pb-6">
-                  <div className="tw-flex tw-justify-between tw-items-start">
-                    <div>
-                      <h4 className="tw-font-semibold">{review.user?.Name || "Khách hàng"}</h4>
-                      <div className="tw-flex tw-items-center tw-mt-1">
-                        {[...Array(5)].map((_, i) => (
-                          <i
-                            key={i}
-                            className={`fas fa-star ${
-                              i < review.rating
-                                ? "tw-text-yellow-400"
-                                : "tw-text-gray-300"
-                            }`}
-                          ></i>
-                        ))}
-                      </div>
-                    </div>
-                    <span className="tw-text-gray-500 tw-text-sm">
-                      {new Date(review.created_at).toLocaleDateString("vi-VN")}
-                    </span>
-                  </div>
-                  <p className="tw-mt-3 tw-text-gray-700">{review.comment}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="tw-text-center tw-py-8 tw-border tw-rounded-lg">
-              <p className="tw-text-gray-500">Chưa có đánh giá nào cho sản phẩm này.</p>
-            </div>
-          )}
-
-          {/* Form đánh giá */}
-          {token && (
-            <div className="tw-mt-12 tw-border tw-rounded-xl tw-p-6">
-              <h3 className="tw-text-xl tw-font-semibold tw-mb-4">
-                Viết đánh giá của bạn
-              </h3>
-
-              <div className="tw-mb-4">
-                <p className="tw-font-medium tw-mb-2">Đánh giá của bạn:</p>
-                <div className="tw-flex">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      className={`tw-text-2xl tw-mr-1 ${
-                        star <= newReview.rating
-                          ? "fas fa-star tw-text-yellow-400"
-                          : "far fa-star tw-text-gray-300"
-                      }`}
-                      onClick={() =>
-                        setNewReview({ ...newReview, rating: star })
-                      }
-                    ></button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="tw-mb-4">
-                <label
-                  htmlFor="review-comment"
-                  className="tw-font-medium tw-block tw-mb-2"
-                >
-                  Nhận xét
-                </label>
-                <textarea
-                  id="review-comment"
-                  rows="4"
-                  className="tw-w-full tw-border tw-rounded-lg tw-p-3 focus:tw-outline-none focus:tw-border-[#99CCD0]"
-                  placeholder="Hãy chia sẻ cảm nhận của bạn về sản phẩm..."
-                  value={newReview.comment}
-                  onChange={(e) =>
-                    setNewReview({ ...newReview, comment: e.target.value })
-                  }
-                ></textarea>
-              </div>
-
-              <button
-                className="tw-bg-[#99CCD0] hover:tw-bg-[#88bbbf] tw-text-white tw-font-medium tw-px-6 tw-py-2 tw-rounded-lg"
-                onClick={handleSubmitReview}
-                disabled={submitReviewMutation.isPending}
-              >
-                {submitReviewMutation.isPending ? (
-                  <i className="fas fa-spinner fa-spin tw-mr-2"></i>
-                ) : null}
-                Gửi đánh giá
-              </button>
-            </div>
-          )}
-        </section>
 
         {/* Sản phẩm liên quan */}
         <section className="tw-mb-16">
