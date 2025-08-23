@@ -242,7 +242,8 @@ class ProductController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-public function search(Request $request) {
+public function search(Request $request)
+{
     try {
         $query = $request->get('q');
         $categoryId = $request->get('category_id');
@@ -251,8 +252,9 @@ public function search(Request $request) {
 
         $products = Product::with(['category', 'variants.attributes.attribute'])
             ->when($query, function ($q) use ($query) {
-
-                return $q->where('Name', 'like', "%{$query}%");
+                // So khớp chính xác từ, không phân biệt hoa thường
+                $word = mb_strtolower($query, 'UTF-8');
+                return $q->whereRaw("LOWER(Name) REGEXP ?", ["[[:<:]]{$word}[[:>:]]"]);
             })
             ->when($categoryId, function ($q) use ($categoryId) {
                 return $q->where('CategoryID', $categoryId);
