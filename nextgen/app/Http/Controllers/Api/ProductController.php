@@ -242,42 +242,42 @@ class ProductController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function search(Request $request)
-    {
-        try {
-            $query = $request->get('q');
-            $categoryId = $request->get('category_id');
-            $minPrice = $request->get('min_price');
-            $maxPrice = $request->get('max_price');
+public function search(Request $request)
+{
+    try {
+        $query = $request->get('q');
+        $categoryId = $request->get('category_id');
+        $minPrice = $request->get('min_price');
+        $maxPrice = $request->get('max_price');
 
-            $products = Product::with(['category', 'variants.attributes.attribute'])
-                ->when($query, function ($q) use ($query) {
-                    return $q->where('Name', 'like', "%{$query}%")
-                            ->orWhere('Description', 'like', "%{$query}%");
-                })
-                ->when($categoryId, function ($q) use ($categoryId) {
-                    return $q->where('CategoryID', $categoryId);
-                })
-                ->when($minPrice, function ($q) use ($minPrice) {
-                    return $q->where('base_price', '>=', $minPrice);
-                })
-                ->when($maxPrice, function ($q) use ($maxPrice) {
-                    return $q->where('base_price', '<=', $maxPrice);
-                })
-                ->orderBy('Create_at', 'desc')
-                ->get();
+        $products = Product::with(['category', 'variants.attributes.attribute'])
+            ->when($query, function ($q) use ($query) {
+                // So khớp chính xác từ, không phân biệt hoa thường
+                $word = mb_strtolower($query, 'UTF-8');
+                return $q->whereRaw("LOWER(Name) REGEXP ?", ["[[:<:]]{$word}[[:>:]]"]);
+            })
+            ->when($categoryId, function ($q) use ($categoryId) {
+                return $q->where('CategoryID', $categoryId);
+            })
+            ->when($minPrice, function ($q) use ($minPrice) {
+                return $q->where('base_price', '>=', $minPrice);
+            })
+            ->when($maxPrice, function ($q) use ($maxPrice) {
+                return $q->where('base_price', '<=', $maxPrice);
+            })
+            ->orderBy('Create_at', 'desc')
+            ->get();
 
-            return response()->json([
-                'success' => true,
-                'data' => $products,
-                'message' => 'Products searched successfully'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error searching products: ' . $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'data' => $products,
+            'message' => 'Products searched successfully'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error searching products: ' . $e->getMessage()
+        ], 500);
     }
+}
 }

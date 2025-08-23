@@ -71,31 +71,61 @@ class ProductController extends Controller
         ]);
     }
 
+    /**
+     * Search products by name or description
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
     public function search(Request $request)
-    {
-        $query = Product::with('category', 'variants.attributes.attribute');
+{
+    try {
+        $query = $request->get('q');
+        $categoryId = $request->get('category_id');
+        $minPrice = $request->get('min_price');
+        $maxPrice = $request->get('max_price');
 
-        if ($request->filled('query')) {
-            $query->where('Name', 'like', '%' . $request->query('query') . '%');
-        }
+        $products = Product::with(['category', 'variants.attributes.attribute'])
+           ->when($query, function ($q) use ($query) {
+    return $q->where(function ($sub) use ($query) {
+        // Ưu tiên tìm trong Name trước
+        $sub->where('Name', 'like', "%{$query}%");
 
-        if ($request->filled('categoryID') && is_numeric($request->categoryID)) {
-            $query->where('CategoryID', $request->categoryID);
-        }
+        // Nếu muốn tìm thêm trong Description thì cho tùy chọn
+        // nhưng chỉ lấy nếu Name không khớp
+        $sub->orWhere(function ($desc) use ($query) {
+            $desc->where('Description', 'like', "%{$query}%")
+                 ->whereRaw('Name NOT LIKE ?', ["%{$query}%"]);
+        });
+    });
+})
 
-        if ($request->filled('priceRange')) {
-            $range = explode(',', $request->priceRange);
-            if (count($range) === 2 && is_numeric($range[0]) && is_numeric($range[1])) {
-                $query->whereBetween('base_price', [$range[0], $range[1]]);
-            }
-        }
+            ->when($categoryId, function ($q) use ($categoryId) {
+                return $q->where('CategoryID', $categoryId);
+            })
+            ->when($minPrice, function ($q) use ($minPrice) {
+                return $q->where('base_price', '>=', $minPrice);
+            })
+            ->when($maxPrice, function ($q) use ($maxPrice) {
+                return $q->where('base_price', '<=', $maxPrice);
+            })
+            ->orderBy('Create_at', 'desc')
+            ->get();
 
-        if ($request->has('status') && in_array($request->status, ['0', '1'])) {
-            $query->where('Status', $request->status);
-        }
+        return response()->json([
+            'success' => true,
+            'data' => $products,
+            'message' => 'Products searched successfully'
+        ]);
 
-        return response()->json($query->get());
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error searching products: ' . $e->getMessage()
+        ], 500);
     }
+}
+
     public function destroy($id)
     {
         $product = Product::find($id);
