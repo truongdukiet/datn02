@@ -193,46 +193,15 @@ const MyOrderDetail = () => {
 
     const isCancelled = statusText === 'cancelled';
 
-    // Mô tả chi tiết cho từng trạng thái, bao gồm cả mốc thời gian
-    const getStatusDescription = (status, timestamp) => {
-        const time = formatOrderDate(timestamp);
+    // Mô tả chi tiết cho từng trạng thái (đã bỏ thời gian)
+    const getStatusDescription = (status) => {
         switch (status?.toLowerCase()) {
-            case 'pending': return (
-                <>
-                    Đơn hàng đã được đặt
-                    <br />
-                    <span style={{ fontSize: '0.8em', color: '#888' }}>{time}</span>
-                </>
-            );
-            case 'processing': return (
-                <>
-                    Đơn hàng đang được chuẩn bị
-                    <br />
-                    <span style={{ fontSize: '0.8em', color: '#888' }}>{time}</span>
-                </>
-            );
-            case 'shipped': return (
-                <>
-                    Đơn hàng đã được vận chuyển
-                    <br />
-                    <span style={{ fontSize: '0.8em', color: '#888' }}>{time}</span>
-                </>
-            );
+            case 'pending': return 'Đơn hàng đã được đặt';
+            case 'processing': return 'Đơn hàng đang được chuẩn bị';
+            case 'shipped': return 'Đơn hàng đã được vận chuyển';
             case 'delivered':
-            case 'completed': return (
-                <>
-                    Đơn hàng đã được giao thành công
-                    <br />
-                    <span style={{ fontSize: '0.8em', color: '#888' }}>{time}</span>
-                </>
-            );
-            case 'cancelled': return (
-                <>
-                    Đơn hàng đã bị hủy
-                    <br />
-                    <span style={{ fontSize: '0.8em', color: '#888' }}>{time}</span>
-                </>
-            );
+            case 'completed': return 'Đơn hàng đã được giao thành công';
+            case 'cancelled': return 'Đơn hàng đã bị hủy';
             default: return `Chưa có thông tin`;
         }
     };
@@ -319,25 +288,25 @@ const MyOrderDetail = () => {
 
             <Divider />
 
-            {/* Trạng thái đơn hàng dưới dạng Steps với mốc thời gian */}
+            {/* Trạng thái đơn hàng dưới dạng Steps (đã bỏ thời gian) */}
             <h3 style={{ marginBottom: '24px', textAlign: 'center' }}>Tiến trình đơn hàng</h3>
             <div style={{ marginBottom: '40px' }}>
                 <Steps current={getStepStatus()} status={isCancelled ? 'error' : 'process'}>
                     <Step
                         title="Chờ xử lý"
-                        description={getStatusDescription('pending', orderInfo.created_at || orderInfo.CreatedAt)}
+                        description={getStatusDescription('pending')}
                     />
                     <Step
                         title="Đang xử lý"
-                        description={getStatusDescription('processing', orderInfo.processing_at)}
+                        description={getStatusDescription('processing')}
                     />
                     <Step
                         title="Đang giao hàng"
-                        description={getStatusDescription('shipped', orderInfo.shipped_at)}
+                        description={getStatusDescription('shipped')}
                     />
                     <Step
                         title="Đã hoàn thành"
-                        description={getStatusDescription('completed', orderInfo.completed_at || orderInfo.delivered_at)}
+                        description={getStatusDescription('completed')}
                     />
                 </Steps>
             </div>
@@ -376,9 +345,7 @@ const MyOrderDetail = () => {
                                         ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.subtotal || item.Subtotal)
                                         : 'Chưa có thông tin'}
                                 </div>
-                                <div style={{ color: '#888', fontSize: '0.9em', marginTop: '5px' }}>
-                                    Ngày đặt: {formatOrderDate(item.created_at || item.CreatedAt)}
-                                </div>
+
 
                                 {canReview && (
                                     <Button type="link" style={{ padding: 0, marginTop: '10px' }} onClick={() => handleReviewClick(item)}>
