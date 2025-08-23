@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { formatPrice } from "../../../utils/formatPrice";
 import ProductItem from "../../../components/ProductItem/ProductItem";
@@ -7,6 +7,7 @@ import apiClient from "../../../api/api";
 import { message } from "antd";
 import ClientHeader from "../../../layouts/MainLayout/ClientHeader";
 import { favoriteApi } from "../../../api/favoriteApi";
+import axios from "axios";
 
 const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
@@ -16,6 +17,7 @@ const ProductDetail = () => {
   const [newReview, setNewReview] = useState({ rating: 0, comment: "" });
   const [mainImage, setMainImage] = useState(null);
   const [thumbnailImages, setThumbnailImages] = useState([]);
+  const [variantAttributes, setVariantAttributes] = useState({});
 
   const noMatchingVariantRef = useRef(false);
   const navigate = useNavigate();
@@ -56,27 +58,27 @@ const ProductDetail = () => {
         setSelectedVariant(data.variants[0]);
         setSelectedAttributes(initialAttributes);
         updateAvailableAttributeValues(initialAttributes, data.variants);
+
+        // Ảnh chính là ảnh của biến thể đầu tiên
+        setMainImage({
+          image: data.variants[0].Image,
+          id: data.variants[0].ProductVariantID,
+        });
+
+        // Ảnh nhỏ là ảnh của các biến thể còn lại
+        const thumbnails = data.variants
+          .slice(1)
+          .map((variant) => ({
+            image: variant.Image,
+            id: variant.ProductVariantID,
+          }))
+          .filter((img) => !!img.image); // chỉ lấy ảnh có tồn tại
+        setThumbnailImages(thumbnails);
       } else {
         setSelectedVariant(null);
+        setMainImage({ image: data.Image, id: 0 }); // fallback ảnh sản phẩm chung
+        setThumbnailImages([]);
       }
-
-      // Xử lý ảnh sản phẩm
-      let imagesToDisplay = [];
-      let mainImg = null;
-
-      if (data.variants?.[0]) {
-        imagesToDisplay = data.media.filter(
-          (img) => img.variant_id === data.variants[0].ProductVariantID
-        );
-      }
-
-      if (imagesToDisplay.length === 0) {
-        imagesToDisplay = data.media.filter((img) => img.variant_id === null);
-      }
-
-      mainImg = imagesToDisplay.find((img) => img.is_main === 1) || imagesToDisplay[0];
-      setMainImage(mainImg);
-      setThumbnailImages(imagesToDisplay.filter((img) => img !== mainImg));
     },
   });
 
@@ -177,6 +179,34 @@ const ProductDetail = () => {
     },
   });
 
+  // Lấy thuộc tính từng variant giống admin
+  useEffect(() => {
+    const fetchAllVariantAttributes = async (variants = []) => {
+      const attributesMap = {};
+      await Promise.all(
+        variants.map(async (variant) => {
+          try {
+            const res = await axios.get(
+              `http://localhost:8000/api/variant-attributes?variant_id=${variant.ProductVariantID}`
+            );
+            // Lọc đúng variant
+            const filtered = (res.data.data || []).filter(
+              (attr) => attr.ProductVariantID === variant.ProductVariantID
+            );
+            attributesMap[variant.ProductVariantID] = filtered;
+          } catch {
+            attributesMap[variant.ProductVariantID] = [];
+          }
+        })
+      );
+      setVariantAttributes(attributesMap);
+    };
+
+    if (product?.variants?.length) {
+      fetchAllVariantAttributes(product.variants);
+    }
+  }, [product]);
+
   // ✅ Cập nhật giá trị thuộc tính khả dụng
   const updateAvailableAttributeValues = (currentAttributes, variants) => {
     if (!variants) return;
@@ -234,15 +264,21 @@ const ProductDetail = () => {
         setSelectedVariant(matchingVariant);
         noMatchingVariantRef.current = false;
 
-        // Cập nhật ảnh khi chọn biến thể mới
-        const variantImages = product.media.filter(
-          (img) => img.variant_id === matchingVariant.ProductVariantID
-        );
-        if (variantImages.length > 0) {
-          const mainImg = variantImages.find((img) => img.is_main === 1) || variantImages[0];
-          setMainImage(mainImg);
-          setThumbnailImages(variantImages.filter((img) => img !== mainImg));
-        }
+        // Ảnh chính là ảnh của biến thể được chọn
+        setMainImage({
+          image: matchingVariant.Image,
+          id: matchingVariant.ProductVariantID,
+        });
+
+        // Ảnh nhỏ là ảnh của các biến thể còn lại (trừ biến thể đang chọn)
+        const thumbnails = product.variants
+          .filter((v) => v.ProductVariantID !== matchingVariant.ProductVariantID)
+          .map((variant) => ({
+            image: variant.Image,
+            id: variant.ProductVariantID,
+          }))
+          .filter((img) => !!img.image);
+        setThumbnailImages(thumbnails);
       } else {
         setSelectedVariant(null);
         noMatchingVariantRef.current = Object.keys(updatedAttributes).length > 0;
@@ -354,11 +390,12 @@ const ProductDetail = () => {
           <div className="tw-col-span-1">
             <div className="tw-relative">
               {/* Ảnh chính */}
-              <div className="tw-aspect-square tw-border tw-rounded-xl tw-overflow-hidden tw-mb-4">
+              <div className="tw-aspect-square tw-border tw-rounded-xl tw-overflow-hidden tw-mb-4 tw-bg-white tw-flex tw-items-center tw-justify-center tw-shadow-sm">
                 <img
                   src={`http://localhost:8000/storage/${mainImage?.image || product?.Image}`}
                   alt={product?.Name}
-                  className="tw-w-full tw-h-full tw-object-contain"
+                  className="tw-w-full tw-h-full tw-object-contain tw-transition-all tw-duration-300"
+                  style={{ maxHeight: 400 }}
                 />
               </div>
 
@@ -383,20 +420,32 @@ const ProductDetail = () => {
             </div>
 
             {/* Ảnh con */}
-            <div className="tw-grid tw-grid-cols-4 tw-gap-3">
-              {thumbnailImages.map((img) => (
-                <div
-                  key={img.id}
-                  className="tw-aspect-square tw-border tw-rounded-lg tw-cursor-pointer tw-overflow-hidden"
-                  onClick={() => handleClickThumbnail(img)}
-                >
-                  <img
-                    src={`http://localhost:8000/storage/${img.image}`}
-                    alt={`Ảnh phụ ${img.id}`}
-                    className="tw-w-full tw-h-full tw-object-cover"
-                  />
-                </div>
-              ))}
+            <div className="tw-flex tw-gap-3 tw-mt-2">
+              {product.variants
+                .filter((v) => v.ProductVariantID !== mainImage?.id && !!v.Image)
+                .map((variant) => (
+                  <div
+                    key={variant.ProductVariantID}
+                    className={`tw-aspect-square tw-border tw-rounded-lg tw-cursor-pointer tw-overflow-hidden tw-bg-white tw-shadow-sm ${
+                      mainImage?.id === variant.ProductVariantID
+                        ? "tw-border-[#99CCD0] tw-ring-2 tw-ring-[#99CCD0]"
+                        : "tw-border-gray-200"
+                    }`}
+                    style={{ width: 80, height: 80 }}
+                    onClick={() =>
+                      setMainImage({
+                        image: variant.Image,
+                        id: variant.ProductVariantID,
+                      })
+                    }
+                  >
+                    <img
+                      src={`http://localhost:8000/storage/${variant.Image}`}
+                      alt={`Ảnh phụ ${variant.ProductVariantID}`}
+                      className="tw-w-full tw-h-full tw-object-cover tw-transition-all tw-duration-200 hover:tw-scale-105"
+                    />
+                  </div>
+                ))}
             </div>
           </div>
 
@@ -441,45 +490,57 @@ const ProductDetail = () => {
             {/* Thuộc tính sản phẩm */}
             {product?.variants && product.variants.length > 0 && (
               <div className="tw-mb-8">
-                {Array.from(
-                  new Set(
-                    product.variants.flatMap((v) =>
-                      v.attributes.flatMap((a) =>
-                        a?.attribute?.AttributeID ? [a.attribute.AttributeID] : []
-                      )
-                    )
-                  )
-                ).map((attrId) => {
-                  const attribute = product.variants
-                    .flatMap((v) => v.attributes)
-                    .find((a) => a?.attribute?.AttributeID === attrId)?.attribute;
+                {/** Lấy danh sách các thuộc tính theo thứ tự mong muốn, ví dụ: màu trước, size sau */}
+                {["color", "size"].map((attrKey, idx) => {
+                  // Tìm AttributeID theo tên thuộc tính (giả sử name là 'color' hoặc 'size')
+                  const attrObj = Object.values(variantAttributes)
+                    .flat()
+                    .find((a) => a.name?.toLowerCase() === attrKey);
+                  if (!attrObj) return null;
+                  const attrId = attrObj.AttributeID;
 
+                  // Lọc variants phù hợp với các thuộc tính đã chọn trước đó
+                  let filteredVariants = product.variants;
+                  for (let i = 0; i < idx; i++) {
+                    const prevAttrKey = ["color", "size"][i];
+                    const prevAttrObj = Object.values(variantAttributes)
+                      .flat()
+                      .find((a) => a.name?.toLowerCase() === prevAttrKey);
+                    if (prevAttrObj && selectedAttributes[prevAttrObj.AttributeID]) {
+                      filteredVariants = filteredVariants.filter((variant) =>
+                        (variantAttributes[variant.ProductVariantID] || []).some(
+                          (a) =>
+                            a.AttributeID === prevAttrObj.AttributeID &&
+                            a.value === selectedAttributes[prevAttrObj.AttributeID]
+                        )
+                      );
+                    }
+                  }
+
+                  // Lấy các giá trị duy nhất cho thuộc tính này từ các biến thể đã lọc
                   const uniqueValues = [
                     ...new Set(
-                      product.variants.flatMap((v) =>
-                        v.attributes
-                          .filter((a) => a?.attribute?.AttributeID === attrId)
-                          .map((a) => a.value)
-                      )
+                      filteredVariants
+                        .flatMap((v) => variantAttributes[v.ProductVariantID] || [])
+                        .filter((a) => a.AttributeID === attrId)
+                        .map((a) => a.value)
                     ),
                   ];
 
                   return (
                     <div key={attrId} className="tw-mb-5">
                       <p className="tw-font-semibold tw-mb-2">
-                        {attribute?.name || "Thuộc tính"}:
+                        {attrObj?.name || "Thuộc tính"}:
                       </p>
                       <div className="tw-flex tw-flex-wrap tw-gap-2">
-                        {uniqueValues.map((value, idx) => {
+                        {uniqueValues.map((value, idx2) => {
                           const isSelected = selectedAttributes[attrId] === value;
-                          const isAvailable =
-                            !availableAttributeValues[attrId] ||
-                            availableAttributeValues[attrId].includes(value) ||
-                            isSelected;
+                          // Chỉ cho phép chọn nếu giá trị này có trong filteredVariants
+                          const isAvailable = true;
 
                           return (
                             <button
-                              key={idx}
+                              key={idx2}
                               type="button"
                               className={`tw-px-4 tw-py-2 tw-border tw-rounded-lg tw-transition ${
                                 isSelected
@@ -488,9 +549,7 @@ const ProductDetail = () => {
                                   ? "tw-border-gray-300 hover:tw-border-[#99CCD0]"
                                   : "tw-border-gray-300 tw-text-gray-400 tw-cursor-not-allowed"
                               }`}
-                              onClick={() =>
-                                isAvailable && handleAttributeSelect(attrId, value)
-                              }
+                              onClick={() => handleAttributeSelect(attrId, value)}
                               disabled={!isAvailable}
                             >
                               {value}
@@ -508,6 +567,51 @@ const ProductDetail = () => {
                 )}
               </div>
             )}
+
+            {/* Chọn biến thể */}
+            <div className="tw-mb-8">
+              <p className="tw-font-semibold tw-mb-2">Chọn biến thể:</p>
+              <div className="tw-flex tw-flex-wrap tw-gap-3">
+                {product.variants.map((variant) => {
+                  const attrs = (variantAttributes[variant.ProductVariantID] || [])
+                    .map((attr) => `${attr.value}`)
+                    .join(" | ");
+                  const isSelected = selectedVariant?.ProductVariantID === variant.ProductVariantID;
+
+                  return (
+                    <button
+                      key={variant.ProductVariantID}
+                      type="button"
+                      className={
+                        "tw-px-4 tw-py-2 tw-rounded-lg tw-font-medium tw-transition tw-border " +
+                        (isSelected
+                          ? "tw-bg-[#009688] tw-text-white tw-border-[#009688] tw-shadow"
+                          : "tw-bg-white tw-text-[#009688] tw-border-gray-300 hover:tw-bg-[#e0f2f1] hover:tw-border-[#009688]")
+                      }
+                      style={{
+                        minWidth: 80,
+                        minHeight: 40,
+                        outline: isSelected ? "2px solid #009688" : "none",
+                      }}
+                      onClick={() => {
+                        setSelectedVariant(variant);
+                        setMainImage({
+                          image: variant.Image,
+                          id: variant.ProductVariantID,
+                        });
+                        const newAttrs = {};
+                        (variantAttributes[variant.ProductVariantID] || []).forEach(attr => {
+                          newAttrs[attr.AttributeID] = attr.value;
+                        });
+                        setSelectedAttributes(newAttrs);
+                      }}
+                    >
+                      {attrs}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             {/* Số lượng và nút thêm giỏ */}
             <div className="tw-flex tw-flex-col sm:tw-flex-row tw-gap-6 tw-mb-8">
@@ -560,7 +664,6 @@ const ProductDetail = () => {
         </div>
 
 
-
         {/* Sản phẩm liên quan */}
         <section className="tw-mb-16">
           <h2 className="tw-text-2xl tw-font-bold tw-mb-8 tw-text-center">
@@ -594,3 +697,4 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
+
