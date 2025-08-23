@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import '../../../public/css/ProductVariantForm.css'; // Tạo file CSS riêng
+import '../../../public/css/ProductVariantForm.css';
 
-const ProductVariantForm = ({ variant, onSubmit, productId }) => {
+const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
     const [formData, setFormData] = useState({
         ProductID: productId || '',
         Sku: '',
         Price: '',
         Stock: '',
-        ImagePath: '' // Thay Image bằng ImagePath để lưu đường dẫn
+        Image: null
     });
-    const [availableImages, setAvailableImages] = useState([]); // State để lưu danh sách ảnh có sẵn
     const [attributes, setAttributes] = useState([]);
     const [selectedAttributes, setSelectedAttributes] = useState({});
-    const [imagePreview, setImagePreview] = useState(null); // Thêm state cho ảnh preview
+    const [imagePreview, setImagePreview] = useState(null);
+    const [currentImage, setCurrentImage] = useState(null);
     
     const API_BASE_URL = 'http://localhost:8000/api';
 
@@ -35,12 +35,12 @@ const ProductVariantForm = ({ variant, onSubmit, productId }) => {
                 Sku: variant.Sku,
                 Price: variant.Price,
                 Stock: variant.Stock,
-                Image: null
+                Image: null // Để null vì đã có currentImage
             });
             
-            // Nếu variant có ảnh, hiển thị preview
+            // Lưu ảnh hiện tại nếu có
             if (variant.Image) {
-                setImagePreview(`http://localhost:8000/storage/${variant.Image}`);
+                setCurrentImage(`http://localhost:8000/storage/${variant.Image}`);
             }
             
             const fetchVariantAttributes = async () => {
@@ -90,7 +90,6 @@ const ProductVariantForm = ({ variant, onSubmit, productId }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        // Tạo object dữ liệu để gửi
         const dataToSend = {
             ProductID: formData.ProductID,
             Sku: formData.Sku,
@@ -101,18 +100,31 @@ const ProductVariantForm = ({ variant, onSubmit, productId }) => {
 
         try {
             if (variant) {
-                // Nếu là chỉnh sửa, gửi dưới dạng JSON
-                const response = await axios.put(
+                // Xử lý update - dùng FormData để hỗ trợ cả ảnh
+                const formDataToSend = new FormData();
+                formDataToSend.append('ProductID', formData.ProductID);
+                formDataToSend.append('Sku', formData.Sku);
+                formDataToSend.append('Price', formData.Price);
+                formDataToSend.append('Stock', formData.Stock);
+                
+                if (formData.Image) {
+                    formDataToSend.append('Image', formData.Image);
+                }
+
+                Object.keys(selectedAttributes).forEach(attrId => {
+                    formDataToSend.append(`attributes[${attrId}]`, selectedAttributes[attrId]);
+                });
+
+                await axios.post(
                     `${API_BASE_URL}/product-variants/${variant.ProductVariantID}`,
-                    dataToSend,
+                    formDataToSend,
                     {
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
+                        headers: { 'Content-Type': 'multipart/form-data' },
+                        params: { _method: 'PUT' } // For Laravel to recognize as PUT
                     }
                 );
             } else {
-                // Nếu là tạo mới, vẫn dùng FormData để hỗ trợ upload ảnh
+                // Xử lý create
                 const formDataToSend = new FormData();
                 formDataToSend.append('ProductID', formData.ProductID);
                 formDataToSend.append('Sku', formData.Sku);
@@ -137,10 +149,7 @@ const ProductVariantForm = ({ variant, onSubmit, productId }) => {
             alert('Lưu biến thể thành công!');
             onSubmit();
         } catch (error) {
-            console.error('Lỗi khi lưu biến thể:', {
-                message: error.message,
-                response: error.response?.data
-            });
+            console.error('Lỗi khi lưu biến thể:', error);
             
             if (error.response?.data?.errors) {
                 const errorMessages = Object.values(error.response.data.errors).flat().join('\n');
@@ -149,6 +158,12 @@ const ProductVariantForm = ({ variant, onSubmit, productId }) => {
                 alert('Lỗi khi lưu biến thể: ' + (error.response?.data.message || error.message));
             }
         }
+    };
+
+    const handleRemoveImage = () => {
+        setFormData({ ...formData, Image: null });
+        setImagePreview(null);
+        setCurrentImage(null);
     };
 
     return (
@@ -207,17 +222,63 @@ const ProductVariantForm = ({ variant, onSubmit, productId }) => {
                     <div className="form-column">
                         <div className="form-group">
                             <label>Hình ảnh:</label>
+                            
+                            {/* Hiển thị ảnh hiện tại khi edit */}
+                            {variant && currentImage && !imagePreview && (
+                                <div style={{ marginBottom: '15px' }}>
+                                    <p>Ảnh hiện tại:</p>
+                                    <img
+                                        src={currentImage}
+                                        alt="Current product"
+                                        style={{ 
+                                            maxWidth: '150px', 
+                                            maxHeight: '150px',
+                                            border: '1px solid #ddd',
+                                            borderRadius: '4px'
+                                        }}
+                                        onError={(e) => {
+                                            e.target.style.display = 'none';
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveImage}
+                                        style={{
+                                            marginTop: '10px',
+                                            padding: '5px 10px',
+                                            backgroundColor: '#dc3545',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '4px',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        Xóa ảnh
+                                    </button>
+                                </div>
+                            )}
+                            
+                            {/* Input file để chọn ảnh mới */}
                             <input
                                 type="file"
                                 onChange={handleFileChange}
                                 accept="image/*"
                             />
+                            
+                            {/* Hiển thị preview ảnh mới */}
                             {imagePreview && (
                                 <div className="image-preview-container">
+                                    <p>Ảnh mới:</p>
                                     <img 
                                         src={imagePreview} 
                                         alt="Preview" 
                                         className="image-preview"
+                                        style={{ 
+                                            maxWidth: '150px', 
+                                            maxHeight: '150px',
+                                            border: '1px solid #ddd',
+                                            borderRadius: '4px'
+                                        }}
                                     />
                                 </div>
                             )}
@@ -245,6 +306,13 @@ const ProductVariantForm = ({ variant, onSubmit, productId }) => {
                 <div className="form-actions">
                     <button type="submit" className="submit-btn">
                         {variant ? "Cập nhật" : "Thêm mới"}
+                    </button>
+                    <button 
+                        type="button" 
+                        onClick={onCancel}
+                        className="cancel-btn"
+                    >
+                        Hủy
                     </button>
                 </div>
             </form>

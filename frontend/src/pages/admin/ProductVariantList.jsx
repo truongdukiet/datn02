@@ -6,6 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 const ProductVariantList = () => {
     const [variants, setVariants] = useState([]);
+    const [variantAttributes, setVariantAttributes] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [editVariant, setEditVariant] = useState(null);
@@ -31,13 +32,47 @@ const ProductVariantList = () => {
             }
             
             const response = await axios.get(url);
-            setVariants(response.data.data || []);
+            const variantsData = response.data.data || [];
+            setVariants(variantsData);
+            
+            // Fetch attributes cho từng variant
+            fetchAllVariantAttributes(variantsData);
         } catch (err) {
             setError("Error fetching product variants");
         } finally {
             setLoading(false);
         }
     };
+
+    const fetchAllVariantAttributes = async (variantsData) => {
+        try {
+            const attributesMap = {};
+            
+            const attributePromises = variantsData.map(async (variant) => {
+                try {
+                    const response = await axios.get(
+                        `${API_BASE_URL}/variant-attributes?variant_id=${variant.ProductVariantID}`
+                    );
+                    
+                    // Lọc chỉ lấy attributes có ProductVariantID trùng với variant hiện tại
+                    const filteredAttributes = (response.data.data || []).filter(
+                        attr => attr.ProductVariantID === variant.ProductVariantID
+                    );
+                    
+                    attributesMap[variant.ProductVariantID] = filteredAttributes;
+                } catch (error) {
+                    console.error(`Error fetching attributes for variant ${variant.ProductVariantID}:`, error);
+                    attributesMap[variant.ProductVariantID] = [];
+                }
+            });
+            
+            await Promise.all(attributePromises);
+            setVariantAttributes(attributesMap);
+        } catch (error) {
+            console.error('Error fetching variant attributes:', error);
+        }
+    };
+
 
     const fetchProductName = async () => {
         try {
@@ -78,14 +113,15 @@ const ProductVariantList = () => {
         setEditVariant(null);
     };
 
-    const renderAttributes = (attributes) => {
-        if (!attributes || !attributes.length) return null;
+     const renderAttributes = (variantId) => {
+        const attributes = variantAttributes[variantId] || [];
+        if (!attributes.length) return null;
         
         return (
             <div className="attribute-tags">
                 {attributes.map((attr, index) => (
                     <span key={index} className="attribute-tag">
-                        {attr.AttributeName}: {attr.AttributeValue}
+                        {attr.name}: {attr.value}
                     </span>
                 ))}
             </div>
@@ -163,7 +199,7 @@ const ProductVariantList = () => {
                                 <td>{variant.Sku}</td>
                                 <td>{variant.Price.toLocaleString()}đ</td>
                                 <td>
-                                    {renderAttributes(variant.Attributes)}
+                                    {renderAttributes(variant.ProductVariantID)}
                                 </td>
                                 <td>
                                     <button 
@@ -276,6 +312,18 @@ const ProductVariantList = () => {
                 
                 .form-container {
                     background-color: #f8f9fa;
+                }
+                
+                .loading {
+                    text-align: center;
+                    padding: 20px;
+                    font-size: 18px;
+                }
+                
+                .error {
+                    color: #dc3545;
+                    text-align: center;
+                    padding: 20px;
                 }
             `}</style>
         </div>
