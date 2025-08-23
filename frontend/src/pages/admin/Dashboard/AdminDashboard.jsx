@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bar, Pie, Doughnut } from 'react-chartjs-2';
+import { Bar, Pie, Doughnut, Line } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -28,7 +28,11 @@ import {
     FaStarHalfAlt,
     FaExclamationTriangle,
     FaCalendarAlt,
-    FaTags
+    FaTags,
+    FaChartBar,
+    FaChartArea,
+    FaArrowUp,
+    FaArrowDown
 } from 'react-icons/fa';
 
 ChartJS.register(
@@ -57,7 +61,8 @@ const AdminDashboard = () => {
         ratings: { average: 0, total: 0, distribution: {} },
         lowStockProducts: [],
         monthlySales: [],
-        monthlyRevenue: []
+        monthlyRevenue: [],
+        topInventoryProducts: []
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -139,9 +144,31 @@ const AdminDashboard = () => {
                     return sum + totalStock;
                 }, 0);
 
+                // Lấy top 5 sản phẩm có tồn kho cao nhất
+                const topInventoryProducts = [...products]
+                    .sort((a, b) => {
+                        const aStock = a.variants ?
+                            a.variants.reduce((total, variant) => total + (variant.Stock || 0), 0) :
+                            (a.Stock || 0);
+                        const bStock = b.variants ?
+                            b.variants.reduce((total, variant) => total + (variant.Stock || 0), 0) :
+                            (b.Stock || 0);
+                        return bStock - aStock;
+                    })
+                    .slice(0, 5)
+                    .map(product => ({
+                        id: product.ProductID,
+                        name: product.Name,
+                        stock_quantity: product.variants ?
+                            product.variants.reduce((total, variant) => total + (variant.Stock || 0), 0) :
+                            (product.Stock || 0),
+                        image: product.Image ? `${API_BASE_URL.replace('/api', '')}/storage/${product.Image}` : null
+                    }));
+
                 setDashboardData(prevState => ({
                     ...prevState,
                     lowStockProducts: [...lowStockProducts, ...outOfStockProducts],
+                    topInventoryProducts: topInventoryProducts,
                     summary: {
                         ...prevState.summary,
                         total_products: products.length,
@@ -161,6 +188,36 @@ const AdminDashboard = () => {
 
         fetchDashboardData();
     }, []);
+
+    // ===== Helpers tính % tăng/giảm MoM =====
+    const calcGrowthPct = (current, previous) => {
+        if (previous === undefined || previous === null) return undefined;
+        if (previous === 0) {
+            if (current > 0) return 100;
+            return 0;
+        }
+        return ((current - previous) / previous) * 100;
+    };
+
+    const pickLastTwo = (arr = []) => {
+        if (!Array.isArray(arr) || arr.length === 0) return [undefined, undefined];
+        if (arr.length === 1) return [0, arr[0]];
+        return [arr[arr.length - 2], arr[arr.length - 1]];
+    };
+
+    // Users MoM (fallback nếu API không trả summary.user_growth)
+    const [prevUsersCount, currUsersCount] = pickLastTwo(
+        (dashboardData.userGrowth || []).map(it => it.count)
+    );
+    const usersMoM = calcGrowthPct(currUsersCount, prevUsersCount);
+
+    // Sales MoM (dựa trên monthlySales)
+    const [prevSalesCount, currSalesCount] = pickLastTwo(dashboardData.monthlySales || []);
+    const salesMoM = calcGrowthPct(currSalesCount, prevSalesCount);
+
+    // Revenue MoM (dựa trên monthlyRevenue)
+    const [prevRevenue, currRevenue] = pickLastTwo(dashboardData.monthlyRevenue || []);
+    const revenueMoM = calcGrowthPct(currRevenue, prevRevenue);
 
     // Biểu đồ lượt bán & Doanh thu theo tháng (2025)
     const monthlyDataChart = {
@@ -214,6 +271,49 @@ const AdminDashboard = () => {
                 'rgba(0, 123, 255, 1)'
             ],
             borderWidth: 1
+        }]
+    };
+
+    // Biểu đồ Top 5 sản phẩm tồn kho
+    const topInventoryChart = {
+        labels: dashboardData.topInventoryProducts.map(product => product.name),
+        datasets: [{
+            label: 'Số lượng tồn kho',
+            data: dashboardData.topInventoryProducts.map(product => product.stock_quantity),
+            backgroundColor: [
+                'rgba(75, 192, 192, 0.6)',
+                'rgba(54, 162, 235, 0.6)',
+                'rgba(255, 206, 86, 0.6)',
+                'rgba(153, 102, 255, 0.6)',
+                'rgba(255, 159, 64, 0.6)'
+            ],
+            borderColor: [
+                'rgba(75, 192, 192, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(153, 102, 255, 1)',
+                'rgba(255, 159, 64, 1)'
+            ],
+            borderWidth: 1
+        }]
+    };
+
+    // Biểu đồ đường cho tăng trưởng người dùng
+    const userGrowthChart = {
+        labels: dashboardData.userGrowth.map(item => {
+            const [year, month] = item.month.split('-');
+            return `Tháng ${month}/${year}`;
+        }),
+        datasets: [{
+            label: 'Số người dùng mới',
+            data: dashboardData.userGrowth.map(item => item.count),
+            fill: true,
+            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+            borderColor: 'rgba(153, 102, 255, 1)',
+            tension: 0.3,
+            pointBackgroundColor: 'rgba(153, 102, 255, 1)',
+            pointRadius: 4,
+            pointHoverRadius: 6
         }]
     };
 
@@ -280,58 +380,73 @@ const AdminDashboard = () => {
         return <Alert variant="danger">{error}</Alert>;
     }
 
-    // Tạo mảng các card summary, loại bỏ card Doanh thu (2025) - phần tử thứ 7
+    // ===== Tạo mảng các card summary (giữ nguyên layout cũ, chỉ bổ sung growth + icon) =====
     const summaryCards = [
         {
             title: 'Tổng người dùng',
-            value: dashboardData.summary.total_users,
+            value: dashboardData.summary.total_users || 0,
             icon: <FaUsers size={24} />,
             color: 'primary',
-            growth: dashboardData.summary.user_growth
+            // Dùng API nếu có, nếu không dùng tính toán MoM
+            growth: (dashboardData.summary.user_growth ?? usersMoM)
         },
         {
             title: 'Tổng sản phẩm',
-            value: dashboardData.summary.total_products,
-            icon: <FaBox size={24} />,
+            value: dashboardData.summary.total_products || 0,
+            icon: <FaBox size={26} />,
             color: 'success'
+            // Không có dữ liệu MoM đáng tin -> không hiển thị mũi tên
         },
         {
             title: 'Tổng đơn hàng',
-            value: dashboardData.summary.total_orders,
-            icon: <FaShoppingCart size={24} />,
-            color: 'info'
+            value: dashboardData.summary.total_orders || 0,
+            icon: <FaShoppingCart size={26} />,
+            color: 'info',
+            // Fallback lấy MoM từ monthlySales
+            growth: (dashboardData.summary.order_growth ?? salesMoM)
         },
         {
             title: 'Tổng doanh thu',
-            value: dashboardData.summary.total_revenue?.toLocaleString('vi-VN') + ' VNĐ',
-            icon: <FaDollarSign size={24} />,
-            color: 'warning'
+            value: ((dashboardData.summary.total_revenue ?? 0).toLocaleString('vi-VN')) + ' VNĐ',
+            icon: <FaDollarSign size={26} />,
+            color: 'warning',
+            growth: (dashboardData.summary.revenue_growth ?? revenueMoM)
         },
         {
             title: 'Đánh giá trung bình',
             value: (
                 <>
-                    <div className="fw-bold">{dashboardData.ratings.average?.toFixed(1) || 0}/5</div>
+                    <div className="fw-bold">{(dashboardData.ratings.average ?? 0).toFixed(1)}/5</div>
                     <small>{dashboardData.ratings.total || 0} đánh giá</small>
                 </>
             ),
-            icon: <FaStar size={24} />,
+            icon: <FaStar size={26} />,
             color: 'danger'
         },
         {
             title: 'Tổng tồn kho',
             value: dashboardData.summary.total_inventory || 0,
-            icon: <FaWarehouse size={24} />,
+            icon: <FaWarehouse size={26} />,
             color: 'secondary',
             subtitle: `${dashboardData.summary.low_stock_count || 0} SP sắp hết, ${dashboardData.summary.out_of_stock_count || 0} SP hết hàng`
         },
-        // Đã loại bỏ card Doanh thu (2025) ở đây
         {
             title: 'Tổng lượt bán (2025)',
-            value: dashboardData.monthlySales?.reduce((sum, sales) => sum + sales, 0) || 0,
-            icon: <FaTags size={24} />,
+            value: (dashboardData.monthlySales?.reduce((sum, sales) => sum + sales, 0) || 0),
+            icon: <FaTags size={26} />,
             color: 'info',
-            subtitle: `Năm 2025 (Chỉ đơn hoàn thành)`
+            subtitle: `Năm 2025 (Chỉ đơn hoàn thành)`,
+            growth: salesMoM
+        },
+        {
+            title: 'Tăng trưởng người dùng',
+            value: dashboardData.userGrowth.length > 0 ? dashboardData.userGrowth[dashboardData.userGrowth.length - 1].count : 0,
+            icon: <FaChartArea size={26} />,
+            color: 'success',
+            subtitle: dashboardData.userGrowth.length > 0 ?
+                `Tháng ${dashboardData.userGrowth[dashboardData.userGrowth.length - 1].month.split('-')[1]}` :
+                'Chưa có dữ liệu',
+            growth: usersMoM
         }
     ];
 
@@ -344,41 +459,49 @@ const AdminDashboard = () => {
 
             {/* Summary Cards */}
             <Row className="mb-4">
-                {summaryCards.map((card, index) => (
-                    <Col key={index} xl={3} md={6} sm={6} className="mb-4">
-                        <Card className={`h-100 border-start border-${card.color} border-5 shadow-sm`}>
-                            <Card.Body className="d-flex flex-column">
-                                <div className="d-flex justify-content-between align-items-center mb-2">
-                                    <div className={`text-${card.color} fw-bold text-uppercase`} style={{ fontSize: '0.8rem' }}>
-                                        {card.title}
-                                    </div>
-                                    <div className={`text-${card.color}`}>
-                                        {card.icon}
-                                    </div>
-                                </div>
-                                <div className="mt-auto">
-                                    <h4 className="fw-bold text-gray-800 mb-0">
-                                        {card.value}
-                                    </h4>
-                                    {card.growth !== undefined && (
-                                        <div className="text-xs text-muted mt-1">
-                                            <span className={`me-1 ${card.growth >= 0 ? 'text-success' : 'text-danger'}`}>
-                                                <i className={`fas fa-${card.growth >= 0 ? 'arrow-up' : 'arrow-down'} me-1`}></i>
-                                                {card.growth}%
-                                            </span>
-                                            <span>So với tháng trước</span>
+                {summaryCards.map((card, index) => {
+                    const hasGrowth = typeof card.growth === 'number' && !Number.isNaN(card.growth);
+                    const growthVal = hasGrowth ? Number(card.growth.toFixed(1)) : null;
+                    const isUp = hasGrowth ? growthVal >= 0 : null;
+
+                    return (
+                        <Col key={index} xl={3} md={6} sm={6} className="mb-4">
+                            <Card className={`h-100 border-start border-${card.color} border-5 shadow-sm`}>
+                                <Card.Body className="d-flex flex-column">
+                                    <div className="d-flex justify-content-between align-items-center mb-2">
+                                        <div className={`text-${card.color} fw-bold text-uppercase`} style={{ fontSize: '0.8rem' }}>
+                                            {card.title}
                                         </div>
-                                    )}
-                                    {card.subtitle && (
-                                        <div className="text-xs text-muted mt-1">
-                                            {card.subtitle}
+                                        <div className={`text-${card.color}`}>
+                                            {card.icon}
                                         </div>
-                                    )}
-                                </div>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                ))}
+                                    </div>
+                                    <div className="mt-auto">
+                                        <h4 className="fw-bold text-gray-800 mb-0">
+                                            {card.value}
+                                        </h4>
+
+                                        {hasGrowth && (
+                                            <div className="text-xs text-muted mt-1 d-flex align-items-center">
+                                                <span className={`me-2 ${isUp ? 'text-success' : 'text-danger'} d-inline-flex align-items-center`}>
+                                                    {isUp ? <FaArrowUp className="me-1" /> : <FaArrowDown className="me-1" />}
+                                                    {Math.abs(growthVal)}%
+                                                </span>
+                                                <span>So với tháng trước</span>
+                                            </div>
+                                        )}
+
+                                        {card.subtitle && (
+                                            <div className="text-xs text-muted mt-1">
+                                                {card.subtitle}
+                                            </div>
+                                        )}
+                                    </div>
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                    );
+                })}
             </Row>
 
             {/* Monthly Sales & Revenue (2025) - Now full width */}
@@ -436,6 +559,62 @@ const AdminDashboard = () => {
                         </Card.Body>
                     </Card>
                 </Col>
+            </Row>
+
+            {/* New Charts Row: Top Inventory Products and User Growth */}
+            <Row className="mb-4">
+                {/* Top 5 sản phẩm tồn kho */}
+                <Col xl={6} className="mb-4">
+                    <Card className="shadow-sm h-100">
+                        <Card.Header className="py-3 bg-light">
+                            <h6 className="m-0 fw-bold text-primary">
+                                <FaChartBar className="me-2" />
+                                Top 5 sản phẩm tồn kho cao nhất
+                            </h6>
+                        </Card.Header>
+                        <Card.Body style={{ position: 'relative', height: '400px' }}>
+                            {dashboardData.topInventoryProducts && dashboardData.topInventoryProducts.length > 0 ? (
+                                <Bar
+                                    data={topInventoryChart}
+                                    options={{
+                                        ...chartOptions,
+                                        indexAxis: 'y', // Hiển thị biểu đồ ngang
+                                    }}
+                                />
+                            ) : (
+                                <div className="text-center py-5">
+                                    <FaExclamationTriangle className="text-warning mb-3" size={48} />
+                                    <h6 className="text-muted">Chưa có dữ liệu sản phẩm tồn kho</h6>
+                                </div>
+                            )}
+                        </Card.Body>
+                    </Card>
+                </Col>
+
+                {/* Biểu đồ đường tăng trưởng người dùng
+                <Col xl={6} className="mb-4">
+                    <Card className="shadow-sm h-100">
+                        <Card.Header className="py-3 bg-light">
+                            <h6 className="m-0 fw-bold text-primary">
+                                <FaChartArea className="me-2" />
+                                Tăng trưởng người dùng
+                            </h6>
+                        </Card.Header>
+                        <Card.Body style={{ position: 'relative', height: '400px' }}>
+                            {dashboardData.userGrowth && dashboardData.userGrowth.length > 0 ? (
+                                <Line
+                                    data={userGrowthChart}
+                                    options={chartOptions}
+                                />
+                            ) : (
+                                <div className="text-center py-5">
+                                    <FaExclamationTriangle className="text-warning mb-3" size={48} />
+                                    <h6 className="text-muted">Chưa có dữ liệu tăng trưởng người dùng</h6>
+                                </div>
+                            )}
+                        </Card.Body>
+                    </Card>
+                </Col>*/}
             </Row>
 
             {/* Low Stock Alert - Full Width */}
@@ -517,7 +696,7 @@ const AdminDashboard = () => {
                             <div className="text-center mb-3">
                                 <Statistic
                                     title="Điểm trung bình"
-                                    value={dashboardData.ratings.average?.toFixed(1) || 0}
+                                    value={(dashboardData.ratings.average ?? 0).toFixed(1)}
                                     suffix="/ 5"
                                     valueStyle={{ color: '#ffc107' }}
                                 />
@@ -589,16 +768,16 @@ const AdminDashboard = () => {
                                                         <Badge
                                                             bg={
                                                                 order.status === 'completed' ? 'success' :
-                                                                    order.status === 'pending' ? 'warning' :
-                                                                        order.status === 'cancelled' ? 'danger' :
-                                                                            order.status === 'processing' ? 'info' : 'primary'
+                                                                order.status === 'pending' ? 'warning' :
+                                                                order.status === 'cancelled' ? 'danger' :
+                                                                order.status === 'processing' ? 'info' : 'primary'
                                                             }
                                                         >
                                                             {order.status === 'pending' ? 'Chờ xử lý' :
-                                                                order.status === 'processing' ? 'Đang xử lý' :
-                                                                    order.status === 'completed' ? 'Đã hoàn thành' :
-                                                                        order.status === 'cancelled' ? 'Đã hủy' :
-                                                                            order.status === 'shipped' ? 'Đang giao hàng' : order.status}
+                                                             order.status === 'processing' ? 'Đang xử lý' :
+                                                             order.status === 'completed' ? 'Đã hoàn thành' :
+                                                             order.status === 'cancelled' ? 'Đã hủy' :
+                                                             order.status === 'shipped' ? 'Đang giao hàng' : order.status}
                                                         </Badge>
                                                     </td>
                                                     <td>{order.total_amount?.toLocaleString('vi-VN')}₫</td>

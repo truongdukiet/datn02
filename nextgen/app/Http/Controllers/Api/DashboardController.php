@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\Product;
-use App\Models\Review; // ✅ Thêm dòng này để sử dụng Review Model
+use App\Models\Review;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
@@ -27,9 +27,9 @@ class DashboardController extends Controller
                 'revenue_data' => $this->getRevenueData(),
                 'recent_orders' => $this->getRecentOrdersData(),
                 'order_status' => $this->getOrderStatusDistribution(),
-                'ratings_summary' => $this->getRatingsSummary(), // ✅ Thêm thống kê đánh giá vào đây
-                'monthly_sales_2025' => $this->getMonthlySalesData(2025), // ✅ Thêm lượt bán 2025
-                'monthly_revenue_2025' => $this->getMonthlyRevenueData(2025) // ✅ Thêm doanh thu 2025
+                'ratings_summary' => $this->getRatingsSummary(),
+                'monthly_sales_2025' => $this->getMonthlySalesData(2025),
+                'monthly_revenue_2025' => $this->getMonthlyRevenueData(2025)
             ];
 
             \Log::info('Dashboard data fetched successfully', ['data' => $data]);
@@ -144,8 +144,50 @@ class DashboardController extends Controller
             'total_products' => Product::count(),
             'total_orders' => Order::count(),
             'total_revenue' => (float) Order::where('status', 'completed')->sum('total_amount'),
-            'active_users' => User::where('status', 1)->count()
+            'active_users' => User::where('status', 1)->count(),
+            'user_growth' => $this->calculateUserGrowth(), // Tăng trưởng người dùng so với tháng trước
+            'user_growth_percent' => $this->calculateUserGrowthPercent() // ✅ thêm phần trăm tăng trưởng
         ];
+    }
+
+    /**
+     * Tính toán tăng trưởng người dùng so với tháng trước (%)
+     */
+    private function calculateUserGrowth(): float
+    {
+        $currentMonthUsers = User::whereYear('Created_at', Carbon::now()->year)
+            ->whereMonth('Created_at', Carbon::now()->month)
+            ->count();
+
+        $previousMonthUsers = User::whereYear('Created_at', Carbon::now()->subMonth()->year)
+            ->whereMonth('Created_at', Carbon::now()->subMonth()->month)
+            ->count();
+
+        if ($previousMonthUsers === 0) {
+            return $currentMonthUsers > 0 ? 100.0 : 0.0;
+        }
+
+        return round((($currentMonthUsers - $previousMonthUsers) / $previousMonthUsers) * 100, 2);
+    }
+
+    /**
+     * Phần trăm tăng trưởng người dùng (riêng biệt)
+     */
+    private function calculateUserGrowthPercent(): float
+    {
+        $currentMonthUsers = User::whereYear('Created_at', Carbon::now()->year)
+            ->whereMonth('Created_at', Carbon::now()->month)
+            ->count();
+
+        $previousMonthUsers = User::whereYear('Created_at', Carbon::now()->subMonth()->year)
+            ->whereMonth('Created_at', Carbon::now()->subMonth()->month)
+            ->count();
+
+        if ($previousMonthUsers === 0) {
+            return $currentMonthUsers > 0 ? 100.0 : 0.0;
+        }
+
+        return round((($currentMonthUsers - $previousMonthUsers) / $previousMonthUsers) * 100, 2);
     }
 
     private function getUserGrowthData(): array
@@ -154,13 +196,13 @@ class DashboardController extends Controller
                 DB::raw('DATE_FORMAT(Created_at, "%Y-%m") as month'),
                 DB::raw('COUNT(*) as count')
             ])
-            ->where('Created_at', '>=', now()->subMonths(6))
+            ->where('Created_at', '>=', now()->subMonths(12)) // Lấy dữ liệu 12 tháng thay vì 6 tháng
             ->groupBy('month')
             ->orderBy('month')
             ->get()
             ->map(function ($item) {
                 return [
-                    'month' => Carbon::createFromFormat('Y-m', $item->month)->format('M Y'),
+                    'month' => $item->month,
                     'count' => $item->count
                 ];
             })
@@ -174,13 +216,13 @@ class DashboardController extends Controller
                 DB::raw('SUM(Total_amount) as amount')
             ])
             ->where('Status', 'completed')
-            ->where('Create_at', '>=', now()->subMonths(6))
+            ->where('Create_at', '>=', now()->subMonths(12))
             ->groupBy('month')
             ->orderBy('month')
             ->get()
             ->map(function ($item) {
                 return [
-                    'month' => Carbon::createFromFormat('Y-m', $item->month)->format('M Y'),
+                    'month' => $item->month,
                     'amount' => (float) $item->amount
                 ];
             })
@@ -192,7 +234,7 @@ class DashboardController extends Controller
         return Order::with(['user:UserID,username'])
             ->select(['OrderID', 'UserID', 'Status', 'Total_amount', 'Create_at'])
             ->orderBy('Create_at', 'desc')
-            ->limit(5)
+            ->limit(10)
             ->get()
             ->map(function ($order) {
                 return [
@@ -218,18 +260,10 @@ class DashboardController extends Controller
             ->toArray();
     }
 
-    /**
-     * ✅ Lấy dữ liệu thống kê đánh giá
-     */
     private function getRatingsSummary(): array
     {
-        // Lấy tổng số đánh giá
         $totalRatings = Review::count();
-
-        // Lấy điểm trung bình
         $averageRating = Review::avg('Star_rating');
-
-        // Lấy phân bố đánh giá (số lượng đánh giá cho mỗi số sao)
         $distribution = Review::select('Star_rating', DB::raw('COUNT(*) as count'))
             ->groupBy('Star_rating')
             ->orderBy('Star_rating', 'desc')
@@ -237,73 +271,62 @@ class DashboardController extends Controller
             ->pluck('count', 'Star_rating')
             ->toArray();
 
-        // Đảm bảo có đủ các mức sao từ 1 đến 5, nếu không có thì gán 0
         for ($i = 1; $i <= 5; $i++) {
             if (!isset($distribution[$i])) {
                 $distribution[$i] = 0;
             }
         }
-        // Sắp xếp lại distribution theo thứ tự tăng dần của sao nếu cần (frontend đã xử lý)
 
         return [
-            'average' => (float) number_format($averageRating, 1), // Làm tròn 1 chữ số thập phân
+            'average' => (float) number_format($averageRating, 1),
             'total' => (int) $totalRatings,
             'distribution' => $distribution
         ];
     }
 
-    /**
-     * ✅ Lấy dữ liệu lượt bán theo tháng cho một năm cụ thể
-     */
     private function getMonthlySalesData(int $year): array
     {
         $salesData = Order::select([
-                DB::raw('DATE_FORMAT(Create_at, "%Y-%m") as month'),
+                DB::raw('MONTH(Create_at) as month'),
                 DB::raw('COUNT(*) as count')
             ])
             ->whereYear('Create_at', $year)
             ->where('Status', 'completed')
-            ->groupBy('month')
+            ->groupBy(DB::raw('MONTH(Create_at)'))
             ->orderBy('month')
             ->get();
 
-        // Khởi tạo mảng 12 tháng với giá trị 0
         $monthlyCounts = array_fill(0, 12, 0);
 
         foreach ($salesData as $item) {
-            $monthIndex = (int) Carbon::createFromFormat('Y-m', $item->month)->format('n') - 1; // 'n' cho tháng không có số 0 ở đầu
+            $monthIndex = (int) $item->month - 1;
             $monthlyCounts[$monthIndex] = $item->count;
         }
 
-        return $monthlyCounts; // Trả về mảng 12 phần tử (số lượt bán mỗi tháng)
+        return $monthlyCounts;
     }
 
-    /**
-     * ✅ Lấy dữ liệu doanh thu theo tháng cho một năm cụ thể
-     */
     private function getMonthlyRevenueData(int $year): array
     {
         $revenueData = Order::select([
-                DB::raw('DATE_FORMAT(Create_at, "%Y-%m") as month'),
+                DB::raw('MONTH(Create_at) as month'),
                 DB::raw('SUM(Total_amount) as amount')
             ])
             ->whereYear('Create_at', $year)
             ->where('Status', 'completed')
-            ->groupBy('month')
+            ->groupBy(DB::raw('MONTH(Create_at)'))
             ->orderBy('month')
             ->get();
 
-        // Khởi tạo mảng 12 tháng với giá trị 0
         $monthlyAmounts = array_fill(0, 12, 0.0);
 
         foreach ($revenueData as $item) {
-            $monthIndex = (int) Carbon::createFromFormat('Y-m', $item->month)->format('n') - 1;
+            $monthIndex = (int) $item->month - 1;
             $monthlyAmounts[$monthIndex] = (float) $item->amount;
         }
 
-        return $monthlyAmounts; // Trả về mảng 12 phần tử (doanh thu mỗi tháng)
+        return $monthlyAmounts;
     }
-
 
     private function handleError(\Exception $e): JsonResponse
     {
