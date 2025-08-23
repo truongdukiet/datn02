@@ -562,60 +562,35 @@ const AdminDashboard = () => {
             </Row>
 
             {/* New Charts Row: Top Inventory Products and User Growth */}
-            <Row className="mb-4">
-                {/* Top 5 sản phẩm tồn kho */}
-                <Col xl={6} className="mb-4">
-                    <Card className="shadow-sm h-100">
-                        <Card.Header className="py-3 bg-light">
-                            <h6 className="m-0 fw-bold text-primary">
-                                <FaChartBar className="me-2" />
-                                Top 5 sản phẩm tồn kho cao nhất
-                            </h6>
-                        </Card.Header>
-                        <Card.Body style={{ position: 'relative', height: '400px' }}>
-                            {dashboardData.topInventoryProducts && dashboardData.topInventoryProducts.length > 0 ? (
-                                <Bar
-                                    data={topInventoryChart}
-                                    options={{
-                                        ...chartOptions,
-                                        indexAxis: 'y', // Hiển thị biểu đồ ngang
-                                    }}
-                                />
-                            ) : (
-                                <div className="text-center py-5">
-                                    <FaExclamationTriangle className="text-warning mb-3" size={48} />
-                                    <h6 className="text-muted">Chưa có dữ liệu sản phẩm tồn kho</h6>
-                                </div>
-                            )}
-                        </Card.Body>
-                    </Card>
-                </Col>
-
-                {/* Biểu đồ đường tăng trưởng người dùng
-                <Col xl={6} className="mb-4">
-                    <Card className="shadow-sm h-100">
-                        <Card.Header className="py-3 bg-light">
-                            <h6 className="m-0 fw-bold text-primary">
-                                <FaChartArea className="me-2" />
-                                Tăng trưởng người dùng
-                            </h6>
-                        </Card.Header>
-                        <Card.Body style={{ position: 'relative', height: '400px' }}>
-                            {dashboardData.userGrowth && dashboardData.userGrowth.length > 0 ? (
-                                <Line
-                                    data={userGrowthChart}
-                                    options={chartOptions}
-                                />
-                            ) : (
-                                <div className="text-center py-5">
-                                    <FaExclamationTriangle className="text-warning mb-3" size={48} />
-                                    <h6 className="text-muted">Chưa có dữ liệu tăng trưởng người dùng</h6>
-                                </div>
-                            )}
-                        </Card.Body>
-                    </Card>
-                </Col>*/}
-            </Row>
+        <Row className="mb-4">
+    {/* Top 5 sản phẩm tồn kho */}
+    <Col xl={12} className="mb-4">
+        <Card className="shadow-sm h-100">
+            <Card.Header className="py-3 bg-light">
+                <h6 className="m-0 fw-bold text-primary">
+                    <FaChartBar className="me-2" />
+                    Top 5 sản phẩm tồn kho cao nhất
+                </h6>
+            </Card.Header>
+            <Card.Body style={{ position: 'relative', height: '700px' }}>
+                {dashboardData.topInventoryProducts && dashboardData.topInventoryProducts.length > 0 ? (
+                    <Bar
+                        data={topInventoryChart}
+                        options={{
+                            ...chartOptions,
+                            indexAxis: 'y', // Hiển thị biểu đồ ngang
+                        }}
+                    />
+                ) : (
+                    <div className="text-center py-5">
+                        <FaExclamationTriangle className="text-warning mb-3" size={48} />
+                        <h6 className="text-muted">Chưa có dữ liệu sản phẩm tồn kho</h6>
+                    </div>
+                )}
+            </Card.Body>
+        </Card>
+    </Col>
+</Row>
 
             {/* Low Stock Alert - Full Width */}
             <Row className="mb-4">
