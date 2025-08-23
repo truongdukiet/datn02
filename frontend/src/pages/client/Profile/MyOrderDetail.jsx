@@ -305,7 +305,7 @@ const MyOrderDetail = () => {
                     <div>Địa chỉ: {orderInfo.shipping_address || orderInfo.Shipping_address || 'Chưa có thông tin'}</div>
                 </Item>
                 <Item label="Phương thức thanh toán">
-                    {orderInfo.payment_method || order.paymentGateway?.Name || 'Chưa xác định'}
+                    {orderInfo.payment_method || order.paymentGateway?.Name || 'thanh toán VNPAY '}
                 </Item>
                 <Item label="Mã giảm giá">
                     {orderInfo.voucher_code || order.voucher?.Code || 'Không sử dụng'}

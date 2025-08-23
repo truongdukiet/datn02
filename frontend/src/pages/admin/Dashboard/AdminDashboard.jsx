@@ -583,7 +583,7 @@ const AdminDashboard = () => {
                     />
                 ) : (
                     <div className="text-center py-5">
-                        <FaExclamationTriangle className="text-warning mb-3" size={50} />
+                        <FaExclamationTriangle className="text-warning mb-3" size={100} />
                         <h6 className="text-muted">Chưa có dữ liệu sản phẩm tồn kho</h6>
                     </div>
                 )}
