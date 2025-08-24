@@ -72,9 +72,10 @@ const CategoryList = () => {
                 e.target.src = "/images/category-1.png"; // fallback nếu ảnh không tồn tại
               }}
             />
-            <p className="tw-text-[20px] tw-mt-[12px] tw-font-medium">
-              {category.Name}
-            </p>
+           <p className="tw-text-[20px] tw-mt-[12px] tw-font-semibold tw-text-gray-700 hover:tw-text-blue-600 tw-transition-colors">
+  {category.Name}
+</p>
+
           </Link>
         ))}
       </Flex>
