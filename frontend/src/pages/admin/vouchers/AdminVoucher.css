@@ -94,3 +94,279 @@ h2, h3 {
     margin-bottom: 20px;
     font-weight: 600;
 }
+/* Container Styling */
+.voucher-management {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* Headings */
+.voucher-management h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #2c3e50;
+  font-size: 28px;
+  font-weight: 600;
+  position: relative;
+  padding-bottom: 15px;
+}
+
+.voucher-management h2::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(90deg, #3498db, #2ecc71);
+  border-radius: 2px;
+}
+
+.voucher-management h3 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 20px;
+  font-weight: 600;
+  font-size: 22px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #f1f2f6;
+}
+
+/* Error message */
+.voucher-management .error {
+  color: #e74c3c;
+  font-size: 14px;
+  margin-bottom: 15px;
+  background-color: #ffecec;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border-left: 4px solid #e74c3c;
+  font-weight: 500;
+}
+
+/* Table Styling */
+.voucher-management table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 25px;
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.voucher-management th,
+.voucher-management td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.voucher-management th {
+  background-color: #f0f0f0;
+  color: #333;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 14px;
+  border-top: none;
+}
+
+.voucher-management tr:hover {
+  background-color: #f5f5f5;
+}
+
+/* Button Styling - Giữ màu nút menu như cũ */
+.voucher-management > button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  margin-bottom: 25px;
+  transition: background-color 0.2s ease;
+  font-size: 14px;
+}
+
+.voucher-management > button:hover {
+  background-color: #218838;
+}
+
+.voucher-management td button {
+  margin: 3px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* Nút Sửa - Màu xanh như cũ */
+.voucher-management td button:first-child {
+  background-color: #007bff;
+  color: white;
+}
+
+.voucher-management td button:first-child:hover {
+  background-color: #0069d9;
+}
+
+/* Nút Xóa - Màu đỏ như cũ */
+.voucher-management td button:last-child {
+  background-color: #dc3545;
+  color: white;
+}
+
+.voucher-management td button:last-child:hover {
+  background-color: #c82333;
+}
+
+/* Form Styling */
+.voucher-management form {
+  background: white;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+}
+
+/* Form inputs */
+.voucher-management input,
+.voucher-management textarea,
+.voucher-management select {
+  width: 100%;
+  padding: 12px 14px;
+  margin: 10px 0 20px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font-size: 15px;
+  transition: border-color 0.2s ease;
+}
+
+.voucher-management input:focus,
+.voucher-management textarea:focus,
+.voucher-management select:focus {
+  border-color: #28a745;
+  outline: none;
+}
+
+.voucher-management textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Nút trong form - Màu xanh lá như cũ */
+.voucher-management form button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 16px;
+  width: 100%;
+  transition: background-color 0.2s ease;
+}
+
+.voucher-management form button:hover {
+  background-color: #218838;
+}
+
+/* Status badge styling */
+.voucher-management tr td:nth-child(4) {
+  font-weight: 500;
+  color: #28a745;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .voucher-management {
+    padding: 16px;
+  }
+
+  .voucher-management table {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .voucher-management th,
+  .voucher-management td {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .voucher-management form {
+    padding: 20px;
+  }
+
+  .voucher-management td button {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
+
+/* Loading state */
+.voucher-management p {
+  text-align: center;
+  padding: 20px;
+  font-size: 18px;
+}
+
+.voucher-management p:empty {
+  display: none;
+}
+
+/* STYLE CHO MENU CHỨA MỤC QUẢN LÝ VOUCHER */
+/* Giả sử menu có class là .admin-menu */
+.admin-menu {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.admin-menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.admin-menu li {
+  padding: 12px 15px;
+  margin-bottom: 5px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.admin-menu li:hover {
+  background-color: #e9ecef;
+}
+
+/* Mục Quản lý voucher được chọn - màu xanh nhạt như trong ảnh */
+.admin-menu li.active {
+  background-color: #e3f2fd; /* Màu xanh nhạt giống trong ảnh */
+  color: #1976d2;
+  font-weight: 500;
+}
+
+/* Biểu tượng checkbox trong menu */
+.admin-menu li::before {
+  content: "☑ ";
+  margin-right: 8px;
+}
+
+.admin-menu li.active::before {
+  content: "✔ ";
+}
