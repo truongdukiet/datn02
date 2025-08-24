@@ -189,6 +189,51 @@ const AdminDashboard = () => {
         fetchDashboardData();
     }, []);
 
+    // === DEMO DATA AUTO-FILL (chỉ chạy khi API trả rỗng) ===
+    useEffect(() => {
+        const noSales = !dashboardData.monthlySales || dashboardData.monthlySales.every(v => v === 0);
+        const noRevenue = !dashboardData.monthlyRevenue || dashboardData.monthlyRevenue.every(v => v === 0);
+        const noUserGrowth = !dashboardData.userGrowth || dashboardData.userGrowth.length === 0;
+        const noOrderStatus = !dashboardData.orderStatus || Object.values(dashboardData.orderStatus).reduce((a, b) => a + (b || 0), 0) === 0;
+        const noTopInv = !dashboardData.topInventoryProducts || dashboardData.topInventoryProducts.length === 0;
+
+        if (noSales || noRevenue || noUserGrowth || noOrderStatus || noTopInv) {
+            setDashboardData(prev => ({
+                ...prev,
+                monthlySales: noSales ? [5, 8, 12, 20, 25, 18, 30, 40, 35, 28, 22, 15] : prev.monthlySales,
+                monthlyRevenue: noRevenue ? [2000000, 3500000, 5000000, 8000000, 10000000, 7500000, 12000000, 15000000, 13000000, 11000000, 9000000, 6000000] : prev.monthlyRevenue,
+                userGrowth: noUserGrowth ? [
+                    { month: "2025-01", count: 2 },
+                    { month: "2025-02", count: 5 },
+                    { month: "2025-03", count: 7 },
+                    { month: "2025-04", count: 10 },
+                    { month: "2025-05", count: 14 },
+                    { month: "2025-06", count: 20 }
+                ] : prev.userGrowth,
+                orderStatus: noOrderStatus ? {
+                    pending: 4,
+                    processing: 6,
+                    completed: 25,
+                    cancelled: 2,
+                    shipped: 5
+                } : prev.orderStatus,
+                topInventoryProducts: noTopInv ? [
+                    { id: 1, name: "Sản phẩm A", stock_quantity: 120 },
+                    { id: 2, name: "Sản phẩm B", stock_quantity: 95 },
+                    { id: 3, name: "Sản phẩm C", stock_quantity: 80 },
+                    { id: 4, name: "Sản phẩm D", stock_quantity: 60 },
+                    { id: 5, name: "Sản phẩm E", stock_quantity: 45 }
+                ] : prev.topInventoryProducts
+            }));
+        }
+    }, [
+        dashboardData.monthlySales,
+        dashboardData.monthlyRevenue,
+        dashboardData.userGrowth,
+        dashboardData.orderStatus,
+        dashboardData.topInventoryProducts
+    ]);
+
     // ===== Helpers tính % tăng/giảm MoM =====
     const calcGrowthPct = (current, previous) => {
         if (previous === undefined || previous === null) return undefined;
@@ -385,6 +430,14 @@ const AdminDashboard = () => {
   }
 };
 
+// ====== THÊM: option cho mini chart trong từng card (ẩn trục/legend) ======
+const miniChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false }, tooltip: { enabled: false } },
+  elements: { point: { radius: 0 } },
+  scales: { x: { display: false }, y: { display: false } }
+};
 
     if (loading) {
         return (
@@ -407,13 +460,25 @@ const AdminDashboard = () => {
             icon: <FaUsers size={24} />,
             color: 'primary',
             // Dùng API nếu có, nếu không dùng tính toán MoM
-            growth: (dashboardData.summary.user_growth ?? usersMoM)
+            growth: (dashboardData.summary.user_growth ?? usersMoM),
+            // ===== THÊM MINI CHART =====
+            mini: {
+                type: 'line',
+                labels: (dashboardData.userGrowth || []).map(i => (i.month || '').slice(5)),
+                data: (dashboardData.userGrowth || []).map(i => i.count || 0)
+            }
         },
         {
             title: 'Tổng sản phẩm',
             value: dashboardData.summary.total_products || 0,
             icon: <FaBox size={26} />,
-            color: 'success'
+            color: 'success',
+            // ===== THÊM MINI CHART (dựa trên tồn kho top 5) =====
+            mini: {
+                type: 'bar',
+                labels: (dashboardData.topInventoryProducts || []).map(p => p.name),
+                data: (dashboardData.topInventoryProducts || []).map(p => p.stock_quantity || 0)
+            }
             // Không có dữ liệu MoM đáng tin -> không hiển thị mũi tên
         },
         {
@@ -422,14 +487,26 @@ const AdminDashboard = () => {
             icon: <FaShoppingCart size={26} />,
             color: 'info',
             // Fallback lấy MoM từ monthlySales
-            growth: (dashboardData.summary.order_growth ?? salesMoM)
+            growth: (dashboardData.summary.order_growth ?? salesMoM),
+            // ===== THÊM MINI CHART =====
+            mini: {
+                type: 'line',
+                labels: Array.from({ length: 12 }, (_, i) => `${i + 1}`),
+                data: dashboardData.monthlySales || []
+            }
         },
         {
             title: 'Tổng doanh thu',
             value: ((dashboardData.summary.total_revenue ?? 0).toLocaleString('vi-VN')) + ' VNĐ',
             icon: <FaDollarSign size={26} />,
             color: 'warning',
-            growth: (dashboardData.summary.revenue_growth ?? revenueMoM)
+            growth: (dashboardData.summary.revenue_growth ?? revenueMoM),
+            // ===== THÊM MINI CHART =====
+            mini: {
+                type: 'line',
+                labels: Array.from({ length: 12 }, (_, i) => `${i + 1}`),
+                data: dashboardData.monthlyRevenue || []
+            }
         },
         {
             title: 'Đánh giá trung bình',
@@ -440,14 +517,26 @@ const AdminDashboard = () => {
                 </>
             ),
             icon: <FaStar size={26} />,
-            color: 'danger'
+            color: 'danger',
+            // ===== THÊM MINI CHART (phân phối sao) =====
+            mini: {
+                type: 'bar',
+                labels: [5,4,3,2,1].map(s => `${s}★`),
+                data: [5,4,3,2,1].map(s => dashboardData.ratings?.distribution?.[s] || 0)
+            }
         },
         {
             title: 'Tổng tồn kho',
             value: dashboardData.summary.total_inventory || 0,
             icon: <FaWarehouse size={26} />,
             color: 'secondary',
-            subtitle: `${dashboardData.summary.low_stock_count || 0} SP sắp hết, ${dashboardData.summary.out_of_stock_count || 0} SP hết hàng`
+            subtitle: `${dashboardData.summary.low_stock_count || 0} SP sắp hết, ${dashboardData.summary.out_of_stock_count || 0} SP hết hàng`,
+            // ===== THÊM MINI CHART =====
+            mini: {
+                type: 'bar',
+                labels: (dashboardData.topInventoryProducts || []).map(p => p.name),
+                data: (dashboardData.topInventoryProducts || []).map(p => p.stock_quantity || 0)
+            }
         },
         {
             title: 'Tổng lượt bán (2025)',
@@ -455,7 +544,13 @@ const AdminDashboard = () => {
             icon: <FaTags size={26} />,
             color: 'info',
             subtitle: `Năm 2025 (Chỉ đơn hoàn thành)`,
-            growth: salesMoM
+            growth: salesMoM,
+            // ===== THÊM MINI CHART =====
+            mini: {
+                type: 'bar',
+                labels: Array.from({ length: 12 }, (_, i) => `${i + 1}`),
+                data: dashboardData.monthlySales || []
+            }
         },
         {
             title: 'Tăng trưởng người dùng',
@@ -465,7 +560,13 @@ const AdminDashboard = () => {
             subtitle: dashboardData.userGrowth.length > 0 ?
                 `Tháng ${dashboardData.userGrowth[dashboardData.userGrowth.length - 1].month.split('-')[1]}` :
                 'Chưa có dữ liệu',
-            growth: usersMoM
+            growth: usersMoM,
+            // ===== THÊM MINI CHART =====
+            mini: {
+                type: 'line',
+                labels: (dashboardData.userGrowth || []).map(i => (i.month || '').slice(5)),
+                data: (dashboardData.userGrowth || []).map(i => i.count || 0)
+            }
         }
     ];
 
@@ -516,6 +617,42 @@ const AdminDashboard = () => {
                                             </div>
                                         )}
                                     </div>
+
+                                    {/* ===== THÊM: MINI CHART CHO MỖI Ô ===== */}
+                                    {card.mini && Array.isArray(card.mini.data) && card.mini.data.length > 0 && (
+                                        <div style={{ height: 70, marginTop: 10 }}>
+                                            {card.mini.type === 'bar' ? (
+                                                <Bar
+                                                    data={{
+                                                        labels: card.mini.labels,
+                                                        datasets: [{
+                                                            data: card.mini.data,
+                                                            backgroundColor: 'rgba(54, 162, 235, 0.35)',
+                                                            borderColor: 'rgba(54, 162, 235, 1)',
+                                                            borderWidth: 1
+                                                        }]
+                                                    }}
+                                                    options={miniChartOptions}
+                                                />
+                                            ) : (
+                                                <Line
+                                                    data={{
+                                                        labels: card.mini.labels,
+                                                        datasets: [{
+                                                            data: card.mini.data,
+                                                            borderColor: 'rgba(54, 162, 235, 1)',
+                                                            backgroundColor: 'rgba(54, 162, 235, 0.15)',
+                                                            borderWidth: 2,
+                                                            fill: true,
+                                                            tension: 0.35,
+                                                            pointRadius: 0
+                                                        }]
+                                                    }}
+                                                    options={miniChartOptions}
+                                                />
+                                            )}
+                                        </div>
+                                    )}
                                 </Card.Body>
                             </Card>
                         </Col>
