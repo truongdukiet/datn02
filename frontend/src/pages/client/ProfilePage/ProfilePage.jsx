@@ -7,6 +7,8 @@ import {
   Input,
   message,
   Space,
+  Modal,
+  Form,
 } from 'antd';
 import {
   UserOutlined,
@@ -14,6 +16,7 @@ import {
   SaveOutlined,
   LogoutOutlined,
   HomeOutlined,
+  LockOutlined,
 } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import axiosClient from '../../../api/axiosClient';
@@ -29,6 +32,8 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [userData, setUserData] = useState(defaultUserData);
+  const [isChangePasswordModalVisible, setIsChangePasswordModalVisible] = useState(false);
+  const [changePasswordForm] = Form.useForm();
 
   useEffect(() => {
     const loggedUser = JSON.parse(localStorage.getItem('user'));
@@ -90,6 +95,32 @@ const ProfilePage = () => {
     }
   };
 
+  const handleChangePassword = async (values) => {
+    const loggedUser = JSON.parse(localStorage.getItem('user'));
+    if (!loggedUser || !loggedUser.UserID) {
+      message.error('Bạn chưa đăng nhập!');
+      return;
+    }
+
+    try {
+      await axiosClient.put(`/users/${loggedUser.UserID}/password`, {
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword,
+      });
+
+      message.success('Đổi mật khẩu thành công!');
+      setIsChangePasswordModalVisible(false);
+      changePasswordForm.resetFields();
+    } catch (error) {
+      console.error('Lỗi khi đổi mật khẩu:', error);
+      if (error.response && error.response.data && error.response.data.message) {
+        message.error(error.response.data.message);
+      } else {
+        message.error('Đổi mật khẩu thất bại. Vui lòng thử lại!');
+      }
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('authToken');
@@ -110,6 +141,13 @@ const ProfilePage = () => {
                 Trang chủ
               </Button>
             </Link>
+            <Button
+              type="default"
+              icon={<LockOutlined />}
+              onClick={() => setIsChangePasswordModalVisible(true)}
+            >
+              Đổi mật khẩu
+            </Button>
             <Button
               type={isEditing ? 'primary' : 'default'}
               icon={isEditing ? <SaveOutlined /> : <EditOutlined />}
@@ -185,6 +223,77 @@ const ProfilePage = () => {
           </Descriptions.Item>
         </Descriptions>
       </Card>
+
+      {/* Modal đổi mật khẩu */}
+      <Modal
+        title="Đổi mật khẩu"
+        open={isChangePasswordModalVisible}
+        onCancel={() => {
+          setIsChangePasswordModalVisible(false);
+          changePasswordForm.resetFields();
+        }}
+        footer={null}
+      >
+        <Form
+          form={changePasswordForm}
+          layout="vertical"
+          onFinish={handleChangePassword}
+        >
+          <Form.Item
+            label="Mật khẩu hiện tại"
+            name="currentPassword"
+            rules={[
+              { required: true, message: 'Vui lòng nhập mật khẩu hiện tại!' },
+            ]}
+          >
+            <Input.Password placeholder="Nhập mật khẩu hiện tại" />
+          </Form.Item>
+
+          <Form.Item
+            label="Mật khẩu mới"
+            name="newPassword"
+            rules={[
+              { required: true, message: 'Vui lòng nhập mật khẩu mới!' },
+              { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự!' },
+            ]}
+          >
+            <Input.Password placeholder="Nhập mật khẩu mới" />
+          </Form.Item>
+
+          <Form.Item
+            label="Xác nhận mật khẩu mới"
+            name="confirmPassword"
+            dependencies={['newPassword']}
+            rules={[
+              { required: true, message: 'Vui lòng xác nhận mật khẩu mới!' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('newPassword') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('Mật khẩu xác nhận không khớp!'));
+                },
+              }),
+            ]}
+          >
+            <Input.Password placeholder="Xác nhận mật khẩu mới" />
+          </Form.Item>
+
+          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+            <Space>
+              <Button onClick={() => {
+                setIsChangePasswordModalVisible(false);
+                changePasswordForm.resetFields();
+              }}>
+                Hủy
+              </Button>
+              <Button type="primary" htmlType="submit">
+                Đổi mật khẩu
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
