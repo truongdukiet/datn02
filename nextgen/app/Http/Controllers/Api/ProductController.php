@@ -252,7 +252,6 @@ public function search(Request $request)
 
         $products = Product::with(['category', 'variants.attributes.attribute'])
             ->when($query, function ($q) use ($query) {
-                // So khớp chính xác từ, không phân biệt hoa thường
                 $word = mb_strtolower($query, 'UTF-8');
                 return $q->whereRaw("LOWER(Name) REGEXP ?", ["[[:<:]]{$word}[[:>:]]"]);
             })

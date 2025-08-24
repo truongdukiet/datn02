@@ -569,7 +569,7 @@ const ProductDetail = () => {
             )}
 
             {/* Chọn biến thể */}
-            <div className="tw-mb-8">
+            {/* <div className="tw-mb-8">
               <p className="tw-font-semibold tw-mb-2">Chọn biến thể:</p>
               <div className="tw-flex tw-flex-wrap tw-gap-3">
                 {product.variants.map((variant) => {
@@ -611,7 +611,114 @@ const ProductDetail = () => {
                   );
                 })}
               </div>
+            </div> */}
+
+            {/* Chọn màu sắc */}
+            <div className="tw-mb-5">
+              <p className="tw-font-semibold tw-mb-2">Chọn màu sắc:</p>
+              <div className="tw-flex tw-flex-wrap tw-gap-2">
+                {[...new Set(
+                  product.variants
+                    .flatMap(v => (variantAttributes[v.ProductVariantID] || []))
+                    .filter(attr => {
+                      // Sửa lại lấy đúng tên thuộc tính
+                      const attrName = attr.attribute?.name?.toLowerCase();
+                      console.log("Color attribute:", attr); // Debug
+                      return attrName === "màu sắc";
+                    })
+                    .map(attr => attr.value)
+                )].map((color, idx) => {
+                  const isSelected = selectedAttributes.color === color;
+
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      className={
+                        "tw-px-4 tw-py-2 tw-rounded-lg tw-font-medium tw-transition tw-border " +
+                        (isSelected
+                          ? "tw-bg-[#009688] tw-text-white tw-border-[#009688] tw-shadow"
+                          : "tw-bg-white tw-text-[#009688] tw-border-gray-300 hover:tw-bg-[#e0f2f1] hover:tw-border-[#009688]")
+                      }
+                      style={{
+                        minWidth: 80,
+                        minHeight: 40,
+                        outline: isSelected ? "2px solid #009688" : "none",
+                      }}
+                      onClick={() => {
+                        setSelectedAttributes({ color });
+                        setSelectedVariant(null);
+                      }}
+                    >
+                      {color}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
+            {/* Chọn kích thước */}
+            {selectedAttributes.color && (
+              <div className="tw-mb-8">
+                <p className="tw-font-semibold tw-mb-2">Chọn kích thước:</p>
+                <div className="tw-flex tw-flex-wrap tw-gap-2">
+                  {[...new Set(
+                    product.variants
+                      .filter(variant =>
+                        (variantAttributes[variant.ProductVariantID] || []).some(
+                          attr => {
+                            const attrName = attr.attribute?.name?.toLowerCase();
+                            return attrName === "màu sắc" && attr.value === selectedAttributes.color;
+                          }
+                        )
+                      )
+                      .flatMap(variant =>
+                        (variantAttributes[variant.ProductVariantID] || []).filter(
+                          attr => {
+                            const attrName = attr.attribute?.name?.toLowerCase();
+                            return attrName === "kích thước";
+                          }
+                        ).map(attr => ({
+                          size: attr.value,
+                          variantId: variant.ProductVariantID,
+                          image: variant.Image
+                        }))
+                      )
+                  )].map((sizeObj, idx) => {
+                    const isSelected = selectedVariant?.ProductVariantID === sizeObj.variantId;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        className={
+                          "tw-px-4 tw-py-2 tw-rounded-lg tw-font-medium tw-transition tw-border " +
+                          (isSelected
+                            ? "tw-bg-[#009688] tw-text-white tw-border-[#009688] tw-shadow"
+                            : "tw-bg-white tw-text-[#009688] tw-border-gray-300 hover:tw-bg-[#e0f2f1] hover:tw-border-[#009688]")
+                        }
+                        style={{
+                          minWidth: 80,
+                          minHeight: 40,
+                          outline: isSelected ? "2px solid #009688" : "none",
+                        }}
+                        onClick={() => {
+                          setSelectedVariant(
+                            product.variants.find(v => v.ProductVariantID === sizeObj.variantId)
+                          );
+                          setMainImage({
+                            image: sizeObj.image,
+                            id: sizeObj.variantId,
+                          });
+                          setSelectedAttributes({ ...selectedAttributes, size: sizeObj.size });
+                        }}
+                      >
+                        {sizeObj.size}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Số lượng và nút thêm giỏ */}
             <div className="tw-flex tw-flex-col sm:tw-flex-row tw-gap-6 tw-mb-8">

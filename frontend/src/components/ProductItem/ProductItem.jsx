@@ -19,7 +19,7 @@ const ProductItem = ({ product }) => {
   const { ProductID, Name, base_price, Image, variants = [] } = product || {};
   const queryClient = useQueryClient();
 
-  // ✅ Lấy biến thể mặc định
+  // ✅ Biến thể mặc định
   const defaultVariant =
     Array.isArray(variants) && variants.length > 0 ? variants[0] : null;
 
@@ -71,7 +71,7 @@ const ProductItem = ({ product }) => {
     mutationFn: favoriteApi.addToFavorites,
     onSuccess: () => {
       message.success("Đã thêm vào danh sách yêu thích!");
-      queryClient.invalidateQueries(["favorites", userId]); // ❌ Không refetch products
+      queryClient.invalidateQueries(["favorites", userId]);
     },
     onError: (error) => {
       message.error(
@@ -139,14 +139,20 @@ const ProductItem = ({ product }) => {
     }
   };
 
+  // ✅ URL chi tiết sản phẩm
+  const detailUrl = `/products/${ProductID}`;
+
   return (
     <div className="tw-mb-4">
       <div className="tw-relative tw-pt-[100%]">
-        <img
-          src={`http://localhost:8000${getProductImageUrl(product.Image)}`}
-          alt={Name || "Sản phẩm"}
-          className="tw-w-full tw-h-full tw-object-cover tw-absolute tw-top-0 tw-left-0"
-        />
+        {/* ✅ Cả khung ảnh là Link sang chi tiết */}
+        <Link to={detailUrl} className="tw-absolute tw-inset-0">
+          <img
+            src={`http://localhost:8000${getProductImageUrl(Image)}`}
+            alt={Name || "Sản phẩm"}
+            className="tw-w-full tw-h-full tw-object-cover"
+          />
+        </Link>
 
         {/* Nút yêu thích */}
         <button
@@ -169,8 +175,9 @@ const ProductItem = ({ product }) => {
       </div>
 
       <div className="tw-mt-5 tw-flex tw-flex-col tw-items-center tw-gap-y-3">
+        {/* ✅ Tên cũng là Link sang chi tiết */}
         <Link
-          to={`/products/${ProductID}`}
+          to={detailUrl}
           className="tw-text-center tw-line-clamp-1 tw-font-semibold tw-text-[#212121]"
         >
           {Name || "Sản phẩm"}
