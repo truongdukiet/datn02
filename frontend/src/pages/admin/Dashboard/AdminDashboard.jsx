@@ -73,7 +73,7 @@ const AdminDashboard = () => {
                 setLoading(true);
                 setError(null);
 
-                // Sử dụng một API duy nhất để lấy tất cả dữ liệu
+                // Sử dụng một API duy nhất để lấy tất cả dữliệu
                 const res = await axios.get(`${API_BASE_URL}/dashboard`);
                 const data = res.data?.data || {};
 
@@ -219,24 +219,30 @@ const AdminDashboard = () => {
     const [prevRevenue, currRevenue] = pickLastTwo(dashboardData.monthlyRevenue || []);
     const revenueMoM = calcGrowthPct(currRevenue, prevRevenue);
 
-    // Biểu đồ lượt bán & Doanh thu theo tháng (2025)
+    // Biểu đồ lượt bán & Doanh thu theo tháng (2025) - BIỂU ĐỒ KẾT HỢP
     const monthlyDataChart = {
         labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
                  'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
         datasets: [
             {
+                type: 'bar',
                 label: 'Lượt bán',
                 data: dashboardData.monthlySales,
                 backgroundColor: 'rgba(255, 99, 132, 0.5)',
                 borderColor: 'rgba(255, 99, 132, 1)',
                 borderWidth: 1,
+                yAxisID: 'y',
             },
             {
+                type: 'line',
                 label: 'Doanh thu (VNĐ)',
                 data: dashboardData.monthlyRevenue,
-                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
                 borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1,
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+                yAxisID: 'y1',
             }
         ]
     };
@@ -274,7 +280,7 @@ const AdminDashboard = () => {
         }]
     };
 
-    // Biểu đồ Top 5 sản phẩm tồn kho
+    // Biểu đồ Top 5 sản phẩm tồn kho - ĐÃ THAY ĐỔI THÀNH BIỂU ĐỒ TRÒN
     const topInventoryChart = {
         labels: dashboardData.topInventoryProducts.map(product => product.name),
         datasets: [{
@@ -317,55 +323,68 @@ const AdminDashboard = () => {
         }]
     };
 
-    const chartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'top',
-                labels: {
-                    font: {
-                        size: 15,
-                        family: "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif"
-                    }
-                }
-            },
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    font: {
-                        size: 13,
-                        family: "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif"
-                    }
-                },
-                grid: {
-                    display: true,
-                    color: 'rgba(0, 0, 0, 0.05)'
-                }
-            },
-            x: {
-                ticks: {
-                    font: {
-                        size: 13,
-                        family: "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif"
-                    }
-                },
-                grid: {
-                    display: false
-                }
-            }
-        },
-        layout: {
-            padding: {
-                top: 13,
-                bottom: 13,
-                left: 13,
-                right: 13
-            }
+ const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'top',
+      labels: {
+        font: {
+          size: 15,
+          family: "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif"
         }
-    };
+      }
+    },
+    tooltip: {
+      callbacks: {
+        // Hiển thị gọn gàng: chỉ số liệu
+        label: function(context) {
+          let value = context.raw;
+          if (context.dataset.label.includes('Doanh thu')) {
+            return value.toLocaleString('vi-VN') + ' VNĐ';
+          }
+          return value;
+        }
+      }
+    }
+  },
+  scales: {
+    x: {
+      title: {
+        display: false   // ẩn nhãn trục X
+      },
+      grid: {
+        drawTicks: false
+      }
+    },
+    y: {
+      beginAtZero: true,
+      title: {
+        display: false   // ẩn chữ "Lượt bán"
+      }
+    },
+    y1: {
+      beginAtZero: true,
+      position: 'right',
+      grid: {
+        drawOnChartArea: false
+      },
+      title: {
+        display: false   // ẩn chữ "Doanh thu (VNĐ)"
+      }
+    }
+  },
+  layout: {
+    padding: {
+      top: 13,
+      bottom: 13,
+      left: 13,
+      right: 13
+    }
+  }
+};
+
 
     if (loading) {
         return (
@@ -504,7 +523,7 @@ const AdminDashboard = () => {
                 })}
             </Row>
 
-            {/* Monthly Sales & Revenue (2025) - Now full width */}
+            {/* Monthly Sales & Revenue (2025) - Biểu đồ kết hợp */}
             <Row className="mb-4">
                 <Col xl={12} className="mb-4">
                     <Card className="shadow-sm h-100">
@@ -562,35 +581,46 @@ const AdminDashboard = () => {
             </Row>
 
             {/* New Charts Row: Top Inventory Products and User Growth */}
-        <Row className="mb-4">
-    {/* Top 5 sản phẩm tồn kho */}
-    <Col xl={12} className="mb-4">
-        <Card className="shadow-sm h-100">
-            <Card.Header className="py-3 bg-light">
-                <h6 className="m-0 fw-bold text-primary">
-                    <FaChartBar className="me-2" />
-                    Top 5 sản phẩm tồn kho cao nhất
-                </h6>
-            </Card.Header>
-            <Card.Body style={{ position: 'relative', height: '700px' }}>
-                {dashboardData.topInventoryProducts && dashboardData.topInventoryProducts.length > 0 ? (
-                    <Bar
-                        data={topInventoryChart}
-                        options={{
-                            ...chartOptions,
-                            indexAxis: 'y', // Hiển thị biểu đồ ngang
-                        }}
-                    />
-                ) : (
-                    <div className="text-center py-5">
-                        <FaExclamationTriangle className="text-warning mb-3" size={100} />
-                        <h6 className="text-muted">Chưa có dữ liệu sản phẩm tồn kho</h6>
-                    </div>
-                )}
-            </Card.Body>
-        </Card>
-    </Col>
-</Row>
+            <Row className="mb-4">
+                {/* Top 5 sản phẩm tồn kho - ĐÃ THAY ĐỔI THÀNH BIỂU ĐỒ TRÒN */}
+                <Col xl={12} className="mb-4">
+                    <Card className="shadow-sm h-100">
+                        <Card.Header className="py-3 bg-light">
+                            <h6 className="m-0 fw-bold text-primary">
+                                <FaChartBar className="me-2" />
+                                Top 5 sản phẩm tồn kho cao nhất
+                            </h6>
+                        </Card.Header>
+                        <Card.Body style={{ position: 'relative', height: '500px' }}>
+                            {dashboardData.topInventoryProducts && dashboardData.topInventoryProducts.length > 0 ? (
+                                <Doughnut
+                                    data={topInventoryChart}
+                                    options={{
+                                        ...chartOptions,
+                                        plugins: {
+                                            ...chartOptions.plugins,
+                                            legend: {
+                                                position: 'right',
+                                                labels: {
+                                                    font: {
+                                                        size: 13,
+                                                        family: "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }}
+                                />
+                            ) : (
+                                <div className="text-center py-5">
+                                    <FaExclamationTriangle className="text-warning mb-3" size={48} />
+                                    <h6 className="text-muted">Chưa có dữ liệu sản phẩm tồn kho</h6>
+                                </div>
+                            )}
+                        </Card.Body>
+                    </Card>
+                </Col>
+            </Row>
 
             {/* Low Stock Alert - Full Width */}
             <Row className="mb-4">
