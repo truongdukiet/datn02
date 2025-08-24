@@ -16,7 +16,7 @@ export default function ChatWidget() {
           position: "fixed",
           bottom: "24px",
           right: "24px",
-          backgroundColor: "#8B5E3C", 
+          backgroundColor: "#8B5E3C",
           border: "none",
           borderRadius: "50%",
           width: "65px",
@@ -32,14 +32,14 @@ export default function ChatWidget() {
           padding: 0,
         }}
       >
-        <img 
-          src="http://localhost:8000/storage/chatbot.png"   
+        <img
+          src="http://localhost:8000/storage/chatbot.png"
           alt="Chat"
-          style={{ 
-            width: "60%", 
-            height: "60%", 
+          style={{
+            width: "60%",
+            height: "60%",
             objectFit: "cover",
-            borderRadius: "50%" 
+            borderRadius: "50%"
           }}
         />
       </button>
@@ -52,20 +52,20 @@ export default function ChatWidget() {
             right: "24px",
             width: "350px",
             height: "450px",
-            border: "1px solid #D4AF37", 
+            border: "1px solid #D4AF37",
             borderRadius: "16px",
             overflow: "hidden",
             boxShadow: "0 8px 25px rgba(0,0,0,0.2)",
-            backgroundColor: "#FAF9F6", 
+            backgroundColor: "#FAF9F6",
             display: "flex",
             flexDirection: "column",
             zIndex: 9999,
           }}
         >
- 
+
           <div
             style={{
-              backgroundColor: "#4B2E2B", 
+              backgroundColor: "#4B2E2B",
               color: "white",
               padding: "14px 16px",
               fontWeight: "bold",

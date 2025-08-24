@@ -10,7 +10,8 @@ const AddCategory = () => {
         Image: "",
         Status: "active"
     });
-    const [error, setError] = useState("");
+    const [previewImage, setPreviewImage] = useState(null);
+    const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
@@ -19,19 +20,91 @@ const AddCategory = () => {
             ...prev,
             [name]: value
         }));
+
+        // Clear error when user types
+        if (errors[name]) {
+            setErrors(prev => {
+                const newErrors = {...prev};
+                delete newErrors[name];
+                return newErrors;
+            });
+        }
+    };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Tạo URL để xem trước ảnh
+            const imageUrl = URL.createObjectURL(file);
+            setPreviewImage(imageUrl);
+
+            // Chuẩn bị file để upload (trong FormData)
+            setFormData(prev => ({
+                ...prev,
+                Image: file
+            }));
+
+            // Clear error nếu có
+            if (errors.Image) {
+                setErrors(prev => {
+                    const newErrors = {...prev};
+                    delete newErrors.Image;
+                    return newErrors;
+                });
+            }
+        }
+    };
+
+    const validateForm = () => {
+        const newErrors = {};
+
+        if (!formData.Name.trim()) {
+            newErrors.Name = "Tên danh mục là bắt buộc";
+        }
+
+        if (!formData.Image) {
+            newErrors.Image = "Vui lòng chọn hình ảnh";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!validateForm()) {
+            return;
+        }
+
         setLoading(true);
-        setError("");
+        setErrors({});
+
         try {
-            await axios.post(`http://localhost:8000/api/categories`, formData);
+            // Tạo FormData để gửi file
+            const submitData = new FormData();
+            submitData.append('Name', formData.Name);
+            submitData.append('Description', formData.Description);
+            submitData.append('Status', formData.Status);
+            submitData.append('Image', formData.Image);
+
+            await axios.post(`http://localhost:8000/api/categories`, submitData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
             alert("Thêm danh mục thành công!");
             navigate("/admin/categories");
         } catch (err) {
             console.error("Error adding category:", err);
-            setError("Lỗi thêm danh mục.");
+
+            if (err.response?.status === 422 && err.response.data?.errors) {
+                // Hiển thị lỗi validation từ server
+                setErrors(err.response.data.errors);
+            } else {
+                setErrors({ general: "Lỗi thêm danh mục. Vui lòng thử lại." });
+            }
         } finally {
             setLoading(false);
         }
@@ -40,30 +113,126 @@ const AddCategory = () => {
     return (
         <div style={{ maxWidth: "600px", margin: "auto", padding: "20px" }}>
             <h2>Thêm danh mục mới</h2>
-            {error && <p style={{ color: "red" }}>{error}</p>}
+
+            {errors.general && <div style={{ color: "red", marginBottom: "15px" }}>{errors.general}</div>}
+
             <form onSubmit={handleSubmit}>
-                <div style={{ marginBottom: "10px" }}>
-                    <label>Tên danh mục:</label>
-                    <input type="text" name="Name" value={formData.Name} onChange={handleChange} required />
+                <div style={{ marginBottom: "15px" }}>
+                    <label style={{ display: "block", marginBottom: "5px" }}>Tên danh mục:</label>
+                    <input
+                        type="text"
+                        name="Name"
+                        value={formData.Name}
+                        onChange={handleChange}
+                        style={{
+                            width: "100%",
+                            padding: "8px",
+                            border: errors.Name ? "1px solid red" : "1px solid #ccc",
+                            borderRadius: "4px"
+                        }}
+                    />
+                    {errors.Name && <div style={{ color: "red", fontSize: "14px", marginTop: "5px" }}>{errors.Name}</div>}
                 </div>
-                <div style={{ marginBottom: "10px" }}>
-                    <label>Mô tả:</label>
-                    <textarea name="Description" value={formData.Description} onChange={handleChange} />
+
+                <div style={{ marginBottom: "15px" }}>
+                    <label style={{ display: "block", marginBottom: "5px" }}>Mô tả:</label>
+                    <textarea
+                        name="Description"
+                        value={formData.Description}
+                        onChange={handleChange}
+                        style={{
+                            width: "100%",
+                            padding: "8px",
+                            border: "1px solid #ccc",
+                            borderRadius: "4px",
+                            minHeight: "100px"
+                        }}
+                    />
                 </div>
-                <div style={{ marginBottom: "10px" }}>
-                    <label>Hình ảnh:</label>
-                    <input type="text" name="Image" value={formData.Image} onChange={handleChange} />
+
+                <div style={{ marginBottom: "15px" }}>
+                    <label style={{ display: "block", marginBottom: "5px" }}>Hình ảnh:</label>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        style={{
+                            width: "100%",
+                            padding: "8px",
+                            border: errors.Image ? "1px solid red" : "1px solid #ccc",
+                            borderRadius: "4px"
+                        }}
+                    />
+                    {errors.Image && <div style={{ color: "red", fontSize: "14px", marginTop: "5px" }}>{errors.Image}</div>}
+
+                    {previewImage && (
+                        <div style={{ marginTop: "10px" }}>
+                            <p>Xem trước:</p>
+                            <img
+                                src={previewImage}
+                                alt="Preview"
+                                style={{
+                                    maxWidth: "200px",
+                                    maxHeight: "200px",
+                                    border: "1px solid #ddd",
+                                    borderRadius: "4px",
+                                    marginTop: "5px"
+                                }}
+                            />
+                        </div>
+                    )}
                 </div>
-                <div style={{ marginBottom: "10px" }}>
-                    <label>Trạng thái:</label>
-                    <select name="Status" value={formData.Status} onChange={handleChange}>
+
+                <div style={{ marginBottom: "15px" }}>
+                    <label style={{ display: "block", marginBottom: "5px" }}>Trạng thái:</label>
+                    <select
+                        name="Status"
+                        value={formData.Status}
+                        onChange={handleChange}
+                        style={{
+                            width: "100%",
+                            padding: "8px",
+                            border: "1px solid #ccc",
+                            borderRadius: "4px"
+                        }}
+                    >
                         <option value="active">Hoạt động</option>
                         <option value="inactive">Không hoạt động</option>
                     </select>
                 </div>
-                <button type="submit" disabled={loading}>
-                    {loading ? "Đang thêm..." : "Thêm danh mục"}
-                </button>
+
+                <div style={{ display: "flex", gap: "10px" }}>
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        style={{
+                            padding: "10px 15px",
+                            backgroundColor: "#007bff",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: loading ? "not-allowed" : "pointer",
+                            opacity: loading ? 0.6 : 1
+                        }}
+                    >
+                        {loading ? "Đang thêm..." : "Thêm danh mục"}
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => navigate("/admin/categories")}
+                        style={{
+                            padding: "10px 15px",
+                            backgroundColor: "#6c757d",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: "pointer"
+                        }}
+                    >
+                        Hủy bỏ
+                    </button>
+                </div>
             </form>
         </div>
     );
