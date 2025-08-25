@@ -3,41 +3,8 @@ import { useState, useEffect, useRef } from "react";
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [position, setPosition] = useState({ x: 24, y: 24 });
-  const dragOffset = useRef({ x: 0, y: 0 });
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!isDragging) return;
-      setPosition({
-        x: e.clientX - dragOffset.current.x,
-        y: e.clientY - dragOffset.current.y,
-      });
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    if (isDragging) {
-      window.addEventListener("mousemove", handleMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
-    }
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isDragging]);
-
-  const handleMouseDown = (e) => {
-    setIsDragging(true);
-    dragOffset.current = {
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
-    };
-  };
+  // Đã loại bỏ trạng thái kéo và vị trí
+  const position = useRef({ x: 24, y: 24 }); // Vẫn giữ vị trí tham chiếu nhưng không thay đổi
 
   const robotIcon = (
     <svg
@@ -88,17 +55,16 @@ export default function ChatWidget() {
       <div
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        onMouseDown={handleMouseDown}
         style={{
           position: "fixed",
-          top: position.y,
-          left: position.x,
+          bottom: "24px", // Cố định ở góc dưới bên phải
+          right: "24px",
           zIndex: 9999,
           display: "flex",
           alignItems: "center",
           flexDirection: "row-reverse",
           gap: "10px",
-          cursor: "grab",
+          cursor: "pointer", // Đổi từ grab sang pointer vì không kéo được nữa
         }}
       >
         <div
@@ -117,7 +83,8 @@ export default function ChatWidget() {
             pointerEvents: isOpen ? "none" : "auto",
           }}
         >
-          Chào bạn!
+              Trợ lý AI
+
         </div>
 
         <button
@@ -125,13 +92,13 @@ export default function ChatWidget() {
           style={{
             backgroundColor: "#ffffffff",
             border: "none",
-            borderRadius: "50%",
-            width: "65px",
-            height: "65px",
+            borderRadius: "60%",
+            width: "80px",
+            height: "80px",
             cursor: "pointer",
             boxShadow: isHovered
-              ? "0 10px 20px rgba(0,0,0,0.35), 0 0 15px rgba(255, 215, 0, 0.6)"
-              : "0 10px 15px rgba(0,0,0,0.25)",
+              ? "0 15px 20px rgba(0,0,0,0.35), 0 0 20px rgba(255, 200, 0, 0.6)"
+              : "0 15px 15px rgba(0,0,0,0.25)",
             transition: "all 0.3s ease",
             display: "flex",
             alignItems: "center",
@@ -163,8 +130,8 @@ export default function ChatWidget() {
         <div
           style={{
             position: "fixed",
-            top: position.y + 70,
-            left: position.x - 300,
+            bottom: "100px", // Hiển thị phía trên nút chatbot
+            right: "24px",
             width: "350px",
             height: "450px",
             borderRadius: "16px",
@@ -179,10 +146,9 @@ export default function ChatWidget() {
         >
           <div className="chat-container">
             <div
-              onMouseDown={(e) => e.stopPropagation()}
               className="chat-header"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24">
+              <svg width="25" height="25" viewBox="0 0 24 24">
                 <rect x="6" y="4" width="12" height="8" rx="2" fill="#FFD700" />
                 <rect x="4" y="12" width="16" height="8" rx="2" fill="#FFD700" />
                 <circle cx="9" cy="8" r="1" fill="#333" />
@@ -190,7 +156,7 @@ export default function ChatWidget() {
                 <circle cx="9" cy="16" r="1" fill="#333" />
                 <circle cx="15" cy="16" r="1" fill="#333" />
               </svg>
-              Trợ lý Nội Thất NextGen
+          Next Gen
             </div>
           </div>
           <iframe
