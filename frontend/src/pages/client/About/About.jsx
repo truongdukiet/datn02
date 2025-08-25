@@ -13,8 +13,8 @@ const About = () => {
         <div className="container">
           <div className="row align-items-center text-center justify-content-center">
             <div className="col-md-8">
-              <span className="sub-text">About Us</span>
-              <h1>Learn More About NextGen</h1>
+              <span className="sub-text">Giới thiệu</span>
+              <h1>Next-Gen</h1>
             </div>
           </div>
         </div>
@@ -34,9 +34,9 @@ const About = () => {
               </div>
             </div>
             <div className="col-lg-6">
-              <span className="sub-title">Our Story</span>
+              <span className="sub-title">Câu chuyện của chúng tôi</span>
               <h2 className="font-weight-bold text-black mb-4">
-                About NextGen Interior Design
+                Giới thiệu về NextGen Interior Design
               </h2>
               <p>
                 NextGen Interior Design là công ty thiết kế nội thất hàng đầu
