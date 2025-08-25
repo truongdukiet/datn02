@@ -194,6 +194,22 @@ const Checkout = () => {
     }
   };
 
+  const renderAttributes = (variantId) => {
+    const attributes = variantAttributes[variantId] || [];
+    if (!attributes.length) return null;
+
+    return (
+      <div className="attribute-tags">
+        {attributes.map((attr, index) => (
+          <span key={index} className="attribute-tag">
+            {attr.value}
+            {index < attributes.length - 1 && <span> | </span>}
+          </span>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <>
       <ClientHeader lightMode={false} />
@@ -221,9 +237,11 @@ const Checkout = () => {
                   >
                     <img
                       src={
-                        item.product_variant?.product?.Image
-                          ? `http://localhost:8000/storage/${item.product_variant.product.Image}`
-                          : "/default-product.jpg"
+                        item.product_variant?.Image
+                          ? `http://localhost:8000/storage/${item.product_variant.Image}`
+                          : (item.product_variant?.product?.Image
+                              ? `http://localhost:8000/storage/${item.product_variant.product.Image}`
+                              : "/default-product.jpg")
                       }
                       alt={item.product_variant?.product?.Name || "Sản phẩm"}
                       className="tw-size-28 tw-object-cover tw-rounded"
@@ -232,6 +250,8 @@ const Checkout = () => {
                       <p className="tw-m-0 tw-font-bold tw-text-lg">
                         {item.product_variant?.product?.Name || "Tên sản phẩm"}
                       </p>
+                      {/* Hiển thị thuộc tính biến thể */}
+                      {item.product_variant?.attributes && item.product_variant.attributes.length > 0 && renderAttributes(item.product_variant.ProductVariantID)}
                       <p className="tw-text-[#757575]">
                         Số lượng: {item.Quantity}
                       </p>
@@ -332,6 +352,22 @@ const Checkout = () => {
           </div>
         </div>
       </main>
+
+      <style jsx>{`
+        .attribute-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 5px;
+        }
+        .attribute-tag {
+          background-color: #e9ecef;
+          color: #495057;
+          padding: 3px 8px;
+          border-radius: 4px;
+          font-size: 12px;
+          white-space: nowrap;
+        }
+      `}</style>
     </>
   );
 };

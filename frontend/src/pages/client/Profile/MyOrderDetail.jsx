@@ -207,7 +207,14 @@ const MyOrderDetail = () => {
     };
 
     // Hiển thị ảnh sản phẩm
-    const renderProductImage = (imagePath) => {
+    const renderProductImage = (item) => {
+        // Ưu tiên ảnh biến thể, sau đó đến ảnh sản phẩm gốc
+        const imagePath =
+            item.productVariant?.Image ||
+            item.Image ||
+            item.productVariant?.product?.Image ||
+            "";
+
         if (!imagePath) {
             return (
                 <div style={{
@@ -224,6 +231,25 @@ const MyOrderDetail = () => {
             );
         }
         return <Image width={80} src={`http://localhost:8000/storage/${imagePath}`} />;
+    };
+
+    // Hiển thị thuộc tính sản phẩm
+    const renderAttributes = (item) => {
+        // Nếu có mảng attributes từ API
+        const attributes = item.productVariant?.attributes || [];
+        if (!attributes.length) return null;
+
+        return (
+            <div className="attribute-tags" style={{ marginBottom: 5 }}>
+                {attributes.map((attr, idx) => (
+                    <span key={idx} className="attribute-tag">
+                        {attr.attribute?.name ? `${attr.attribute.name}: ` : ""}
+                        {attr.value}
+                        {idx < attributes.length - 1 && <span> | </span>}
+                    </span>
+                ))}
+            </div>
+        );
     };
 
     // Hiển thị loading khi đang tải dữ liệu
@@ -324,11 +350,12 @@ const MyOrderDetail = () => {
                             paddingBottom: '20px',
                             borderBottom: '1px solid #f0f0f0'
                         }}>
-                            {renderProductImage(item.Image || item.productVariant?.product?.Image)}
+                            {renderProductImage(item)}
                             <div style={{ marginLeft: '20px', flex: 1 }}>
                                 <h4 style={{ marginBottom: '5px' }}>
                                     {item.product_name || item.productVariant?.product?.Name || 'Chưa có tên sản phẩm'}
                                 </h4>
+                                {renderAttributes(item)}
                                 <div style={{ color: '#666', marginBottom: '5px' }}>
                                     Phân loại: {item.variant_name || item.productVariant?.Name || 'Chưa có thông tin'}
                                     {item.color && ` - Màu: ${item.color}`}
@@ -346,6 +373,8 @@ const MyOrderDetail = () => {
                                         : 'Chưa có thông tin'}
                                 </div>
 
+                                {/* Hiển thị thuộc tính sản phẩm */}
+                                {renderAttributes(item)}
 
                                 {canReview && (
                                     <Button type="link" style={{ padding: 0, marginTop: '10px' }} onClick={() => handleReviewClick(item)}>

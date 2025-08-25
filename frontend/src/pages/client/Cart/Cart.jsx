@@ -288,7 +288,8 @@ const Cart = () => {
                     to="/checkout"
                     state={{
                       cartItems: hasSelectedItems ? getSelectedItems() : [],
-                      totalAmount: hasSelectedItems ? selectedTotalAmount : 0
+                      totalAmount: hasSelectedItems ? selectedTotalAmount : 0,
+                      variantAttributes // truyền thêm map thuộc tính
                     }}
                     className={`tw-bg-[#99CCD0] tw-text-white tw-font-medium tw-px-4 tw-h-12 tw-uppercase tw-flex tw-items-center tw-justify-center tw-w-full tw-mt-6 ${
                       !hasSelectedItems ? "tw-opacity-50 tw-cursor-not-allowed" : "tw-cursor-pointer"

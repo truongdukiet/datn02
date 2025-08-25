@@ -220,9 +220,11 @@ const ThankYouPay = () => {
                     >
                       <img
                         src={
-                          item.product_variant?.product?.Image
-                            ? `http://localhost:8000/storage/${item.product_variant.product.Image}`
-                            : "https://picsum.photos/200/300"
+                          item.product_variant?.Image
+                            ? `http://localhost:8000/storage/${item.product_variant.Image}`
+                            : (item.product_variant?.product?.Image
+                                ? `http://localhost:8000/storage/${item.product_variant.product.Image}`
+                                : "/default-product.jpg")
                         }
                         alt={item.product_variant?.product?.Name || "Sản phẩm"}
                         className="tw-size-28 tw-object-cover tw-rounded"
@@ -233,6 +235,19 @@ const ThankYouPay = () => {
                           {item.product_variant?.product?.Name ||
                             "Tên sản phẩm không xác định"}
                         </p>
+
+                        {/* Thuộc tính biến thể */}
+                        {item.product_variant?.attributes && item.product_variant.attributes.length > 0 && (
+                          <div className="attribute-tags tw-mb-2">
+                            {item.product_variant.attributes.map((attr, idx) => (
+                              <span key={idx} className="attribute-tag">
+                                {attr.attribute?.name ? `${attr.attribute.name}: ` : ""}
+                                {attr.value}
+                                {idx < item.product_variant.attributes.length - 1 && <span> | </span>}
+                              </span>
+                            ))}
+                          </div>
+                        )}
 
                         <p className="tw-mt-3 tw-text-[#1A1C20]">
                           SL: {item.Quantity}
@@ -333,6 +348,22 @@ const ThankYouPay = () => {
           </div>
         </div>
       </main>
+
+      <style jsx>{`
+        .attribute-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 5px;
+        }
+        .attribute-tag {
+          background-color: #e9ecef;
+          color: #495057;
+          padding: 3px 8px;
+          border-radius: 4px;
+          font-size: 12px;
+          white-space: nowrap;
+        }
+      `}</style>
     </>
   );
 };

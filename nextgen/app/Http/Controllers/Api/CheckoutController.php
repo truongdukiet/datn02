@@ -321,17 +321,22 @@ class CheckoutController extends Controller
 
             // Gửi mail xác nhận đơn hàng
             Mail::send([], [], function ($message) use ($user, $order, $orderUrl) {
+                // Lấy chi tiết đơn hàng
+               
                 $message->to($user->Email)
-                        ->subject('Xác nhận đơn hàng #' . $order->OrderID)
-                        ->html("
-                            <p>Xin chào {$user->Fullname},</p>
-                            <p>Cảm ơn bạn đã đặt hàng tại cửa hàng chúng tôi.</p>
-                            <p>Mã đơn hàng: <strong>#{$order->OrderID}</strong></p>
-                            <p>Tổng giá trị: <strong>" . number_format($order->Total_amount) . " VNĐ</strong></p>
-                            <p>Bạn có thể theo dõi đơn hàng tại: <a href='{$orderUrl}'>{$orderUrl}</a></p>
-                            <p>Trân trọng,</p>
-                            <p>NextGen Team</p>
-                        ");
+                    ->subject('Xác nhận đơn hàng #' . $order->OrderID)
+                    ->html("
+                        <p>Xin chào {$user->Fullname},</p>
+                        <p>Cảm ơn bạn đã đặt hàng tại cửa hàng chúng tôi.</p>
+                        <p><strong>Mã đơn hàng:</strong> #{$order->OrderID}</p>
+                        <p><strong>Tổng giá trị:</strong> " . number_format($order->Total_amount) . " VNĐ</p>
+                        <p><strong>Địa chỉ giao hàng:</strong> {$order->Shipping_address}</p>
+                        <p><strong>Số điện thoại:</strong> {$order->Receiver_phone}</p>
+                        <p><strong>Chi tiết đơn hàng:</strong></p>
+                        <p>Bạn có thể theo dõi đơn hàng tại: <a href='{$orderUrl}'>{$orderUrl}</a></p>
+                        <p>Trân trọng,</p>
+                        <p>NextGen Team</p>
+                    ");
             });
 
             return response()->json([
