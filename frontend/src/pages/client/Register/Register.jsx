@@ -17,16 +17,24 @@ const Register = () => {
   const navigate = useNavigate();
   const password = watch("Password");
 
+  const [serverErrors, setServerErrors] = React.useState({});
+
   const registerMutation = useMutation({
     mutationFn: (data) => apiClient.post("/api/register", data),
     onSuccess: () => {
+      setServerErrors({});
       message.success("Đăng ký thành công");
       navigate("/login");
     },
     onError: (error) => {
-      message.error(
-        error?.response?.data?.message || "Có lỗi xảy ra, vui lòng thử lại"
-      );
+      if (error?.response?.status === 422 && error?.response?.data?.errors) {
+        setServerErrors(error.response.data.errors);
+      } else {
+        setServerErrors({});
+        message.error(
+          error?.response?.data?.message || "Có lỗi xảy ra, vui lòng thử lại"
+        );
+      }
     },
   });
 
@@ -97,7 +105,7 @@ const Register = () => {
                   type="text"
                   id="Username"
                   className={`form-control ${
-                    errors.Username ? "is-invalid" : ""
+                    errors.Username || serverErrors.Username ? "is-invalid" : ""
                   }`}
                   placeholder="username123"
                   {...register("Username", {
@@ -108,15 +116,15 @@ const Register = () => {
                     },
                     pattern: {
                       value: /^[a-zA-Z0-9_]+$/,
-                      message:
-                        "Tên đăng nhập chỉ chứa chữ cái, số và dấu gạch dưới",
+                      message: "Tên đăng nhập chỉ chứa chữ cái, số và dấu gạch dưới",
                     },
                   })}
                 />
                 {errors.Username && (
-                  <div className="invalid-feedback">
-                    {errors.Username.message}
-                  </div>
+                  <div className="invalid-feedback">{errors.Username.message}</div>
+                )}
+                {serverErrors.Username && (
+                  <div className="invalid-feedback">{serverErrors.Username[0]}</div>
                 )}
               </div>
             </div>
@@ -129,7 +137,9 @@ const Register = () => {
                 <input
                   type="email"
                   id="Email"
-                  className={`form-control ${errors.Email ? "is-invalid" : ""}`}
+                  className={`form-control ${
+                    errors.Email || serverErrors.Email ? "is-invalid" : ""
+                  }`}
                   placeholder="example@email.com"
                   {...register("Email", {
                     required: "Email không được để trống",
@@ -141,6 +151,9 @@ const Register = () => {
                 />
                 {errors.Email && (
                   <div className="invalid-feedback">{errors.Email.message}</div>
+                )}
+                {serverErrors.Email && (
+                  <div className="invalid-feedback">{serverErrors.Email[0]}</div>
                 )}
               </div>
             </div>
