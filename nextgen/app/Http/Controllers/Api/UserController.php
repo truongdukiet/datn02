@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -133,6 +134,38 @@ class UserController extends Controller
             return response()->json(['success' => true, 'data' => $user], 200);
         } catch (\Exception $e) {
             Log::error('Error fetching profile: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Internal server error'], 500);
+        }
+    }
+
+    public function changePassword(Request $request, $id)
+    {
+        try {
+            $user = User::find($id);
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'User not found'], 404);
+            }
+
+            $validated = $request->validate([
+                'currentPassword' => 'required|string',
+                'newPassword' => 'required|string|min:6',
+            ]);
+
+            // Kiểm tra mật khẩu hiện tại
+            if (!\Hash::check($validated['currentPassword'], $user->Password)) {
+                return response()->json(['success' => false, 'message' => 'Mật khẩu hiện tại không đúng'], 400);
+            }
+
+            // Đổi mật khẩu
+            $user->Password = bcrypt($validated['newPassword']);
+            $user->Updated_at = now();
+            $user->save();
+
+            return response()->json(['success' => true, 'message' => 'Đổi mật khẩu thành công']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'message' => 'Validation failed', 'errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error changing password: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Internal server error'], 500);
         }
     }

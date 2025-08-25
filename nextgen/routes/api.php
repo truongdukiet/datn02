@@ -122,7 +122,6 @@ Route::delete('/products/{id}', [ProductController::class, 'destroy']);
 
 // ProductVariant routes (API public)
 
-
 // User routes (API public) - Cần xem xét lại nếu bạn đã dùng apiResource cho users ở dưới
 Route::get('/users', [UserController::class, 'index']);
 Route::get('/users/{id}', [UserController::class, 'show']);
@@ -130,6 +129,7 @@ Route::post('/users/register', [UserController::class, 'register']);
 Route::post('/users/login', [UserController::class, 'login']);
 Route::put('/users/{id}', [UserController::class, 'update']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);
+Route::put('/users/{id}/password', [UserController::class, 'changePassword']);
 
 // Product routes - chỉ dùng apiResource, không dùng prefix group
 Route::get('products/search', [ProductController::class, 'search']); // Tuyến đường tìm kiếm sản phẩm
@@ -156,15 +156,12 @@ Route::middleware('auth:sanctum')->prefix('carts')->group(function () { // Nhóm
 
 });
 
-
 // FavoriteProduct routes (custom, không dùng apiResource)
 Route::prefix('favorite-products')->group(function () {
     Route::get('/{userId}', [FavoriteProductController::class, 'index']);
     Route::post('/', [FavoriteProductController::class, 'store']);
     Route::delete('/', [FavoriteProductController::class, 'destroy']);
 });
-
-
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
