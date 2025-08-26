@@ -83,37 +83,45 @@ const AdminOrder = () => {
     }, []);
 
     const getStatusOptions = (currentStatus) => {
+        const canCancel = ['pending', 'processing', 'shipped'].includes(currentStatus);
+        const options = [];
+
         switch (currentStatus) {
             case 'pending':
-                return [
+                options.push(
                     { value: 'pending', label: 'Chờ xử lý' },
-                    { value: 'processing', label: 'Đang xử lý' },
-                    { value: 'cancelled', label: 'Đã hủy' },
-                ];
+                    { value: 'processing', label: 'Đang xử lý' }
+                );
+                break;
             case 'processing':
-                return [
+                options.push(
                     { value: 'processing', label: 'Đang xử lý' },
-                    { value: 'shipped', label: 'Đang giao hàng' },
-                ];
+                    { value: 'shipped', label: 'Đang giao hàng' }
+                );
+                break;
             case 'shipped':
-                return [
+                options.push(
                     { value: 'shipped', label: 'Đang giao hàng' },
-                    { value: 'completed', label: 'Đã hoàn thành' },
-                ];
+                    { value: 'completed', label: 'Đã hoàn thành' }
+                );
+                break;
             default:
-                return [];
+                break;
         }
+
+        // Thêm tùy chọn hủy đơn nếu được phép
+        if (canCancel) {
+            options.push({ value: 'cancelled', label: 'Đã hủy' });
+        }
+
+        return options;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!editingOrder) return;
 
-        if (editingOrder.Status !== 'pending' && status === 'cancelled') {
-            alert('Đơn hàng chỉ có thể hủy khi ở trạng thái "Chờ xử lý".');
-            return;
-        }
-
+        // Kiểm tra nếu đơn hàng đã hoàn thành hoặc đã hủy thì không cho cập nhật
         if (editingOrder.Status === 'completed' || editingOrder.Status === 'cancelled') {
             alert('Đơn hàng đã hoàn thành hoặc bị hủy, không thể cập nhật.');
             return;
