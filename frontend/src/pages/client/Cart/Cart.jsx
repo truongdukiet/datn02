@@ -83,8 +83,8 @@ const Cart = () => {
         },
         data: { ProductVariantID: productVariantId },
       });
-      setCartItems(cartItems.filter(item => item.ProductVariantID !== productVariantId));
-      setSelectedItems(selectedItems.filter(id => id !== productVariantId));
+      setCartItems(prevItems => prevItems.filter(item => item.ProductVariantID !== productVariantId));
+      setSelectedItems(prevSelected => prevSelected.filter(id => id !== productVariantId));
       message.success("Sản phẩm đã được xóa khỏi giỏ hàng.");
     } catch (error) {
       message.error("Có lỗi xảy ra khi xóa sản phẩm.");
@@ -119,21 +119,27 @@ const Cart = () => {
     }
   };
 
+  // Sửa đổi hàm xử lý chọn sản phẩm
   const handleSelectItem = useCallback((productVariantId) => {
-    if (selectedItems.includes(productVariantId)) {
-      setSelectedItems(selectedItems.filter(id => id !== productVariantId));
-    } else {
-      setSelectedItems([...selectedItems, productVariantId]);
-    }
-  }, [selectedItems]);
+    setSelectedItems(prevSelected => {
+      if (prevSelected.includes(productVariantId)) {
+        return prevSelected.filter(id => id !== productVariantId);
+      } else {
+        return [...prevSelected, productVariantId];
+      }
+    });
+  }, []);
 
+  // Sửa đổi hàm chọn tất cả
   const handleSelectAll = useCallback(() => {
-    if (selectedItems.length === cartItems.length) {
-      setSelectedItems([]);
-    } else {
-      setSelectedItems(cartItems.map(item => item.ProductVariantID));
-    }
-  }, [selectedItems, cartItems]);
+    setSelectedItems(prevSelected => {
+      if (prevSelected.length === cartItems.length) {
+        return [];
+      } else {
+        return cartItems.map(item => item.ProductVariantID);
+      }
+    });
+  }, [cartItems]);
 
   const selectedTotalAmount = useMemo(() => {
     return cartItems.reduce((total, item) => {
@@ -174,7 +180,7 @@ const Cart = () => {
             ))}
         </div>
     );
-};
+  };
 
   return (
     <>
@@ -211,28 +217,21 @@ const Cart = () => {
                           ? `http://localhost:8000/storage/${item.product_variant.product.Image}`
                           : "default_image.jpg");
 
-                    // Lấy thông tin thuộc tính giống ProductDetail
-                    const attrs = (item.product_variant?.attributes || [])
-                      .map(attr =>
-                        attr.value
-                          ? `${attr.value}`
-                          : ""
-                      )
-                      .filter(Boolean)
-                      .join(" | ");
-
                     return (
                       <section key={item.CartItemID} className="tw-rounded tw-border tw-border-solid tw-border-[#EEEEEE] tw-p-4 tw-flex tw-items-center tw-gap-4">
+                        <Checkbox
+                          checked={selectedItems.includes(item.ProductVariantID)}
+                          onChange={() => handleSelectItem(item.ProductVariantID)}
+                        />
                         <img
                           src={variantImage}
                           alt={item.product_variant?.product?.Name || "Không có tên"}
                           className="tw-size-28 tw-object-cover tw-rounded"
                         />
-                        <div>
+                        <div className="tw-flex-1">
                           <p className="tw-m-0 tw-font-bold tw-text-xl tw-text-[#1A1C20]">
                             {item.product_variant?.product?.Name || "Tên sản phẩm không xác định"}
                           </p>
-                          {/* Đúng chuẩn ProductVariantList */}
                           {renderAttributes(item.ProductVariantID)}
                           <p className="tw-my-3 tw-flex tw-items-center tw-gap-x-3">
                             <span className="tw-text-sm tw-text-[#757575] tw-line-through">
@@ -289,7 +288,7 @@ const Cart = () => {
                     state={{
                       cartItems: hasSelectedItems ? getSelectedItems() : [],
                       totalAmount: hasSelectedItems ? selectedTotalAmount : 0,
-                      variantAttributes // truyền thêm map thuộc tính
+                      variantAttributes
                     }}
                     className={`tw-bg-[#99CCD0] tw-text-white tw-font-medium tw-px-4 tw-h-12 tw-uppercase tw-flex tw-items-center tw-justify-center tw-w-full tw-mt-6 ${
                       !hasSelectedItems ? "tw-opacity-50 tw-cursor-not-allowed" : "tw-cursor-pointer"
@@ -318,4 +317,3 @@ const Cart = () => {
 };
 
 export default Cart;
-
