@@ -103,6 +103,10 @@ Route::apiResource('categories', CategoryController::class);
     Route::post('/categories', [CategoryController::class, 'store']);
     Route::put('/categories/{id}', [CategoryController::class, 'update']);
     Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
+    Route::get('/admin/categories', [CategoryController::class, 'adminIndex']);
+    Route::patch('/admin/categories/{id}/toggle', [CategoryController::class, 'toggleStatus']);
+    Route::patch('/categories/{id}/toggle-status', [CategoryController::class, 'toggleStatus']);
+
 
 // routes/api.php
 Route::get('/product-variants', [ProductVariantController::class, 'index']);
@@ -184,14 +188,5 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard/recent-activities', [AdminDashboardController::class, 'getRecentActivities']); // Lấy dữ liệu hoạt động gần đây
         Route::get('/dashboard/category-stats', [AdminDashboardController::class, 'getCategoryStats']); // Lấy dữ liệu thống kê sản phẩm theo loại
 
-
-        // THÊM CÁC ROUTE QUẢN LÝ DANH MỤC ADMIN TẠI ĐÂY
-        // Các route này sẽ có dạng /api/admin/categories, /api/admin/categories/{id}, v.v.
-        Route::get('/categories', [AdminCategoryController::class, 'index']); // Lấy tất cả danh mục admin
-        Route::post('/categories', [AdminCategoryController::class, 'store']); // Tạo danh mục admin mới
-        Route::get('/categories/{id}', [AdminCategoryController::class, 'show']); // Lấy chi tiết danh mục admin theo ID
-        Route::put('/categories/{id}', [AdminCategoryController::class, 'update']); // Cập nhật danh mục admin theo ID
-        Route::patch('/categories/{id}', [AdminCategoryController::class, 'update']); // Cập nhật danh mục admin theo ID
-        Route::delete('/categories/{id}', [AdminCategoryController::class, 'destroy']); // Xóa danh mục admin theo ID
     });
 });

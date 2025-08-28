@@ -42,6 +42,16 @@ const AdminProducts = () => {
     }
   };
 
+
+  const formatCurrency = (value) => {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    minimumFractionDigits: 0,
+  }).format(value);
+};
+
+
   const handleDeleteProduct = async (productId) => {
     if (window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) {
       try {
@@ -318,7 +328,7 @@ const AdminProducts = () => {
                   />
                 </td>
                 <td style={{ padding: 12 }}>{product.Name}</td>
-                <td style={{ padding: 12 }}>{parseInt(product.base_price).toLocaleString("vi-VN")} VNĐ</td>
+                <td style={{ padding: 12 }}>{formatCurrency(product.base_price)}</td>
                 <td style={{ padding: 12 }}>{product.variants.reduce((total, variant) => total + variant.Stock, 0)}</td>
                 <td style={{ padding: 12 }}>{product.category?.Name}</td>
                 <td style={{ padding: 12 }}>

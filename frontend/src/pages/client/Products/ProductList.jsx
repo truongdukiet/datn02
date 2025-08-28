@@ -41,6 +41,14 @@ const ProductList = () => {
   if (error) {
     return <div className="error">{error}</div>;
   }
+  const formatCurrency = (value) => {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    minimumFractionDigits: 0,
+  }).format(value);
+};
+
 
   return (
     <div className="product-list">
@@ -59,7 +67,7 @@ const ProductList = () => {
             </div>
             <div className="product-info">
               <h3>{product.name}</h3>
-              <p className="price">{product.price?.toLocaleString('vi-VN')} VNĐ</p>
+              <p className="price">{formatCurrency(product.price)}</p>
               <p className="description">{product.description}</p>
               <button
                 className="add-to-cart-btn"

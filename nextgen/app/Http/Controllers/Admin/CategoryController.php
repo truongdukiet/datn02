@@ -108,23 +108,5 @@ class CategoryController extends Controller // Định nghĩa class Controller c
         return response()->json(['message' => 'Danh mục đã được cập nhật thành công.', 'category' => $category]);
     }
 
-    /**
-     * Xóa một danh mục.
-     * Xử lý yêu cầu DELETE đến /api/admin/categories/{id}
-     *
-     * @param  int  $id ID của danh mục cần xóa.
-     * @return \Illuminate\Http\JsonResponse Trả về thông báo thành công.
-     */
-    public function destroy($id) // Phương thức này xử lý việc xóa danh mục.
-    {
-        $category = Category::find($id); // Tìm danh mục cần xóa bằng ID.
 
-        if (!$category) { // Nếu không tìm thấy danh mục.
-            return response()->json(['message' => 'Không tìm thấy danh mục.'], 404); // Trả về lỗi 404.
-        }
-
-        $category->delete(); // Xóa bản ghi danh mục khỏi cơ sở dữ liệu.
-
-        return response()->json(['message' => 'Danh mục đã được xóa thành công.'], 200); // Trả về thông báo thành công với mã HTTP 200 (OK).
-    }
 }

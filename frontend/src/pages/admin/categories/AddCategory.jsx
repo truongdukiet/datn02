@@ -7,7 +7,8 @@ const AddCategory = () => {
     const [formData, setFormData] = useState({
         Name: "",
         Description: "",
-        Image: ""
+        Image: "",
+        Status: "active", // ✅ thêm trường status mặc định
     });
     const [previewImage, setPreviewImage] = useState(null);
     const [errors, setErrors] = useState({});
@@ -75,6 +76,7 @@ const AddCategory = () => {
             submitData.append('Name', formData.Name);
             submitData.append('Description', formData.Description);
             submitData.append('Image', formData.Image);
+            submitData.append('Status', formData.Status); // ✅ gửi status
 
             await axios.post(`http://localhost:8000/api/categories`, submitData, {
                 headers: {
@@ -103,6 +105,7 @@ const AddCategory = () => {
             {errors.general && <div style={{ color: "red", marginBottom: "15px" }}>{errors.general}</div>}
 
             <form onSubmit={handleSubmit}>
+                {/* Name */}
                 <div style={{ marginBottom: "15px" }}>
                     <label style={{ display: "block", marginBottom: "5px" }}>Tên danh mục:</label>
                     <input
@@ -120,6 +123,7 @@ const AddCategory = () => {
                     {errors.Name && <div style={{ color: "red", fontSize: "14px", marginTop: "5px" }}>{errors.Name}</div>}
                 </div>
 
+                {/* Description */}
                 <div style={{ marginBottom: "15px" }}>
                     <label style={{ display: "block", marginBottom: "5px" }}>Mô tả:</label>
                     <textarea
@@ -136,6 +140,7 @@ const AddCategory = () => {
                     />
                 </div>
 
+                {/* Image */}
                 <div style={{ marginBottom: "15px" }}>
                     <label style={{ display: "block", marginBottom: "5px" }}>Hình ảnh:</label>
                     <input
@@ -169,6 +174,26 @@ const AddCategory = () => {
                     )}
                 </div>
 
+                {/* Status */}
+                <div style={{ marginBottom: "15px" }}>
+                    <label style={{ display: "block", marginBottom: "5px" }}>Trạng thái:</label>
+                    <select
+                        name="Status"
+                        value={formData.Status}
+                        onChange={handleChange}
+                        style={{
+                            width: "100%",
+                            padding: "8px",
+                            border: "1px solid #ccc",
+                            borderRadius: "4px"
+                        }}
+                    >
+                        <option value="active">Hoạt động</option>
+                        <option value="inactive">Ẩn</option>
+                    </select>
+                </div>
+
+                {/* Buttons */}
                 <div style={{ display: "flex", gap: "10px" }}>
                     <button
                         type="submit"
