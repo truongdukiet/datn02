@@ -156,12 +156,10 @@ const AdminProducts = () => {
         formDataToSubmit.append(key, formData[key]);
       });
 
-      // Chỉ thêm file hình ảnh nếu người dùng chọn file mới
       if (imageFile) {
-        formDataToSubmit.append('image_file', imageFile);
+        formDataToSubmit.append('Image', imageFile);  // ✅ phải đúng tên
       }
-      // Không cần gửi lại đường dẫn ảnh cũ, backend sẽ tự động giữ lại
-      // nếu không có ảnh mới được gửi lên.
+
 
       await onSave(formDataToSubmit);
     };
@@ -322,7 +320,7 @@ const AdminProducts = () => {
               <tr key={product.ProductID} style={{ borderBottom: "1px solid #eee" }}>
                 <td style={{ padding: 12 }}>
                   <img
-                    src={product.Image ? `http://localhost:8000/storage/${product.Image}` : "https://via.placeholder.com/100"}
+                  src={product.Image ? `http://localhost:8000/storage/${product.Image}` : "https://via.placeholder.com/100"}
                     alt={product.Name}
                     style={{ width: 50, height: 50, objectFit: "cover" }}
                   />
