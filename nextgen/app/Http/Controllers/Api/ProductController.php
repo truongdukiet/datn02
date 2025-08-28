@@ -44,55 +44,59 @@ class ProductController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
-    {
-        try {
-            // Validate input data
-            $validator = Validator::make($request->all(), [
-                'CategoryID' => 'required|integer|exists:categories,CategoryID',
-                'Name' => 'required|string|max:255',
-                'Description' => 'nullable|string',
-                'base_price' => 'required|numeric|min:0',
-                'Status' => 'nullable|boolean',
-                'Image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            ]);
+public function store(Request $request)
+{
+    try {
+        $validator = Validator::make($request->all(), [
+            'CategoryID' => 'required|integer|exists:categories,CategoryID',
+            'Name' => 'required|string|max:255',
+            'Description' => 'nullable|string',
+            'base_price' => 'required|numeric|min:0',
+            'Status' => 'nullable|boolean',
+            'Image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
 
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            // Create new product
-            $productData = $validator->validated();
-            $productData['Create_at'] = now();
-            $productData['Update_at'] = now();
-
-            // Handle image upload if present
-            if ($request->hasFile('Image')) {
-                $imagePath = $request->file('Image')->store('products', 'public');
-                $productData['Image'] = $imagePath;
-            }
-
-            $product = Product::create($productData);
-
-            // Load product with relationships
-            $product->load(['category']);
-
-            return response()->json([
-                'success' => true,
-                'data' => $product,
-                'message' => 'Product created successfully'
-            ], 201);
-        } catch (\Exception $e) {
+        if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error creating product: ' . $e->getMessage()
-            ], 500);
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
         }
+
+        $productData = $validator->validated();
+        $productData['Create_at'] = now();
+        $productData['Update_at'] = now();
+
+        // Set default Status nếu không có
+        if (!isset($productData['Status'])) {
+            $productData['Status'] = 1;
+        }
+
+        // ✅ Upload image giống Category
+        if ($request->hasFile('Image')) {
+            $productData['Image'] = $request->file('Image')->store('products', 'public');
+        } else {
+            $productData['Image'] = null;
+        }
+
+        $product = Product::create($productData);
+        $product->load(['category']);
+
+        return response()->json([
+            'success' => true,
+            'data' => $product,
+            'message' => 'Product created successfully'
+        ], 201);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error creating product: ' . $e->getMessage()
+        ], 500);
     }
+}
+
 
     /**
      * Display the specified resource.
