@@ -7,8 +7,7 @@ const AddCategory = () => {
     const [formData, setFormData] = useState({
         Name: "",
         Description: "",
-        Image: "",
-        Status: "active"
+        Image: ""
     });
     const [previewImage, setPreviewImage] = useState(null);
     const [errors, setErrors] = useState({});
@@ -21,10 +20,9 @@ const AddCategory = () => {
             [name]: value
         }));
 
-        // Clear error when user types
         if (errors[name]) {
             setErrors(prev => {
-                const newErrors = {...prev};
+                const newErrors = { ...prev };
                 delete newErrors[name];
                 return newErrors;
             });
@@ -34,20 +32,17 @@ const AddCategory = () => {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Tạo URL để xem trước ảnh
             const imageUrl = URL.createObjectURL(file);
             setPreviewImage(imageUrl);
 
-            // Chuẩn bị file để upload (trong FormData)
             setFormData(prev => ({
                 ...prev,
                 Image: file
             }));
 
-            // Clear error nếu có
             if (errors.Image) {
                 setErrors(prev => {
-                    const newErrors = {...prev};
+                    const newErrors = { ...prev };
                     delete newErrors.Image;
                     return newErrors;
                 });
@@ -57,15 +52,12 @@ const AddCategory = () => {
 
     const validateForm = () => {
         const newErrors = {};
-
         if (!formData.Name.trim()) {
             newErrors.Name = "Tên danh mục là bắt buộc";
         }
-
         if (!formData.Image) {
             newErrors.Image = "Vui lòng chọn hình ảnh";
         }
-
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -73,19 +65,15 @@ const AddCategory = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!validateForm()) {
-            return;
-        }
+        if (!validateForm()) return;
 
         setLoading(true);
         setErrors({});
 
         try {
-            // Tạo FormData để gửi file
             const submitData = new FormData();
             submitData.append('Name', formData.Name);
             submitData.append('Description', formData.Description);
-            submitData.append('Status', formData.Status);
             submitData.append('Image', formData.Image);
 
             await axios.post(`http://localhost:8000/api/categories`, submitData, {
@@ -98,9 +86,7 @@ const AddCategory = () => {
             navigate("/admin/categories");
         } catch (err) {
             console.error("Error adding category:", err);
-
             if (err.response?.status === 422 && err.response.data?.errors) {
-                // Hiển thị lỗi validation từ server
                 setErrors(err.response.data.errors);
             } else {
                 setErrors({ general: "Lỗi thêm danh mục. Vui lòng thử lại." });
@@ -181,24 +167,6 @@ const AddCategory = () => {
                             />
                         </div>
                     )}
-                </div>
-
-                <div style={{ marginBottom: "15px" }}>
-                    <label style={{ display: "block", marginBottom: "5px" }}>Trạng thái:</label>
-                    <select
-                        name="Status"
-                        value={formData.Status}
-                        onChange={handleChange}
-                        style={{
-                            width: "100%",
-                            padding: "8px",
-                            border: "1px solid #ccc",
-                            borderRadius: "4px"
-                        }}
-                    >
-                        <option value="active">Hoạt động</option>
-                        <option value="inactive">Không hoạt động</option>
-                    </select>
                 </div>
 
                 <div style={{ display: "flex", gap: "10px" }}>

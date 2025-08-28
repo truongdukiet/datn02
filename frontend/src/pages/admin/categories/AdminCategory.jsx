@@ -8,7 +8,9 @@ const AdminCategory = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5; // ✅ số danh mục hiển thị mỗi trang
+
     const API_BASE_URL = 'http://localhost:8000/api';
     const navigate = useNavigate();
 
@@ -39,11 +41,16 @@ const AdminCategory = () => {
         }
     };
 
+    // ✅ Lọc theo từ khóa
     const filteredCategories = categories.filter((category) => {
-        const matchesSearch = category.Name.toLowerCase().includes(searchTerm.toLowerCase());
-        // Vì tất cả đều hiển thị là "Hoạt động", nên bỏ lọc theo status
-        return matchesSearch;
+        return category.Name.toLowerCase().includes(searchTerm.toLowerCase());
     });
+
+    // ✅ Tính toán phân trang
+    const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentCategories = filteredCategories.slice(indexOfFirstItem, indexOfLastItem);
 
     if (loading) return <div className="admin-category-loading">Đang tải dữ liệu...</div>;
     if (error) return <div className="admin-category-error">Lỗi: {error}</div>;
@@ -62,7 +69,6 @@ const AdminCategory = () => {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
-                {/* Ẩn bộ lọc trạng thái vì tất cả đều là "Hoạt động" */}
             </div>
 
             <table className="admin-category-table">
@@ -71,12 +77,11 @@ const AdminCategory = () => {
                         <th>Hình ảnh</th>
                         <th>Tên danh mục</th>
                         <th>Mô tả</th>
-                        <th>Trạng thái</th>
                         <th>Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {filteredCategories.map((category) => (
+                    {currentCategories.map((category) => (
                         <tr key={category.CategoryID}>
                             <td>
                                 {category.Image ? (
@@ -92,14 +97,6 @@ const AdminCategory = () => {
                             <td>{category.Name}</td>
                             <td>{category.Description}</td>
                             <td>
-                                <span
-                                    className="status-tag active"
-                                    title="Trạng thái"
-                                >
-                                    Hoạt động
-                                </span>
-                            </td>
-                            <td>
                                 <Link to={`/admin/edit-category/${category.CategoryID}`} className="btn-edit">Sửa</Link>
                                 <button onClick={() => handleDelete(category.CategoryID)} className="btn-delete">Xóa</button>
                             </td>
@@ -107,6 +104,35 @@ const AdminCategory = () => {
                     ))}
                 </tbody>
             </table>
+
+            {/* ✅ Phân trang */}
+            {totalPages > 1 && (
+                <div className="pagination">
+                    <button
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(prev => prev - 1)}
+                    >
+                        « Trước
+                    </button>
+
+                    {[...Array(totalPages)].map((_, index) => (
+                        <button
+                            key={index + 1}
+                            className={currentPage === index + 1 ? "active" : ""}
+                            onClick={() => setCurrentPage(index + 1)}
+                        >
+                            {index + 1}
+                        </button>
+                    ))}
+
+                    <button
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(prev => prev + 1)}
+                    >
+                        Sau »
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
