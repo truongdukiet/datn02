@@ -11,11 +11,12 @@ import {
 } from "../../../api/api";
 
 const Checkout = () => {
-  const { state } = useLocation(); // Nhận state từ router
+  const { state } = useLocation();
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
-  // State cho thông tin giao hàng
+  
+  // State for shipping information
   const [receiverName, setReceiverName] = useState(user?.Fullname || "");
   const [receiverPhone, setReceiverPhone] = useState(user?.Phone || "");
   const [address, setAddress] = useState(user?.Address || "");
@@ -23,20 +24,27 @@ const Checkout = () => {
   const [paymentId, setPaymentId] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // State cho voucher và giỏ hàng
+  // State for voucher and cart
   const [vouchers, setVouchers] = useState([]);
   const [selectedVoucher, setSelectedVoucher] = useState(null);
   const [discount, setDiscount] = useState(0);
   const [cartItems, setCartItems] = useState([]);
   const [totalAmount, setTotalAmount] = useState(0);
   const [totalAfterDiscount, setTotalAfterDiscount] = useState(0);
+  
+  // State for validation errors
+  const [errors, setErrors] = useState({
+    phone: "",
+    address: "",
+    payment: ""
+  });
 
-  // Kiểm tra đăng nhập
+  // Check login
   if (!user || !token) {
     return <Navigate to="/cart" />;
   }
 
-  // Khởi tạo dữ liệu từ state
+  // Initialize data from state
   useEffect(() => {
     if (state && state.cartItems && state.totalAmount) {
       setCartItems(state.cartItems);
@@ -45,17 +53,17 @@ const Checkout = () => {
     }
   }, [state]);
 
-  // Load dữ liệu bổ sung
+  // Load additional data
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Lấy phương thức thanh toán
+        // Get payment methods
         const paymentResponse = await getPaymentGateways();
         if (paymentResponse.data && paymentResponse.data.success) {
           setPaymentMethods(paymentResponse.data.data || []);
         }
         
-        // Lấy voucher
+        // Get vouchers
         const voucherResponse = await getAvailableVouchers();
         if (voucherResponse.data && voucherResponse.data.success) {
           setVouchers(voucherResponse.data.data || []);
@@ -69,7 +77,7 @@ const Checkout = () => {
     fetchData();
   }, []);
 
-  // Xử lý khi chọn voucher
+  // Handle voucher selection
   const handleVoucherChange = (voucherId) => {
     setSelectedVoucher(voucherId);
     
@@ -81,15 +89,75 @@ const Checkout = () => {
     
     const voucher = vouchers.find(v => v.VoucherID === voucherId);
     if (voucher) {
-      // Giả sử tất cả voucher đều là giảm giá cố định
       const discountValue = voucher.Value;
-      
       setDiscount(discountValue);
       setTotalAfterDiscount(totalAmount - discountValue);
     }
   };
 
-  // Kiểm tra voucher hợp lệ
+  // Validate phone number
+  const validatePhone = (phone) => {
+    const phoneRegex = /^\d{8}$/;
+    if (!phone) {
+      return "Số điện thoại không được để trống";
+    } else if (!phoneRegex.test(phone)) {
+      return "Số điện thoại phải là 8 chữ số";
+    }
+    return "";
+  };
+
+  // Validate address with more sophisticated checks
+  const validateAddress = (address) => {
+    if (!address) {
+      return "Địa chỉ không được để trống";
+    } else if (address.length < 10) {
+      return "Địa chỉ quá ngắn, vui lòng nhập chi tiết hơn";
+    } else if (address.length > 200) {
+      return "Địa chỉ quá dài, vui lòng rút ngắn lại";
+    }
+    
+    // Check for meaningless/repeating characters
+    const repeatingCharRegex = /(.)\1{5,}/; // 5 or more repeating characters
+    if (repeatingCharRegex.test(address)) {
+      return "Địa chỉ chứa ký tự lặp lại không hợp lệ";
+    }
+    
+    // Check for minimum number of words (at least 2 meaningful words)
+    const words = address.trim().split(/\s+/).filter(word => word.length > 2);
+    if (words.length < 2) {
+      return "Địa chỉ phải chứa ít nhất 2 từ có nghĩa";
+    }
+    
+    // Check for Vietnamese characters and meaningful patterns
+    const hasVietnameseChars = /[àáâãèéêìíòóôõùúăđĩũơưăạảấầẩẫậắằẳẵặẹẻẽềềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/i.test(address);
+    const hasLetters = /[a-z]/i.test(address);
+    const hasNumbers = /[0-9]/.test(address);
+    
+    // If no Vietnamese characters, check for meaningful word patterns
+    if (!hasVietnameseChars && hasLetters) {
+      // Check for random character sequences (like "kffjjjjjjjj")
+      const randomCharPattern = /\b([a-z])\1{2,}\b/i; // Words with 3+ repeating chars
+      if (randomCharPattern.test(address)) {
+        return "Địa chỉ chứa từ không có nghĩa";
+      }
+      
+      // Check for minimum meaningful content
+      const meaningfulWordCount = words.filter(word => {
+        // A word is considered meaningful if it has vowel-consonant patterns
+        const hasVowels = /[aeiouy]/i.test(word);
+        const consonantCount = (word.match(/[bcdfghjklmnpqrstvwxz]/gi) || []).length;
+        return hasVowels && consonantCount > 0;
+      }).length;
+      
+      if (meaningfulWordCount < 2) {
+        return "Địa chỉ phải chứa từ có nghĩa";
+      }
+    }
+    
+    return "";
+  };
+
+  // Validate voucher
   const validateVoucher = () => {
     if (!selectedVoucher) return true;
     
@@ -117,16 +185,57 @@ const Checkout = () => {
     return true;
   };
 
-  // Xử lý đặt hàng
+  // Handle input changes with validation
+  const handlePhoneChange = (value) => {
+    // Only allow numbers
+    const numericValue = value.replace(/\D/g, '');
+    setReceiverPhone(numericValue);
+    
+    // Validate and set error
+    const error = validatePhone(numericValue);
+    setErrors(prev => ({ ...prev, phone: error }));
+  };
+
+  const handleAddressChange = (value) => {
+    setAddress(value);
+    
+    // Validate and set error
+    const error = validateAddress(value);
+    setErrors(prev => ({ ...prev, address: error }));
+  };
+
+  const handlePaymentChange = (value) => {
+    setPaymentId(value);
+    
+    // Clear payment error when a method is selected
+    if (value) {
+      setErrors(prev => ({ ...prev, payment: "" }));
+    }
+  };
+
+  // Process order
   const handlePlaceOrder = async () => {
-    // Validate thông tin
-    if (!receiverName || !receiverPhone || !address || !paymentId) {
-      message.warning("Vui lòng nhập đầy đủ thông tin.");
+    // Validate all fields
+    const phoneError = validatePhone(receiverPhone);
+    const addressError = validateAddress(address);
+    const paymentError = !paymentId ? "Vui lòng chọn phương thức thanh toán" : "";
+    
+    setErrors({
+      phone: phoneError,
+      address: addressError,
+      payment: paymentError
+    });
+    
+    if (phoneError || addressError || paymentError || !validateVoucher()) {
+      message.warning("Vui lòng kiểm tra lại thông tin đã nhập.");
       return;
     }
     
-    if (!validateVoucher()) return;
-
+    if (!receiverName) {
+      message.warning("Vui lòng nhập tên người nhận.");
+      return;
+    }
+    
     setLoading(true);
     try {
       const orderData = {
@@ -137,7 +246,7 @@ const Checkout = () => {
         Shipping_address: address,
         PaymentID: paymentId,
         VoucherID: selectedVoucher,
-        Status: "pending", // Thêm trạng thái mặc định
+        Status: "pending",
         order_details: cartItems.map(item => ({
           ProductVariantID: item.ProductVariantID,
           Quantity: item.Quantity,
@@ -146,7 +255,7 @@ const Checkout = () => {
         })),
       };
 
-      // Xử lý thanh toán VNPay
+      // Handle VNPay payment
       if (paymentId === 9) {
         const response = await fetch('http://localhost:8000/api/payment', {
           method: 'POST',
@@ -174,15 +283,15 @@ const Checkout = () => {
         await clearCart();
         message.success("Đặt hàng thành công!");
         
-        // Truyền dữ liệu đơn hàng sang trang ThankYou
+        // Pass order data to ThankYou page
         navigate("/thank-you", { 
           state: { 
-            order: response.data.data, // Dữ liệu đơn hàng từ API
-            orderDetails: cartItems, // Chi tiết đơn hàng
-            voucher: vouchers.find(v => v.VoucherID === selectedVoucher), // Voucher đã chọn
-            discount, // Giảm giá
-            totalAfterDiscount, // Tổng thanh toán
-            paymentMethod: paymentMethods.find(m => m.PaymentID === paymentId) // Phương thức thanh toán
+            order: response.data.data,
+            orderDetails: cartItems,
+            voucher: vouchers.find(v => v.VoucherID === selectedVoucher),
+            discount,
+            totalAfterDiscount,
+            paymentMethod: paymentMethods.find(m => m.PaymentID === paymentId)
           } 
         });
       }
@@ -217,7 +326,7 @@ const Checkout = () => {
         <div className="tw-my-6">
           <h2 className="tw-text-[28px] tw-font-bold tw-text-[#1A1C20]">Thanh toán</h2>
           <div className="tw-grid tw-grid-cols-12 tw-gap-6 tw-mt-8">
-            {/* Danh sách sản phẩm */}
+            {/* Product list */}
             <div className="tw-col-span-7">
               {cartItems.length === 0 ? (
                 <div className="tw-text-center tw-py-10">
@@ -250,7 +359,7 @@ const Checkout = () => {
                       <p className="tw-m-0 tw-font-bold tw-text-lg">
                         {item.product_variant?.product?.Name || "Tên sản phẩm"}
                       </p>
-                      {/* Hiển thị thuộc tính biến thể */}
+                      {/* Display variant attributes */}
                       {item.product_variant?.attributes && item.product_variant.attributes.length > 0 && renderAttributes(item.product_variant.ProductVariantID)}
                       <p className="tw-text-[#757575]">
                         Số lượng: {item.Quantity}
@@ -264,7 +373,7 @@ const Checkout = () => {
               )}
             </div>
 
-            {/* Form thanh toán */}
+            {/* Payment form */}
             <div className="tw-col-span-5">
               <section className="tw-border tw-border-solid tw-border-[#EEEEEE] tw-p-4 tw-rounded">
                 <h3 className="tw-text-xl tw-font-bold tw-mb-4">Thông tin giao hàng</h3>
@@ -275,18 +384,22 @@ const Checkout = () => {
                   className="tw-mb-3"
                 />
                 <Input
-                  placeholder="Số điện thoại"
+                  placeholder="Số điện thoại (8 chữ số)"
                   value={receiverPhone}
-                  onChange={(e) => setReceiverPhone(e.target.value)}
-                  className="tw-mb-3"
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  maxLength={8}
+                  className="tw-mb-1"
                 />
+                {errors.phone && <div className="tw-text-red-500 tw-text-sm tw-mb-3">{errors.phone}</div>}
+                
                 <Input.TextArea
                   rows={3}
-                  placeholder="Địa chỉ giao hàng"
+                  placeholder="Địa chỉ giao hàng (ví dụ: Số 123, đường Nguyễn Văn A, phường B, quận C)"
                   value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="tw-mb-3"
+                  onChange={(e) => handleAddressChange(e.target.value)}
+                  className="tw-mb-1"
                 />
+                {errors.address && <div className="tw-text-red-500 tw-text-sm tw-mb-3">{errors.address}</div>}
 
                 <h3 className="tw-text-xl tw-font-bold tw-mb-4">Voucher giảm giá</h3>
                 <Select
@@ -309,7 +422,8 @@ const Checkout = () => {
                 <Select
                   style={{ width: "100%" }}
                   placeholder="Chọn phương thức thanh toán"
-                  onChange={(value) => setPaymentId(value)}
+                  onChange={handlePaymentChange}
+                  status={errors.payment ? "error" : ""}
                 >
                   {paymentMethods.map((method) => (
                     <Select.Option key={method.PaymentID} value={method.PaymentID}>
@@ -317,8 +431,9 @@ const Checkout = () => {
                     </Select.Option>
                   ))}
                 </Select>
+                {errors.payment && <div className="tw-text-red-500 tw-text-sm tw-mt-1">{errors.payment}</div>}
 
-                {/* Tóm tắt đơn hàng */}
+                {/* Order summary */}
                 <div className="tw-mt-6 tw-space-y-3">
                   <div className="tw-flex tw-justify-between">
                     <p className="tw-m-0">Tổng tiền:</p>
