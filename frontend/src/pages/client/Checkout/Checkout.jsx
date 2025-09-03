@@ -7,7 +7,8 @@ import {
   addOrder, 
   clearCart, 
   getPaymentGateways, 
-  getAvailableVouchers
+  getAvailableVouchers,
+  updateUserProfile
 } from "../../../api/api";
 
 const Checkout = () => {
@@ -213,6 +214,44 @@ const Checkout = () => {
     }
   };
 
+  // Update user profile information
+  const updateUserInfo = async () => {
+    try {
+      const updateData = {};
+      
+      // Only update fields that are missing in user profile
+      if (!user.Phone && receiverPhone) {
+        updateData.Phone = receiverPhone;
+      }
+      
+      if (!user.Address && address) {
+        updateData.Address = address;
+      }
+      
+      if (!user.Fullname && receiverName) {
+        updateData.Fullname = receiverName;
+      }
+      
+      // If there's data to update
+      if (Object.keys(updateData).length > 0) {
+        await updateUserProfile(user.UserID, updateData, token);
+        
+        // Update local storage
+        const updatedUser = { ...user, ...updateData };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        
+        message.success("Thông tin của bạn đã được cập nhật");
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      message.warning("Không thể cập nhật thông tin người dùng, nhưng đơn hàng vẫn sẽ được đặt.");
+      return false;
+    }
+  };
+
   // Process order
   const handlePlaceOrder = async () => {
     // Validate all fields
@@ -238,6 +277,9 @@ const Checkout = () => {
     
     setLoading(true);
     try {
+      // Update user profile information if needed
+      await updateUserInfo();
+
       const orderData = {
         UserID: user.UserID,
         Total_amount: totalAfterDiscount,
@@ -280,6 +322,13 @@ const Checkout = () => {
         }
       } else {
         const response = await addOrder(orderData);
+        
+        // Check if server also updated user info
+        if (response.data.user_updated) {
+          const updatedUser = { ...user, ...response.data.updated_user_data };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+        
         await clearCart();
         message.success("Đặt hàng thành công!");
         
@@ -303,16 +352,17 @@ const Checkout = () => {
     }
   };
 
-  const renderAttributes = (variantId) => {
-    const attributes = variantAttributes[variantId] || [];
-    if (!attributes.length) return null;
+  const renderAttributes = (variant) => {
+    if (!variant || !variant.attributes || variant.attributes.length === 0) {
+      return null;
+    }
 
     return (
       <div className="attribute-tags">
-        {attributes.map((attr, index) => (
+        {variant.attributes.map((attr, index) => (
           <span key={index} className="attribute-tag">
             {attr.value}
-            {index < attributes.length - 1 && <span> | </span>}
+            {index < variant.attributes.length - 1 && <span> | </span>}
           </span>
         ))}
       </div>
@@ -360,7 +410,7 @@ const Checkout = () => {
                         {item.product_variant?.product?.Name || "Tên sản phẩm"}
                       </p>
                       {/* Display variant attributes */}
-                      {item.product_variant?.attributes && item.product_variant.attributes.length > 0 && renderAttributes(item.product_variant.ProductVariantID)}
+                      {renderAttributes(item.product_variant)}
                       <p className="tw-text-[#757575]">
                         Số lượng: {item.Quantity}
                       </p>
@@ -473,6 +523,7 @@ const Checkout = () => {
           display: flex;
           flex-wrap: wrap;
           gap: 5px;
+          margin: 5px 0;
         }
         .attribute-tag {
           background-color: #e9ecef;

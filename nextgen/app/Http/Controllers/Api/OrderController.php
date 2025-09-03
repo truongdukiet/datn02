@@ -107,9 +107,35 @@ class OrderController extends Controller
                 $cart->items()->delete();
             }
 
-            // Lấy thông tin user để gửi email
-            $user = User::find($validated['UserID']); // Sửa: lấy bằng UserID từ request
-
+             // Cập nhật thông tin người dùng nếu cần
+            $user = User::find($validated['UserID']);
+            if ($user) {
+                $updateData = [];
+                
+                // Cập nhật tên nếu chưa có
+                if (empty($user->Fullname) && !empty($validated['Receiver_name'])) {
+                    $updateData['Fullname'] = $validated['Receiver_name'];
+                }
+                
+                // Cập nhật số điện thoại nếu chưa có
+                if (empty($user->Phone) && !empty($validated['Receiver_phone'])) {
+                    $updateData['Phone'] = $validated['Receiver_phone'];
+                }
+                
+                // Cập nhật địa chỉ nếu chưa có
+                if (empty($user->Address) && !empty($validated['Shipping_address'])) {
+                    $updateData['Address'] = $validated['Shipping_address'];
+                }
+                
+                // Nếu có dữ liệu để cập nhật
+                if (!empty($updateData)) {
+                    $user->update($updateData);
+                    
+                    // Thêm thông tin cập nhật vào response
+                    $responseData['user_updated'] = true;
+                    $responseData['updated_user_data'] = $updateData;
+                }
+            }
             // Tạo URL xem đơn hàng
             $orderUrl = "http://localhost:5173/myorder/{$order->OrderID}";
 

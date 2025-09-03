@@ -163,4 +163,14 @@ export const getCartItems = async () => {
 //   return Promise.reject(error);
 // });
 
+export const updateUserProfile = (userId, data, token) => {
+  return axios.put(`http://localhost:8000/api/users/${userId}`, data, {
+    headers: { 
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+};
+
+
 export default apiClient;

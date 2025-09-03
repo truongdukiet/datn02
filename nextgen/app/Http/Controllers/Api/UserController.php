@@ -8,7 +8,8 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
-
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 class UserController extends Controller
 {
     public function index()
@@ -68,33 +69,42 @@ class UserController extends Controller
     {
         try {
             $user = User::find($id);
+            
             if (!$user) {
-                return response()->json(['success' => false, 'message' => 'User not found'], 404);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not found'
+                ], 404);
             }
 
-            $validated = $request->validate([
+            $validator = Validator::make($request->all(), [
                 'Fullname' => 'sometimes|string|max:255',
-                'Email' => 'sometimes|email|unique:users,Email,' . $id . ',UserID',
-                'Phone' => 'nullable|string|max:255',
-                'Address' => 'nullable|string|max:255',
+                'Phone' => 'sometimes|string|max:20',
+                'Address' => 'sometimes|string|max:500',
+                'Email' => 'sometimes|email|max:255|unique:users,Email,' . $id . ',UserID',
             ]);
 
-            // Ghi nhận thời gian cập nhật
-            $validated['Updated_at'] = now();
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation error',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
 
-            // ✅ Cập nhật thông tin user
-            $user->update($validated);
+            $user->update($request->only(['Fullname', 'Phone', 'Address', 'Email']));
 
             return response()->json([
                 'success' => true,
-                'message' => 'Cập nhật thông tin thành công',
+                'message' => 'User updated successfully',
                 'data' => $user
-            ], 200);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['success' => false, 'message' => 'Validation failed', 'errors' => $e->errors()], 422);
+            ]);
+
         } catch (\Exception $e) {
-            Log::error('Error updating user: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Internal server error'], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update user: ' . $e->getMessage()
+            ], 500);
         }
     }
 
