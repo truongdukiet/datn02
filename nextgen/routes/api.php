@@ -102,10 +102,7 @@ Route::apiResource('categories', CategoryController::class);
     Route::get('/categories/{id}', [CategoryController::class, 'show']);
     Route::post('/categories', [CategoryController::class, 'store']);
     Route::put('/categories/{id}', [CategoryController::class, 'update']);
-    Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
-    Route::get('/admin/categories', [CategoryController::class, 'adminIndex']);
-    Route::patch('/admin/categories/{id}/toggle', [CategoryController::class, 'toggleStatus']);
-    Route::patch('/categories/{id}/toggle-status', [CategoryController::class, 'toggleStatus']);
+    Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);;
 
 
 // routes/api.php

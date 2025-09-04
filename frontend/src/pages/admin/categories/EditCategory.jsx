@@ -8,8 +8,7 @@ const EditCategory = () => {
     const [formData, setFormData] = useState({
         Name: "",
         Description: "",
-        Image: "",
-        Status: "active"
+        Image: ""
     });
     const [previewImage, setPreviewImage] = useState(null);
     const [currentImage, setCurrentImage] = useState("");
@@ -26,11 +25,9 @@ const EditCategory = () => {
                 setFormData({
                     Name: category.Name || "",
                     Description: category.Description || "",
-                    Image: category.Image || "",
-                    Status: category.Status || "active"
+                    Image: category.Image || ""
                 });
 
-                // Lưu ảnh hiện tại để hiển thị
                 if (category.Image) {
                     setCurrentImage(`http://localhost:8000/storage/${category.Image}`);
                 }
@@ -52,10 +49,9 @@ const EditCategory = () => {
             [name]: value
         }));
 
-        // Clear error when user types
         if (errors[name]) {
             setErrors(prev => {
-                const newErrors = {...prev};
+                const newErrors = { ...prev };
                 delete newErrors[name];
                 return newErrors;
             });
@@ -65,20 +61,17 @@ const EditCategory = () => {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Tạo URL để xem trước ảnh
             const imageUrl = URL.createObjectURL(file);
             setPreviewImage(imageUrl);
 
-            // Chuẩn bị file để upload (trong FormData)
             setFormData(prev => ({
                 ...prev,
                 Image: file
             }));
 
-            // Clear error nếu có
             if (errors.Image) {
                 setErrors(prev => {
-                    const newErrors = {...prev};
+                    const newErrors = { ...prev };
                     delete newErrors.Image;
                     return newErrors;
                 });
@@ -88,11 +81,9 @@ const EditCategory = () => {
 
     const validateForm = () => {
         const newErrors = {};
-
         if (!formData.Name.trim()) {
             newErrors.Name = "Tên danh mục là bắt buộc";
         }
-
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -100,28 +91,20 @@ const EditCategory = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!validateForm()) {
-            return;
-        }
+        if (!validateForm()) return;
 
         setSubmitting(true);
         setErrors({});
 
         try {
-            // Tạo FormData để gửi file
             const submitData = new FormData();
             submitData.append('Name', formData.Name);
             submitData.append('Description', formData.Description);
-            submitData.append('Status', formData.Status);
 
-            // Chỉ append Image nếu nó là file (người dùng đã chọn ảnh mới)
             if (formData.Image instanceof File) {
-                submitData.append('Image', formData.Image);
-            } else {
                 submitData.append('Image', formData.Image);
             }
 
-            // Sử dụng phương thức POST với _method=PUT để hỗ trợ upload file
             submitData.append('_method', 'PUT');
 
             await axios.post(`http://localhost:8000/api/categories/${id}`, submitData, {
@@ -134,9 +117,7 @@ const EditCategory = () => {
             navigate("/admin/categories");
         } catch (err) {
             console.error("Error updating category:", err);
-
             if (err.response?.status === 422 && err.response.data?.errors) {
-                // Hiển thị lỗi validation từ server
                 setErrors(err.response.data.errors);
             } else {
                 setErrors({ general: "Lỗi cập nhật danh mục. Vui lòng thử lại." });
@@ -191,7 +172,6 @@ const EditCategory = () => {
                 <div style={{ marginBottom: "15px" }}>
                     <label style={{ display: "block", marginBottom: "5px" }}>Hình ảnh:</label>
 
-                    {/* Hiển thị ảnh hiện tại */}
                     {currentImage && (
                         <div style={{ marginBottom: "10px" }}>
                             <p>Ảnh hiện tại:</p>
@@ -225,7 +205,6 @@ const EditCategory = () => {
                     </div>
                     {errors.Image && <div style={{ color: "red", fontSize: "14px", marginTop: "5px" }}>{errors.Image}</div>}
 
-                    {/* Hiển thị ảnh xem trước nếu có */}
                     {previewImage && (
                         <div style={{ marginTop: "10px" }}>
                             <p>Ảnh mới (xem trước):</p>
@@ -242,24 +221,6 @@ const EditCategory = () => {
                             />
                         </div>
                     )}
-                </div>
-
-                <div style={{ marginBottom: "15px" }}>
-                    <label style={{ display: "block", marginBottom: "5px" }}>Trạng thái:</label>
-                    <select
-                        name="Status"
-                        value={formData.Status}
-                        onChange={handleChange}
-                        style={{
-                            width: "100%",
-                            padding: "8px",
-                            border: "1px solid #ccc",
-                            borderRadius: "4px"
-                        }}
-                    >
-                        <option value="active">Hoạt động</option>
-                        <option value="inactive">Không hoạt động</option>
-                    </select>
                 </div>
 
                 <div style={{ display: "flex", gap: "10px" }}>

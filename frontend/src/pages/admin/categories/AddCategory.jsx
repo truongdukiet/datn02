@@ -8,7 +8,6 @@ const AddCategory = () => {
         Name: "",
         Description: "",
         Image: "",
-        Status: "active", // ✅ thêm trường status mặc định
     });
     const [previewImage, setPreviewImage] = useState(null);
     const [errors, setErrors] = useState({});
@@ -76,7 +75,6 @@ const AddCategory = () => {
             submitData.append('Name', formData.Name);
             submitData.append('Description', formData.Description);
             submitData.append('Image', formData.Image);
-            submitData.append('Status', formData.Status); // ✅ gửi status
 
             await axios.post(`http://localhost:8000/api/categories`, submitData, {
                 headers: {
@@ -172,25 +170,6 @@ const AddCategory = () => {
                             />
                         </div>
                     )}
-                </div>
-
-                {/* Status */}
-                <div style={{ marginBottom: "15px" }}>
-                    <label style={{ display: "block", marginBottom: "5px" }}>Trạng thái:</label>
-                    <select
-                        name="Status"
-                        value={formData.Status}
-                        onChange={handleChange}
-                        style={{
-                            width: "100%",
-                            padding: "8px",
-                            border: "1px solid #ccc",
-                            borderRadius: "4px"
-                        }}
-                    >
-                        <option value="active">Hoạt động</option>
-                        <option value="inactive">Ẩn</option>
-                    </select>
                 </div>
 
                 {/* Buttons */}
