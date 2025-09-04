@@ -73,7 +73,7 @@ const AdminDashboard = () => {
                 setLoading(true);
                 setError(null);
 
-                // Sử dụng một API duy nhất để lấy tất cả dữliệu
+                // Sử dụng một API duy nhất để lấy tất cả dữ liệu
                 const res = await axios.get(`${API_BASE_URL}/dashboard`);
                 const data = res.data?.data || {};
 
@@ -103,67 +103,122 @@ const AdminDashboard = () => {
                     monthlyRevenue: monthlyRevenueData
                 }));
 
-                // Lấy dữ liệu sản phẩm để tính tồn kho
+                // Lấy dữ liệu sản phẩm để tính tồn kho (bao gồm cả variants)
                 const productsRes = await axios.get(`${API_BASE_URL}/products`);
                 const products = productsRes.data.data || [];
 
-                const lowStockProducts = products.filter(product => {
-                    const totalStock = product.variants ?
-                        product.variants.reduce((total, variant) => total + (variant.Stock || 0), 0) :
-                        (product.Stock || 0);
-                    return totalStock > 0 && totalStock <= LOW_STOCK_THRESHOLD;
-                }).map(product => ({
-                    id: product.ProductID,
-                    name: product.Name,
-                    sku: product.SKU || `SP-${product.ProductID}`,
-                    stock_quantity: product.variants ?
-                        product.variants.reduce((total, variant) => total + (variant.Stock || 0), 0) :
-                        (product.Stock || 0),
-                    image: product.Image ? `${API_BASE_URL.replace('/api', '')}/storage/${product.Image}` : null,
-                    status: product.Status
-                }));
+                // Lọc sản phẩm có tồn kho thấp và hết hàng từ biến thể
+                const lowStockProducts = [];
+                const outOfStockProducts = [];
 
-                const outOfStockProducts = products.filter(product => {
-                    const totalStock = product.variants ?
-                        product.variants.reduce((total, variant) => total + (variant.Stock || 0), 0) :
-                        (product.Stock || 0);
-                    return totalStock === 0;
-                }).map(product => ({
-                    id: product.ProductID,
-                    name: product.Name,
-                    sku: product.SKU || `SP-${product.ProductID}`,
-                    stock_quantity: 0,
-                    image: product.Image ? `${API_BASE_URL.replace('/api', '')}/storage/${product.Image}` : null,
-                    status: product.Status
-                }));
+                products.forEach(product => {
+                    // Kiểm tra nếu sản phẩm có variants
+                    if (product.variants && product.variants.length > 0) {
+                        // Duyệt qua từng biến thể
+                        product.variants.forEach(variant => {
+                            const stockQuantity = variant.Stock || 0;
+                            
+                            if (stockQuantity > 0 && stockQuantity <= LOW_STOCK_THRESHOLD) {
+                                lowStockProducts.push({
+                                    id: variant.ProductVariantID,
+                                    productId: product.ProductID,
+                                    name: product.Name,
+                                    variantName: variant.VariantName || `Biến thể ${variant.ProductVariantID}`,
+                                    sku: variant.SKU || `SP-${product.ProductID}-V${variant.ProductVariantID}`,
+                                    stock_quantity: stockQuantity,
+                                    image: variant.Image ? 
+                                        `${API_BASE_URL.replace('/api', '')}/storage/${variant.Image}` : 
+                                        (product.Image ? `${API_BASE_URL.replace('/api', '')}/storage/${product.Image}` : null),
+                                    status: variant.Status
+                                });
+                            } else if (stockQuantity === 0) {
+                                outOfStockProducts.push({
+                                    id: variant.ProductVariantID,
+                                    productId: product.ProductID,
+                                    name: product.Name,
+                                    variantName: variant.VariantName || `Biến thể ${variant.ProductVariantID}`,
+                                    sku: variant.SKU || `SP-${product.ProductID}-V${variant.ProductVariantID}`,
+                                    stock_quantity: 0,
+                                    image: variant.Image ? 
+                                        `${API_BASE_URL.replace('/api', '')}/storage/${variant.Image}` : 
+                                        (product.Image ? `${API_BASE_URL.replace('/api', '')}/storage/${product.Image}` : null),
+                                    status: variant.Status
+                                });
+                            }
+                        });
+                    } else {
+                        // Xử lý sản phẩm không có variants (sử dụng stock từ product)
+                        const totalStock = product.Stock || 0;
+                        if (totalStock > 0 && totalStock <= LOW_STOCK_THRESHOLD) {
+                            lowStockProducts.push({
+                                id: product.ProductID,
+                                productId: product.ProductID,
+                                name: product.Name,
+                                variantName: "Sản phẩm chính",
+                                sku: product.SKU || `SP-${product.ProductID}`,
+                                stock_quantity: totalStock,
+                                image: product.Image ? `${API_BASE_URL.replace('/api', '')}/storage/${product.Image}` : null,
+                                status: product.Status
+                            });
+                        } else if (totalStock === 0) {
+                            outOfStockProducts.push({
+                                id: product.ProductID,
+                                productId: product.ProductID,
+                                name: product.Name,
+                                variantName: "Sản phẩm chính",
+                                sku: product.SKU || `SP-${product.ProductID}`,
+                                stock_quantity: 0,
+                                image: product.Image ? `${API_BASE_URL.replace('/api', '')}/storage/${product.Image}` : null,
+                                status: product.Status
+                            });
+                        }
+                    }
+                });
 
+                // Tính tổng tồn kho từ tất cả biến thể
                 const totalInventory = products.reduce((sum, product) => {
-                    const totalStock = product.variants ?
-                        product.variants.reduce((total, variant) => total + (variant.Stock || 0), 0) :
-                        (product.Stock || 0);
-                    return sum + totalStock;
+                    if (product.variants && product.variants.length > 0) {
+                        // Tổng stock từ các biến thể
+                        return sum + product.variants.reduce((variantSum, variant) => 
+                            variantSum + (variant.Stock || 0), 0);
+                    } else {
+                        // Stock từ sản phẩm không có biến thể
+                        return sum + (product.Stock || 0);
+                    }
                 }, 0);
 
-                // Lấy top 5 sản phẩm có tồn kho cao nhất
-                const topInventoryProducts = [...products]
-                    .sort((a, b) => {
-                        const aStock = a.variants ?
-                            a.variants.reduce((total, variant) => total + (variant.Stock || 0), 0) :
-                            (a.Stock || 0);
-                        const bStock = b.variants ?
-                            b.variants.reduce((total, variant) => total + (variant.Stock || 0), 0) :
-                            (b.Stock || 0);
-                        return bStock - aStock;
-                    })
-                    .slice(0, 5)
-                    .map(product => ({
-                        id: product.ProductID,
-                        name: product.Name,
-                        stock_quantity: product.variants ?
-                            product.variants.reduce((total, variant) => total + (variant.Stock || 0), 0) :
-                            (product.Stock || 0),
-                        image: product.Image ? `${API_BASE_URL.replace('/api', '')}/storage/${product.Image}` : null
-                    }));
+                // Lấy top 5 biến thể có tồn kho cao nhất
+                const allVariants = [];
+                
+                products.forEach(product => {
+                    if (product.variants && product.variants.length > 0) {
+                        product.variants.forEach(variant => {
+                            allVariants.push({
+                                id: variant.ProductVariantID,
+                                productId: product.ProductID,
+                                name: product.Name,
+                                variantName: variant.VariantName || `Biến thể ${variant.ProductVariantID}`,
+                                stock_quantity: variant.Stock || 0,
+                                image: variant.Image ? 
+                                    `${API_BASE_URL.replace('/api', '')}/storage/${variant.Image}` : 
+                                    (product.Image ? `${API_BASE_URL.replace('/api', '')}/storage/${product.Image}` : null)
+                            });
+                        });
+                    } else {
+                        allVariants.push({
+                            id: product.ProductID,
+                            productId: product.ProductID,
+                            name: product.Name,
+                            variantName: "Sản phẩm chính",
+                            stock_quantity: product.Stock || 0,
+                            image: product.Image ? `${API_BASE_URL.replace('/api', '')}/storage/${product.Image}` : null
+                        });
+                    }
+                });
+
+                const topInventoryProducts = allVariants
+                    .sort((a, b) => b.stock_quantity - a.stock_quantity)
+                    .slice(0, 5);
 
                 setDashboardData(prevState => ({
                     ...prevState,
