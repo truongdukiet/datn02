@@ -160,6 +160,42 @@ public function toggleStatus($id)
         ]
     ]);
 }
+public function destroy($id)
+{
+    try {
+        $category = Category::find($id);
+
+        if (!$category) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Danh mục không tồn tại'
+            ], 404);
+        }
+
+        // ✅ Kiểm tra xem danh mục có sản phẩm không
+        if ($category->products()->count() > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Danh mục này đang có sản phẩm, không thể xóa!'
+            ], 400);
+        }
+
+        // Nếu không có sản phẩm thì cho phép xóa
+        $category->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Xóa danh mục thành công'
+        ], 200);
+
+    } catch (\Exception $e) {
+        // Bắt mọi lỗi khác (vd: lỗi DB)
+        return response()->json([
+            'success' => false,
+            'message' => 'Lỗi server: ' . $e->getMessage()
+        ], 500);
+    }
+}
 
 
 }

@@ -9,7 +9,7 @@ const AdminCategory = () => {
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5; // ✅ số danh mục hiển thị mỗi trang
+    const itemsPerPage = 5; 
 
     const API_BASE_URL = 'http://localhost:8000/api';
     const navigate = useNavigate();
@@ -53,6 +53,27 @@ const handleToggleStatus = async (id) => {
         }
     } catch (err) {
         alert("Cập nhật trạng thái thất bại!");
+    }
+};
+
+// ✅ Hàm xóa
+const handleDelete = async (id) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa danh mục này?")) return;
+
+    try {
+        const response = await deleteCategory(id); 
+        const data = response.data; 
+
+        if (data.success) {
+            alert(data.message || "Xóa danh mục thành công!");
+            setCategories(prev => prev.filter(cat => cat.CategoryID !== id));
+        } else {
+            alert(data.message || "Không thể xóa danh mục!");
+        }
+    } catch (err) {
+        const msg = err.response?.data?.message || "Lỗi khi xóa danh mục!";
+        alert(msg);
+        console.error("Delete error:", err.response?.data || err.message);
     }
 };
 
@@ -125,6 +146,8 @@ const handleToggleStatus = async (id) => {
 
                             <td>
                                 <Link to={`/admin/edit-category/${category.CategoryID}`} className="btn-edit">Sửa</Link>
+                                    <button onClick={() => handleDelete(category.CategoryID)}className="btn-delete"> Xóa
+    </button>
                             </td>
                         </tr>
                     ))}
