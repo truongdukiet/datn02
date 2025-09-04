@@ -15,7 +15,9 @@ const ProductList = () => {
     try {
       setLoading(true);
       const data = await getProducts();
-      setProducts(data.data || []);
+      // Lọc chỉ hiển thị sản phẩm có status = 1
+      const activeProducts = (data.data || []).filter(product => product.Status == 1);
+      setProducts(activeProducts);
     } catch (err) {
       setError('Không thể tải danh sách sản phẩm');
       console.error('Load products error:', err);
@@ -41,14 +43,14 @@ const ProductList = () => {
   if (error) {
     return <div className="error">{error}</div>;
   }
-  const formatCurrency = (value) => {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    minimumFractionDigits: 0,
-  }).format(value);
-};
 
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+      minimumFractionDigits: 0,
+    }).format(value);
+  };
 
   return (
     <div className="product-list">

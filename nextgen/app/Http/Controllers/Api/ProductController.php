@@ -52,7 +52,7 @@ public function store(Request $request)
             'Name' => 'required|string|max:255',
             'Description' => 'nullable|string',
             'base_price' => 'required|numeric|min:0',
-            'Status' => 'nullable|boolean',
+            'Status' => 'nullable|numeric|in:0,1',
             'Image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -155,7 +155,7 @@ public function store(Request $request)
                 'Name' => 'sometimes|string|max:255',
                 'Description' => 'nullable|string',
                 'base_price' => 'sometimes|numeric|min:0',
-                'Status' => 'nullable|boolean',
+                'Status' => 'nullable|numeric|in:0,1',
                 'Image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 

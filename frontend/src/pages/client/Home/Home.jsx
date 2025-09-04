@@ -68,6 +68,9 @@ const Home = () => {
     }
   }, []);
 
+  // Lọc sản phẩm chỉ hiển thị những sản phẩm có status = 1
+  const activeProducts = productsData?.data?.filter(product => product.Status === 1) || [];
+
   return (
     <>
       <ClientHeader />
@@ -117,7 +120,7 @@ const Home = () => {
                 </div>
               </div>
             ) : (
-              productsData?.data?.slice(0, 8).map((product) => (
+              activeProducts.slice(0, 8).map((product) => (
                 <div key={product.ProductID} className="col-lg-3 col-md-6 mb-4">
                   <ProductItem
                     product={product}
@@ -203,8 +206,6 @@ const Home = () => {
 </div>
 
       <SectionContent2 />
-
-
     </>
   );
 };

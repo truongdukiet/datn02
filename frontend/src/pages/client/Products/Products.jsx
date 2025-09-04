@@ -38,7 +38,6 @@ const Products = () => {
     category: null,
   });
 
-  // ✅ Nhận query "q" và "category" từ URL mà không phá cấu trúc cũ
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const query = searchParams.get("q");
@@ -66,7 +65,7 @@ const Products = () => {
   const categories = categoriesData?.data || [];
 
   const sortProducts = (products, sortBy) => {
-    if (!products || products.length === 0) return [];
+    if (!products || products.length == 0) return [];
 
     const productsCopy = [...products];
 
@@ -88,8 +87,10 @@ const Products = () => {
     }
   };
 
-  const products = data?.data ? sortProducts(data.data, filters.sortBy) : [];
-  const productsCount = data?.data?.length || 0;
+  // Lọc chỉ hiển thị sản phẩm có status = 1
+  const activeProducts = data?.data ? data.data.filter(product => product.Status == 1) : [];
+  const products = sortProducts(activeProducts, filters.sortBy);
+  const productsCount = activeProducts.length;
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -109,7 +110,6 @@ const Products = () => {
 
   const handleCategoryChange = (categoryId) => {
     setSelectedCategory(categoryId);
-
     setFilters((prev) => ({
       ...prev,
       category: categoryId,
@@ -157,7 +157,7 @@ const Products = () => {
                     <>
                       <div className="tw-flex tw-items-center tw-justify-between">
                         <Radio
-                          checked={selectedCategory === null}
+                          checked={selectedCategory == null}
                           onChange={() => handleCategoryChange(null)}
                           className="tw-text-[#212121] tw-text-base"
                         >
@@ -171,7 +171,7 @@ const Products = () => {
                           className="tw-flex tw-items-center tw-justify-between"
                         >
                           <Radio
-                            checked={selectedCategory === category.CategoryID}
+                            checked={selectedCategory == category.CategoryID}
                             onChange={() =>
                               handleCategoryChange(category.CategoryID)
                             }

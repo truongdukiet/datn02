@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom"; // Thêm import này
+import { useNavigate } from "react-router-dom";
 
 const AdminProducts = () => {
-  const navigate = useNavigate(); // Thêm hook navigate
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -42,15 +42,13 @@ const AdminProducts = () => {
     }
   };
 
-
   const formatCurrency = (value) => {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    minimumFractionDigits: 0,
-  }).format(value);
-};
-
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+      minimumFractionDigits: 0,
+    }).format(value);
+  };
 
   const handleDeleteProduct = async (productId) => {
     if (window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) {
@@ -71,11 +69,9 @@ const AdminProducts = () => {
     setShowAddForm(true);
   };
 
-  // ----- PHẦN ĐÃ CHỈNH SỬA LẠI -----
   const handleSaveProduct = async (productData) => {
     try {
       if (editingProduct) {
-        // Sử dụng lại cách POST với _method=PATCH vì đây là cách chuẩn cho Laravel
         productData.append('_method', 'PATCH');
         await axios.post(`${API_BASE_URL}/products/${editingProduct.ProductID}`, productData, {
           headers: { 'Content-Type': 'multipart/form-data' }
@@ -91,20 +87,18 @@ const AdminProducts = () => {
       setShowAddForm(false);
       setEditingProduct(null);
     } catch (err) {
-      // Log lỗi chi tiết hơn từ server để dễ debug
       console.error("Error saving product:", err.response?.data || err.message);
       setError("Error saving product");
       alert("Lỗi khi lưu sản phẩm. Vui lòng kiểm tra console (F12) để xem chi tiết lỗi từ server.");
     }
   };
-  // ----------------------------------
 
   const filteredProducts = products.filter(product => {
     const matchesSearch =
       product.Name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.ProductID?.toString().includes(searchTerm);
     const matchesCategory = filterCategory ? product.CategoryID === parseInt(filterCategory) : true;
-    const matchesStatus = filterStatus ? (filterStatus === "active" ? product.Status : !product.Status) : true;
+    const matchesStatus = filterStatus ? product.Status.toString() === filterStatus : true;
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
@@ -116,8 +110,8 @@ const AdminProducts = () => {
       Name: "",
       Description: "",
       base_price: "",
-      Stock: "",
       CategoryID: "",
+      Status: 1
     });
     const [imageFile, setImageFile] = useState(null);
 
@@ -127,8 +121,8 @@ const AdminProducts = () => {
           Name: product.Name || "",
           Description: product.Description || "",
           base_price: product.base_price || "",
-          Stock: product.variants?.[0]?.Stock || "",
           CategoryID: product.CategoryID || "",
+          Status: product.Status !== undefined ? product.Status : 1
         });
         setImageFile(null);
       } else {
@@ -136,8 +130,8 @@ const AdminProducts = () => {
           Name: "",
           Description: "",
           base_price: "",
-          Stock: "",
           CategoryID: "",
+          Status: 1
         });
         setImageFile(null);
       }
@@ -148,7 +142,6 @@ const AdminProducts = () => {
       setImageFile(file);
     };
 
-    // ----- PHẦN ĐÃ CHỈNH SỬA LẠI -----
     const handleSubmit = async (e) => {
       e.preventDefault();
       const formDataToSubmit = new FormData();
@@ -157,13 +150,11 @@ const AdminProducts = () => {
       });
 
       if (imageFile) {
-        formDataToSubmit.append('Image', imageFile);  // ✅ phải đúng tên
+        formDataToSubmit.append('Image', imageFile);
       }
-
 
       await onSave(formDataToSubmit);
     };
-    // ----------------------------------
 
     return (
       <div style={{ marginBottom: 20, padding: 20, background: "#f8f9fa", borderRadius: 8 }}>
@@ -186,14 +177,6 @@ const AdminProducts = () => {
               style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
               required
             />
-            <input
-              type="number"
-              placeholder="Tồn kho"
-              value={formData.Stock}
-              onChange={(e) => setFormData({ ...formData, Stock: e.target.value })}
-              style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
-              required
-            />
             <select
               value={formData.CategoryID}
               onChange={(e) => setFormData({ ...formData, CategoryID: e.target.value })}
@@ -206,6 +189,14 @@ const AdminProducts = () => {
                   {cat.Name}
                 </option>
               ))}
+            </select>
+            <select
+              value={formData.Status}
+              onChange={(e) => setFormData({ ...formData, Status: parseInt(e.target.value) })}
+              style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
+            >
+              <option value={1}>Hoạt động</option>
+              <option value={0}>Không hoạt động</option>
             </select>
             <input
               type="file"
@@ -270,8 +261,8 @@ const AdminProducts = () => {
           style={{ padding: 8, borderRadius: 4, border: "1px solid #ddd" }}
         >
           <option value="">Trạng thái</option>
-          <option value="active">Hoạt động</option>
-          <option value="inactive">Không hoạt động</option>
+          <option value="1">Hoạt động</option>
+          <option value="0">Không hoạt động</option>
         </select>
         <button
           style={{ padding: "8px 16px", background: "#6c757d", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
@@ -308,7 +299,6 @@ const AdminProducts = () => {
             <th style={{ padding: 12, textAlign: "left" }}>Hình ảnh</th>
             <th style={{ padding: 12, textAlign: "left" }}>Tên sản phẩm</th>
             <th style={{ padding: 12, textAlign: "left" }}>Giá</th>
-            <th style={{ padding: 12, textAlign: "left" }}>Tồn kho</th>
             <th style={{ padding: 12, textAlign: "left" }}>Danh mục</th>
             <th style={{ padding: 12, textAlign: "left" }}>Trạng thái</th>
             <th style={{ padding: 12, textAlign: "left" }}>Thao tác</th>
@@ -320,18 +310,17 @@ const AdminProducts = () => {
               <tr key={product.ProductID} style={{ borderBottom: "1px solid #eee" }}>
                 <td style={{ padding: 12 }}>
                   <img
-                  src={product.Image ? `http://localhost:8000/storage/${product.Image}` : "https://via.placeholder.com/100"}
+                    src={product.Image ? `http://localhost:8000/storage/${product.Image}` : "https://via.placeholder.com/100"}
                     alt={product.Name}
                     style={{ width: 50, height: 50, objectFit: "cover" }}
                   />
                 </td>
                 <td style={{ padding: 12 }}>{product.Name}</td>
                 <td style={{ padding: 12 }}>{formatCurrency(product.base_price)}</td>
-                <td style={{ padding: 12 }}>{product.variants.reduce((total, variant) => total + variant.Stock, 0)}</td>
                 <td style={{ padding: 12 }}>{product.category?.Name}</td>
                 <td style={{ padding: 12 }}>
-                  <span style={{ padding: "4px 8px", borderRadius: 4, background: product.Status ? "#d4edda" : "#f8d7da", color: product.Status ? "#155724" : "#721c24" }}>
-                    {product.Status ? "Hoạt động" : "Không hoạt động"}
+                  <span style={{ padding: "4px 8px", borderRadius: 4, background: product.Status === 1 ? "#d4edda" : "#f8d7da", color: product.Status === 1 ? "#155724" : "#721c24" }}>
+                    {product.Status === 1 ? "Hoạt động" : "Không hoạt động"}
                   </span>
                 </td>
                 <td style={{ padding: 12 }}>
@@ -347,7 +336,6 @@ const AdminProducts = () => {
                   >
                     Xóa
                   </button>
-                  {/* Thêm nút Biến thể */}
                   <button
                     onClick={() => navigate(`/admin/product-variants/${product.ProductID}`)}
                     style={{ padding: "4px 8px", background: "#0d6efd", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}
@@ -359,7 +347,7 @@ const AdminProducts = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="7" style={{ textAlign: "center" }}>Không có sản phẩm nào.</td>
+              <td colSpan="6" style={{ textAlign: "center" }}>Không có sản phẩm nào.</td>
             </tr>
           )}
         </tbody>
