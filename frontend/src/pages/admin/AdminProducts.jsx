@@ -77,15 +77,26 @@ const AdminProducts = () => {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
         alert("Cập nhật sản phẩm thành công!");
+        fetchProducts();
+        setShowAddForm(false);
+        setEditingProduct(null);
       } else {
-        await axios.post(`${API_BASE_URL}/products`, productData, {
+        // Thêm sản phẩm mới
+        const response = await axios.post(`${API_BASE_URL}/products`, productData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
         alert("Thêm sản phẩm thành công!");
+        // Lấy ProductID vừa tạo
+        const newProductId = response.data.data?.ProductID || response.data.ProductID;
+        // Chuyển sang trang tạo biến thể cho sản phẩm mới
+        if (newProductId) {
+          navigate(`/admin/product-variants/${newProductId}`);
+        } else {
+          fetchProducts();
+        }
+        setShowAddForm(false);
+        setEditingProduct(null);
       }
-      fetchProducts();
-      setShowAddForm(false);
-      setEditingProduct(null);
     } catch (err) {
       console.error("Error saving product:", err.response?.data || err.message);
       setError("Error saving product");
