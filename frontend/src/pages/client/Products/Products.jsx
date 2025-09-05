@@ -87,8 +87,15 @@ const Products = () => {
     }
   };
 
-  // Lọc chỉ hiển thị sản phẩm có status = 1
-  const activeProducts = data?.data ? data.data.filter(product => product.Status == 1) : [];
+  // Lọc chỉ hiển thị sản phẩm có status = 1 và có ít nhất 1 biến thể
+  const activeProducts = data?.data
+    ? data.data.filter(
+        (product) =>
+          product.Status == 1 &&
+          Array.isArray(product.variants) &&
+          product.variants.length > 0
+      )
+    : [];
   const products = sortProducts(activeProducts, filters.sortBy);
   const productsCount = activeProducts.length;
 

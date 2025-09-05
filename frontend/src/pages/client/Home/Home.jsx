@@ -68,8 +68,10 @@ const Home = () => {
     }
   }, []);
 
-  // Lọc sản phẩm chỉ hiển thị những sản phẩm có status = 1
-  const activeProducts = productsData?.data?.filter(product => product.Status === 1) || [];
+  // Lọc sản phẩm chỉ hiển thị những sản phẩm có status = 1 và có ít nhất 1 biến thể
+  const activeProducts = productsData?.data?.filter(
+    product => product.Status === 1 && Array.isArray(product.variants) && product.variants.length > 0
+  ) || [];
 
   return (
     <>

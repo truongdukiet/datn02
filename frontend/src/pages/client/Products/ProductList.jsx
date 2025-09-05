@@ -16,7 +16,9 @@ const ProductList = () => {
       setLoading(true);
       const data = await getProducts();
       // Lọc chỉ hiển thị sản phẩm có status = 1
-      const activeProducts = (data.data || []).filter(product => product.Status == 1);
+      const activeProducts = (data.data || []).filter(
+        product => product.Status == 1 && Array.isArray(product.variants) && product.variants.length > 0
+      );
       setProducts(activeProducts);
     } catch (err) {
       setError('Không thể tải danh sách sản phẩm');

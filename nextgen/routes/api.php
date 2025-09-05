@@ -110,6 +110,7 @@ Route::get('/product-variants', [ProductVariantController::class, 'index']);
 Route::get('/product-variants/{id}', [ProductVariantController::class, 'show']);
 Route::get('/products/{id}/variants', [ProductVariantController::class, 'getByProduct']); // Thêm route mới
 Route::put('/product-variants/{id}', [ProductVariantController::class, 'update']);
+Route::delete('/product-variants/{id}', [ProductVariantController::class, 'destroy']);
 Route::post('/product-variants', [ProductVariantController::class, 'store']);
 Route::get('/product-variants/images', [ProductVariantController::class, 'getAvailableImages']);
 
