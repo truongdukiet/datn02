@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getOrderDetail, cancelOrder, submitReview } from "../../../api/axiosClient";
-import { message, Descriptions, Button, Spin, Tag, Divider, Image, Rate, Modal, Form, Input, Steps, Card } from 'antd';
+import { message, Descriptions, Button, Spin, Tag, Divider, Image, Rate, Modal, Form, Input, Steps } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 
 const { Step } = Steps;
@@ -43,6 +43,7 @@ const MyOrderDetail = () => {
     const [currentProduct, setCurrentProduct] = useState(null);
     const [form] = Form.useForm();
     const [lastUpdated, setLastUpdated] = useState(null);
+    const [variantAttributes, setVariantAttributes] = useState({});
 
     // Hàm lấy chi tiết đơn hàng
     const fetchOrderDetail = async () => {
@@ -86,6 +87,11 @@ const MyOrderDetail = () => {
 
                 setOrder(processedOrder);
                 setLastUpdated(new Date());
+                
+                // Lấy thuộc tính cho các biến thể sản phẩm
+                if (processedOrder.order_details && processedOrder.order_details.length > 0) {
+                    fetchAllVariantAttributes(processedOrder.order_details);
+                }
             } else {
                 setError(response.data.message || 'Không thể tải chi tiết đơn hàng');
             }
@@ -93,6 +99,39 @@ const MyOrderDetail = () => {
             setError(err.response?.data?.message || 'Lỗi kết nối server');
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Lấy thuộc tính cho tất cả các biến thể sản phẩm
+    const fetchAllVariantAttributes = async (orderDetails) => {
+        try {
+            const attributesMap = {};
+            const API_BASE_URL = 'http://localhost:8000/api';
+
+            const attributePromises = orderDetails.map(async (item) => {
+                try {
+                    const variantId = item.ProductVariantID || item.productVariant?.id;
+                    if (!variantId) return;
+                    
+                    const response = await fetch(
+                        `${API_BASE_URL}/variant-attributes?variant_id=${variantId}`
+                    );
+                    const data = await response.json();
+                    
+                    const filteredAttributes = (data.data || []).filter(
+                        attr => attr.ProductVariantID === variantId
+                    );
+                    attributesMap[variantId] = filteredAttributes;
+                } catch (error) {
+                    console.error(`Error fetching attributes for variant ${item.ProductVariantID}:`, error);
+                    attributesMap[item.ProductVariantID] = [];
+                }
+            });
+
+            await Promise.all(attributePromises);
+            setVariantAttributes(attributesMap);
+        } catch (error) {
+            console.error('Error fetching variant attributes:', error);
         }
     };
 
@@ -176,6 +215,95 @@ const MyOrderDetail = () => {
         }
     };
 
+    // Hiển thị ảnh sản phẩm - SỬA LẠI để xử lý trường hợp undefined
+    const renderProductImage = (item) => {
+        // Debug để xem cấu trúc dữ liệu
+        console.log('Item data:', item);
+        
+        // Tìm ảnh với xử lý lỗi cho các trường hợp undefined
+        let imagePath = '';
+        
+        // Kiểm tra tất cả các trường có thể chứa ảnh
+        if (item?.product_variant?.Image) {
+            imagePath = item.product_variant.Image;
+        } 
+        else if (item?.Image) {
+            imagePath = item.Image;
+        }
+        else if (item?.productVariant?.Image) {
+            imagePath = item.productVariant.Image;
+        }
+        else if (item?.product_variant?.product?.Image) {
+            imagePath = item.product_variant.product.Image;
+        }
+        else if (item?.productVariant?.product?.Image) {
+            imagePath = item.productVariant.product.Image;
+        }
+
+        // Nếu không tìm thấy ảnh
+        if (!imagePath) {
+            return (
+                <div style={{
+                    width: 80,
+                    height: 80,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#f0f0f0',
+                    color: '#999',
+                    borderRadius: '4px'
+                }}>
+                    Không có ảnh
+                </div>
+            );
+        }
+        
+        // Sử dụng đúng định dạng URL
+        const imageUrl = imagePath.startsWith('http') 
+            ? imagePath 
+            : `http://localhost:8000/storage/${imagePath}`;
+            
+        return (
+            <Image 
+                width={80} 
+                height={80}
+                src={imageUrl} 
+                alt={item?.product_name || item?.productVariant?.product?.Name || 'Sản phẩm'}
+                style={{ objectFit: 'cover', borderRadius: '4px' }}
+                fallback="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjBGMEYwIi8+Cjx0ZXh0IHg9IjQwIiB5PSI0MCIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzk5OSIgZm9udC1zaXplPSIxMiI+Tm8gSW1hZ2U8L3RleHQ+Cjwvc3ZnPg=="
+            />
+        );
+    };
+
+    // Hiển thị thuộc tính sản phẩm
+    const renderAttributes = (item) => {
+        const variantId = item?.ProductVariantID || item?.productVariant?.id;
+        if (!variantId) return null;
+        
+        const attributes = variantAttributes[variantId] || [];
+        
+        if (!attributes.length) return null;
+
+        return (
+            <div className="attribute-tags" style={{ marginBottom: 5, marginTop: 5 }}>
+                {attributes.map((attr, idx) => (
+                    <span key={idx} className="attribute-tag" style={{
+                        backgroundColor: '#f0f0f0',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        marginRight: '5px',
+                        display: 'inline-block',
+                        marginBottom: '3px'
+                    }}>
+                        {attr.attribute?.name ? `${attr.attribute.name}: ` : ""}
+                        {attr.value}
+                    </span>
+                ))}
+            </div>
+        );
+    };
+
     const statusText = (order?.order_info?.status || order?.Status || '').toLowerCase();
     const canReview = ['completed', 'delivered'].includes(statusText);
 
@@ -204,52 +332,6 @@ const MyOrderDetail = () => {
             case 'cancelled': return 'Đơn hàng đã bị hủy';
             default: return `Chưa có thông tin`;
         }
-    };
-
-    // Hiển thị ảnh sản phẩm
-    const renderProductImage = (item) => {
-        // Ưu tiên ảnh biến thể, sau đó đến ảnh sản phẩm gốc
-        const imagePath =
-            item.productVariant?.Image ||
-            item.Image ||
-            item.productVariant?.product?.Image ||
-            "";
-
-        if (!imagePath) {
-            return (
-                <div style={{
-                    width: 80,
-                    height: 80,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: '#f0f0f0',
-                    color: '#999'
-                }}>
-                    Không có ảnh
-                </div>
-            );
-        }
-        return <Image width={80} src={`http://localhost:8000/storage/${imagePath}`} />;
-    };
-
-    // Hiển thị thuộc tính sản phẩm
-    const renderAttributes = (item) => {
-        // Nếu có mảng attributes từ API
-        const attributes = item.productVariant?.attributes || [];
-        if (!attributes.length) return null;
-
-        return (
-            <div className="attribute-tags" style={{ marginBottom: 5 }}>
-                {attributes.map((attr, idx) => (
-                    <span key={idx} className="attribute-tag">
-                        {attr.attribute?.name ? `${attr.attribute.name}: ` : ""}
-                        {attr.value}
-                        {idx < attributes.length - 1 && <span> | </span>}
-                    </span>
-                ))}
-            </div>
-        );
     };
 
     // Hiển thị loading khi đang tải dữ liệu
@@ -353,28 +435,23 @@ const MyOrderDetail = () => {
                             {renderProductImage(item)}
                             <div style={{ marginLeft: '20px', flex: 1 }}>
                                 <h4 style={{ marginBottom: '5px' }}>
-                                    {item.product_name || item.productVariant?.product?.Name || 'Chưa có tên sản phẩm'}
+                                    {item?.product_name || item?.productVariant?.product?.Name || 'Chưa có tên sản phẩm'}
                                 </h4>
+                                
+                                {/* Hiển thị thuộc tính sản phẩm */}
                                 {renderAttributes(item)}
-                                <div style={{ color: '#666', marginBottom: '5px' }}>
-                                    Phân loại: {item.variant_name || item.productVariant?.Name || 'Chưa có thông tin'}
-                                    {item.color && ` - Màu: ${item.color}`}
-                                    {item.size && ` - Size: ${item.size}`}
-                                </div>
-                                <div>Số lượng: {item.quantity || item.Quantity || '0'}</div>
+                                
+                                <div>Số lượng: {item?.quantity || item?.Quantity || '0'}</div>
                                 <div>
-                                    Đơn giá: {item.unit_price || item.Unit_price
+                                    Đơn giá: {item?.unit_price || item?.Unit_price
                                         ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.unit_price || item.Unit_price)
                                         : 'Chưa có thông tin'}
                                 </div>
                                 <div style={{ fontWeight: 'bold', marginTop: '5px' }}>
-                                    Thành tiền: {item.subtotal || item.Subtotal
+                                    Thành tiền: {item?.subtotal || item?.Subtotal
                                         ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.subtotal || item.Subtotal)
                                         : 'Chưa có thông tin'}
                                 </div>
-
-                                {/* Hiển thị thuộc tính sản phẩm */}
-                                {renderAttributes(item)}
 
                                 {canReview && (
                                     <Button type="link" style={{ padding: 0, marginTop: '10px' }} onClick={() => handleReviewClick(item)}>
@@ -424,14 +501,14 @@ const MyOrderDetail = () => {
                     <Form.Item
                         name="rating"
                         label="Đánh giá"
-                        rules={[{ required: true, message: 'Vui lòng chọn số sao đánh giá' }]}
+                        rules={[{ required: 'Vui lòng chọn số sao đánh giá' }]}
                     >
                         <Rate />
                     </Form.Item>
                     <Form.Item
                         name="comment"
                         label="Nhận xét"
-                        rules={[{ required: true, message: 'Vui lòng nhập nhận xét' }]}
+                        rules={[{ required: 'Vui lòng nhập nhận xét' }]}
                     >
                         <Input.TextArea rows={4} placeholder="Hãy chia sẻ cảm nhận của bạn về sản phẩm..." />
                     </Form.Item>
