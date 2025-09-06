@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\UserController; // Import UserController
 use App\Http\Controllers\Api\VoucherController; // Import VoucherController
 use App\Http\Controllers\Api\PaymentGatewayController; // Import PaymentGatewayController
 use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\Api\FavoriteProductController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\VariantAttributeController;
@@ -145,7 +146,8 @@ Route::apiResource('order-details', OrderDetailController::class); // Tuyến đ
 Route::apiResource('users', UserController::class); // Tuyến đường RESTful cho người dùng
 Route::apiResource('vouchers', VoucherController::class); // Tuyến đường RESTful cho voucher
 Route::apiResource('payment-gateways', PaymentGatewayController::class); // Tuyến đường RESTful cho cổng thanh toán
-Route::apiResource('reviews', ReviewController::class); // Tuyến đường RESTful cho đánh giá
+Route::apiResource('reviews', ReviewController::class); // Tuyến đường RESTful cho đánh giá (variant-based)
+Route::apiResource('product-reviews', ProductReviewController::class); // Tuyến đường RESTful cho đánh giá sản phẩm
 Route::apiResource('variant-attributes', VariantAttributeController::class); // Tuyến đường RESTful cho thuộc tính biến thể
 
 // Cart routes (custom, không dùng apiResource)

@@ -9,7 +9,7 @@ class Review extends Model
 {
     use HasFactory; // Kích hoạt tính năng factory nếu cần
 
-    protected $table = 'review'; // Tên bảng trong database của bạn là 'review' (viết thường)
+    protected $table = 'review';
     protected $primaryKey = 'ReviewID'; // Khóa chính của bảng bạn là 'ReviewID' (viết hoa các chữ cái đầu)
 
     // Các cột có thể được gán giá trị hàng loạt (mass assignable)

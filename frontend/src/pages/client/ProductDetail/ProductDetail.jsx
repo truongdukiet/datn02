@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { formatPrice } from "../../../utils/formatPrice";
 import ProductItem from "../../../components/ProductItem/ProductItem";
+import ProductReviews from "../../../components/ProductReviews/ProductReviews";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import apiClient from "../../../api/api";
 import { message } from "antd";
@@ -14,7 +15,7 @@ const ProductDetail = () => {
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [selectedAttributes, setSelectedAttributes] = useState({});
   const [availableAttributeValues, setAvailableAttributeValues] = useState({});
-  const [newReview, setNewReview] = useState({ rating: 0, comment: "" });
+
   const [mainImage, setMainImage] = useState(null);
   const [thumbnailImages, setThumbnailImages] = useState([]);
   const [variantAttributes, setVariantAttributes] = useState({});
@@ -100,6 +101,8 @@ const ProductDetail = () => {
     },
   });
 
+
+
   // ✅ Mutation thêm vào giỏ hàng
   const addToCartMutation = useMutation({
     mutationFn: async ({ variantId, quantity }) => {
@@ -149,26 +152,7 @@ const ProductDetail = () => {
     },
   });
 
-  // ✅ Mutation gửi đánh giá
-  const submitReviewMutation = useMutation({
-    mutationFn: async (reviewData) => {
-      const response = await apiClient.post("/api/reviews", {
-        product_id: id,
-        ...reviewData,
-      });
-      return response.data;
-    },
-    onSuccess: (data) => {
-      message.success("Đã gửi đánh giá thành công!");
-      setNewReview({ rating: 0, comment: "" });
-      queryClient.invalidateQueries(["product", id]);
-    },
-    onError: (error) => {
-      message.error(
-        error.response?.data?.message || "Đã xảy ra lỗi khi gửi đánh giá."
-      );
-    },
-  });
+
 
   // Lấy thuộc tính từng variant giống admin
   useEffect(() => {
@@ -361,23 +345,7 @@ const ProductDetail = () => {
     }
   };
 
-  // ✅ Xử lý gửi đánh giá
-  const handleSubmitReview = () => {
-    if (!newReview.rating || !newReview.comment.trim()) {
-      message.error("Vui lòng chọn số sao và nhập nội dung đánh giá!");
-      return;
-    }
 
-    submitReviewMutation.mutate({
-      rating: newReview.rating,
-      comment: newReview.comment,
-    });
-  };
-
-  // ✅ Xử lý click thumbnail
-  const handleClickThumbnail = (clickedImage) => {
-    setMainImage(clickedImage);
-  };
 
   if (isLoading) {
     return (
@@ -794,6 +762,7 @@ const ProductDetail = () => {
           </div>
         </div>
 
+        <ProductReviews productId={id} />
 
         {/* Sản phẩm liên quan */}
         <section className="tw-mb-16">
