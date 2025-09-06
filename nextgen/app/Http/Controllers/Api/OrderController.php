@@ -293,62 +293,73 @@ class OrderController extends Controller
     }
 
        public function getOrderDetail($orderId)
-    {
-        try {
-            // Lấy đơn hàng với các thông tin cơ bản
-            $order = Order::with(['user', 'voucher', 'paymentGateway'])
-                        ->find($orderId);
+        {
+            try {
+                // Lấy đơn hàng với các thông tin cơ bản
+                $order = Order::with(['user', 'voucher', 'paymentGateway'])
+                            ->find($orderId);
 
-            if (!$order) {
+                if (!$order) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Order not found'
+                    ], 404);
+                }
+
+                // Lấy chi tiết đơn hàng
+                $orderDetails = OrderDetail::where('OrderID', $orderId)
+                                        ->with(['productVariant.product'])
+                                        ->get();
+
+                // Format dữ liệu trả về
+                $response = [
+                    'order_info' => [
+                        'id' => $order->OrderID,
+                        'status' => $order->Status,
+                        'total_amount' => $order->Total_amount,
+                        'receiver_name' => $order->Receiver_name,
+                        'receiver_phone' => $order->Receiver_phone,
+                        'shipping_address' => $order->Shipping_address,
+                        'created_at' => $order->created_at,
+                        'payment_method' => $order->paymentGateway->Name ?? null,
+                        'voucher_code' => $order->voucher->Code ?? null
+                    ],
+                    'order_details' => $orderDetails->map(function($detail) {
+                        return [
+                            'OrderDetailID'    => $detail->OrderDetailID,
+                            'ProductVariantID' => $detail->ProductVariantID,
+                            'product_name'     => $detail->productVariant->product->Name ?? null,
+                            'variant_name'     => $detail->productVariant->Name ?? null,
+                            'quantity'         => $detail->Quantity,
+                            'Unit_price'       => $detail->Unit_price,
+                            'Subtotal'         => $detail->Subtotal,
+                            'Image'            => $detail->productVariant->product->Image ?? null,
+                            // Thêm thông tin product_variant
+                            'product_variant' => [
+                                'Image'            => $detail->productVariant->Image ?? null,
+                                'Price'            => $detail->productVariant->Price ?? null,
+                                'ProductID'        => $detail->productVariant->product->ProductID ?? null,
+                                'ProductVariantID' => $detail->productVariant->ProductVariantID ?? null,
+                                'Sku'              => $detail->productVariant->Sku ?? null,
+                                'Stock'            => $detail->productVariant->Stock ?? null,
+                                'Update_at'        => $detail->productVariant->updated_at,
+                                'created_at'       => $detail->productVariant->created_at,
+                            ]
+                        ];
+                    })
+                ];
+
+                return response()->json([
+                    'success' => true,
+                    'data' => $response
+                ]);
+
+            } catch (\Exception $e) {
+                \Log::error('Order detail error: ' . $e->getMessage());
                 return response()->json([
                     'success' => false,
-                    'message' => 'Order not found'
-                ], 404);
+                    'message' => 'Failed to get order details'
+                ], 500);
             }
-
-            // Lấy chi tiết đơn hàng theo cách tương tự viewCart
-            $orderDetails = OrderDetail::where('OrderID', $orderId)
-                                    ->with(['productVariant.product'])
-                                    ->get();
-
-            // Format dữ liệu trả về
-            $response = [
-                'order_info' => [
-                    'id' => $order->OrderID,
-                    'status' => $order->Status,
-                    'total_amount' => $order->Total_amount,
-                    'receiver_name' => $order->Receiver_name,
-                    'receiver_phone' => $order->Receiver_phone,
-                    'shipping_address' => $order->Shipping_address,
-                    'created_at' => $order->created_at,
-                    'payment_method' => $order->paymentGateway->Name ?? null,
-                    'voucher_code' => $order->voucher->Code ?? null
-                ],
-              'order_details' => $orderDetails->map(function($detail) {
-                return [
-                    'OrderDetailID'    => $detail->OrderDetailID,
-                    'ProductVariantID' => $detail->ProductVariantID,
-                    'product_name'     => $detail->productVariant->product->Name ?? null,
-                    'variant_name'     => $detail->productVariant->Name ?? null,
-                    'quantity'         => $detail->Quantity,
-                    'Unit_price'       => $detail->Unit_price,
-                    'Subtotal'         => $detail->Subtotal,
-                    'Image'            => $detail->productVariant->product->Image ?? null
-                ];
-            })
-            ];
-
-            return response()->json([
-                'success' => true,
-                'data' => $response
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('Order detail error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to get order details'
-            ], 500);
         }
-    }
 }

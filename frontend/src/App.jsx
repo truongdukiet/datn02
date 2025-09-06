@@ -42,6 +42,7 @@ import EditCategory from "./pages/admin/categories/EditCategory";
 import AddCategory from "./pages/admin/categories/AddCategory"; // ✅ Import AddCategory
 import AdminProductVariant from "./pages/admin/ProductVariantList"; // ✅ Import ProductVariantList
 import AdminReview from "./pages/admin/reviews/AdminReview"; // ✅ Import quản lý đánh giá
+import AdminOrderDetail from "./pages/admin/AdminOrderDetail"; // ✅ Import quản lý đánh giá
 
 
 
@@ -221,6 +222,14 @@ const App = () => {
                   </ProtectedAdminRoute>
               ),
             },
+            {
+              path: "orders/:orderId",
+              element: (
+                <ProtectedAdminRoute>
+                  <AdminOrderDetail />
+                </ProtectedAdminRoute>
+              ),
+            }
           ],
         },
       ],

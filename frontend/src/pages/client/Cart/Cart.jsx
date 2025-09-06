@@ -211,6 +211,8 @@ const Cart = () => {
                 <div className="tw-mt-4 tw-flex tw-flex-col tw-gap-y-4">
                   {cartItems.map(item => {
                     // Lấy đúng ảnh biến thể
+                    console.log(item);
+
                     const variantImage = item.product_variant?.Image
                       ? `http://localhost:8000/storage/${item.product_variant.Image}`
                       : (item.product_variant?.product?.Image

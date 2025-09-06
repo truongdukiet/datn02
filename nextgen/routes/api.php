@@ -185,6 +185,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard-stats', [AdminDashboardController::class, 'getStats']); // Lấy số liệu thống kê dashboard
         Route::get('/dashboard/recent-activities', [AdminDashboardController::class, 'getRecentActivities']); // Lấy dữ liệu hoạt động gần đây
         Route::get('/dashboard/category-stats', [AdminDashboardController::class, 'getCategoryStats']); // Lấy dữ liệu thống kê sản phẩm theo loại
-
+        Route::get('/orders/{orderId}', [OrderController::class, 'getOrderDetail']); // Chi tiết đơn hàng (Admin)
     });
 });

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { updateOrder, getOrders } from '../../api/api';
+import { useNavigate } from 'react-router-dom';
 
 const AdminOrder = () => {
     const [orders, setOrders] = useState([]);
@@ -10,6 +11,7 @@ const AdminOrder = () => {
     const [status, setStatus] = useState('pending');
     const [filterStatus, setFilterStatus] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
+    const navigate = useNavigate();
 
     const statusPriority = {
         'pending': 1,
@@ -314,11 +316,17 @@ const AdminOrder = () => {
                                     {(item.Status !== 'completed' && item.Status !== 'cancelled') && (
                                         <button
                                             onClick={() => openEditModal(item)}
-                                            style={{ background: '#28a745', color: '#fff', padding: '5px 10px' }}
+                                            style={{ background: '#28a745', color: '#fff', padding: '5px 10px', marginRight: 8 }}
                                         >
                                             Cập nhật
                                         </button>
                                     )}
+                                    <button
+                                        onClick={() => navigate(`/admin/orders/${item.OrderID}`)}
+                                        style={{ background: '#1890ff', color: '#fff', padding: '5px 10px' }}
+                                    >
+                                        Xem chi tiết
+                                    </button>
                                 </td>
                             </tr>
                         ))

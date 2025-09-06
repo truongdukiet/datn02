@@ -221,24 +221,11 @@ const MyOrderDetail = () => {
         console.log('Item data:', item);
         
         // Tìm ảnh với xử lý lỗi cho các trường hợp undefined
-        let imagePath = '';
-        
-        // Kiểm tra tất cả các trường có thể chứa ảnh
-        if (item?.product_variant?.Image) {
-            imagePath = item.product_variant.Image;
-        } 
-        else if (item?.Image) {
-            imagePath = item.Image;
-        }
-        else if (item?.productVariant?.Image) {
-            imagePath = item.productVariant.Image;
-        }
-        else if (item?.product_variant?.product?.Image) {
-            imagePath = item.product_variant.product.Image;
-        }
-        else if (item?.productVariant?.product?.Image) {
-            imagePath = item.productVariant.product.Image;
-        }
+        let imagePath = item?.Image;
+        console.log(item?.Image);
+        console.log(item?.variants?.Image);
+        console.log(item?.productVariant?.product?.Image);
+
 
         // Nếu không tìm thấy ảnh
         if (!imagePath) {

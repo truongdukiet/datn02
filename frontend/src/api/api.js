@@ -172,5 +172,10 @@ export const updateUserProfile = (userId, data, token) => {
   });
 };
 
+export const getOrderDetail = (orderId) => {
+    return axios.get(`/api/orders/${orderId}`);
+};
+
+
 
 export default apiClient;

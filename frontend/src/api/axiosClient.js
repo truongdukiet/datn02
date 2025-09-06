@@ -80,6 +80,15 @@ export const deleteReview = (id) => axiosClient.delete(`/reviews/${id}`);
 // Thêm các API mới cho quản lý đánh giá
 export const approveReview = (reviewId) => axiosClient.post(`/admin/reviews/${reviewId}/approve`);
 export const hideReview = (reviewId) => axiosClient.post(`/admin/reviews/${reviewId}/hide`);
-
+// Thêm hàm này vào axiosClient.js
+export const updateOrderDetail = async (orderId, data) => {
+  try {
+    const response = await axios.put(`$api/orders/${orderId}`, data);
+    return response;
+  } catch (error) {
+    console.error('Error updating order:', error);
+    throw error;
+  }
+};
 // ✅ Giữ nguyên export default
 export default axiosClient;
