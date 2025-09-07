@@ -19,15 +19,14 @@ const ProductDetail = () => {
   const [thumbnailImages, setThumbnailImages] = useState([]);
   const [variantAttributes, setVariantAttributes] = useState({});
   const [inputQuantity, setInputQuantity] = useState("1");
-  const [cartQuantity, setCartQuantity] = useState(0); // Số lượng đã có trong giỏ
-  const [isCheckingStock, setIsCheckingStock] = useState(false); // Trạng thái kiểm tra tồn kho
+  const [cartQuantity, setCartQuantity] = useState(0);
+  const [isCheckingStock, setIsCheckingStock] = useState(false);
 
   const noMatchingVariantRef = useRef(false);
   const navigate = useNavigate();
   const { id } = useParams();
   const queryClient = useQueryClient();
 
-  // ✅ Lấy thông tin user từ localStorage
   const getUserInfo = () => {
     try {
       const userStr = localStorage.getItem("user");
@@ -41,51 +40,63 @@ const ProductDetail = () => {
   const userId = user?.UserID;
   const token = localStorage.getItem("token");
 
-  // ✅ Query sản phẩm chi tiết
-  const { data: product, isLoading } = useQuery({
-    queryKey: ["product", id],
-    queryFn: async () => {
+const { data: cart } = useQuery({
+  queryKey: ["cart"],
+  queryFn: async () => {
+    try {
+      const response = await apiClient.get("/api/carts", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      // Lấy mảng cart_items từ response
+      return response.data.cart_items || [];
+    } catch (error) {
+      console.error("Error fetching cart:", error);
+      return [];
+    }
+  },
+  enabled: !!token,
+});
+
+// Sửa các query khác để đảm bảo không trả về undefined
+const { data: product, isLoading } = useQuery({
+  queryKey: ["product", id],
+  queryFn: async () => {
+    try {
       const response = await apiClient.get(`/api/products/detail/${id}`);
-      return response.data.data;
-    },
-    onSuccess: (data) => {
-      if (data?.variants && data.variants.length > 0) {
-        const initialAttributes = {};
-        if (data.variants[0].attributes) {
-          data.variants[0].attributes.forEach((attr) => {
-            if (attr?.attribute) {
-              initialAttributes[attr.attribute.AttributeID] = attr.value;
-            }
-          });
-        }
-        setSelectedVariant(data.variants[0]);
-        setSelectedAttributes(initialAttributes);
-        updateAvailableAttributeValues(initialAttributes, data.variants);
+      return response.data.data || {}; // Đảm bảo luôn trả về object
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      return {}; // Trả về object rỗng nếu có lỗi
+    }
+  },
+  onSuccess: (data) => {
+    if (data?.variants && data.variants.length > 0) {
+      // ... (giữ nguyên logic cũ)
+    } else if (data) {
+      // Xử lý khi có data nhưng không có variants
+      setSelectedVariant(null);
+      setMainImage({ image: data.Image, id: 0 });
+      setThumbnailImages([]);
+    }
+  },
+});
 
-        // Ảnh chính là ảnh của biến thể đầu tiên
-        setMainImage({
-          image: data.variants[0].Image,
-          id: data.variants[0].ProductVariantID,
-        });
+const { data: relatedProducts, isLoading: isLoadingRelated } = useQuery({
+  queryKey: ["relatedProducts"],
+  queryFn: async () => {
+    try {
+      const response = await apiClient.get("/api/products");
+      return response.data.data || []; // Đảm bảo luôn trả về mảng
+    } catch (error) {
+      console.error("Error fetching related products:", error);
+      return []; // Trả về mảng rỗng nếu có lỗi
+    }
+  },
+});
 
-        // Ảnh nhỏ là ảnh của các biến thể còn lại
-        const thumbnails = data.variants
-          .slice(1)
-          .map((variant) => ({
-            image: variant.Image,
-            id: variant.ProductVariantID,
-          }))
-          .filter((img) => !!img.image); // chỉ lấy ảnh có tồn tại
-        setThumbnailImages(thumbnails);
-      } else {
-        setSelectedVariant(null);
-        setMainImage({ image: data.Image, id: 0 }); // fallback ảnh sản phẩm chung
-        setThumbnailImages([]);
-      }
-    },
-  });
 
-  // ✅ Query danh sách yêu thích
   const { data: favorites = [] } = useQuery({
     queryKey: ["favorites", userId],
     queryFn: () => favoriteApi.getFavorites(userId),
@@ -93,17 +104,7 @@ const ProductDetail = () => {
     select: (data) => data?.data || [],
   });
 
-  // ✅ Query giỏ hàng
-  const { data: cart } = useQuery({
-    queryKey: ["cart"],
-    queryFn: async () => {
-      const response = await apiClient.get("/api/carts");
-      return response.data.data;
-    },
-    enabled: !!token,
-  });
 
-  // ✅ Kiểm tra xem sản phẩm có trong danh sách yêu thích không
   const isFavorite =
     selectedVariant &&
     Array.isArray(favorites) &&
@@ -113,19 +114,10 @@ const ProductDetail = () => {
         fav?.productVariant?.ProductVariantID === selectedVariant?.ProductVariantID
     );
 
-  // ✅ Query sản phẩm liên quan
-  const { data: relatedProducts, isLoading: isLoadingRelated } = useQuery({
-    queryKey: ["relatedProducts"],
-    queryFn: async () => {
-      const response = await apiClient.get("/api/products");
-      return response.data.data;
-    },
-  });
 
-  // ✅ Mutation thêm vào giỏ hàng với kiểm tra tồn kho
+
   const addToCartMutation = useMutation({
     mutationFn: async ({ variantId, quantity }) => {
-      // Kiểm tra tồn kho trước khi thêm
       setIsCheckingStock(true);
       try {
         const stockCheckResponse = await apiClient.get(`/api/check-stock/${variantId}?quantity=${quantity}`);
@@ -134,7 +126,6 @@ const ProductDetail = () => {
           throw new Error(stockCheckResponse.data.message || "Không đủ tồn kho");
         }
         
-        // Nếu tồn kho đủ, thêm vào giỏ hàng
         const response = await apiClient.post("/api/carts", {
           ProductVariantID: variantId,
           Quantity: quantity,
@@ -148,7 +139,7 @@ const ProductDetail = () => {
       message.success(data.message || "Đã thêm sản phẩm vào giỏ hàng!");
       setQuantity(1);
       setInputQuantity("1");
-      queryClient.invalidateQueries(["cart"]); // Làm mới giỏ hàng
+      queryClient.invalidateQueries(["cart"]);
     },
     onError: (error) => {
       message.error(
@@ -157,7 +148,6 @@ const ProductDetail = () => {
     },
   });
 
-  // ✅ Mutation thêm yêu thích
   const addToFavoritesMutation = useMutation({
     mutationFn: favoriteApi.addToFavorites,
     onSuccess: () => {
@@ -172,7 +162,6 @@ const ProductDetail = () => {
     },
   });
 
-  // ✅ Mutation xóa yêu thích
   const removeFromFavoritesMutation = useMutation({
     mutationFn: favoriteApi.removeFromFavorites,
     onSuccess: () => {
@@ -187,7 +176,6 @@ const ProductDetail = () => {
     },
   });
 
-  // ✅ Mutation gửi đánh giá
   const submitReviewMutation = useMutation({
     mutationFn: async (reviewData) => {
       const response = await apiClient.post("/api/reviews", {
@@ -208,7 +196,6 @@ const ProductDetail = () => {
     },
   });
 
-  // Lấy thuộc tính từng variant giống admin
   useEffect(() => {
     const fetchAllVariantAttributes = async (variants = []) => {
       const attributesMap = {};
@@ -218,7 +205,6 @@ const ProductDetail = () => {
             const res = await axios.get(
               `http://localhost:8000/api/variant-attributes?variant_id=${variant.ProductVariantID}`
             );
-            // Lọc đúng variant
             const filtered = (res.data.data || []).filter(
               (attr) => attr.ProductVariantID === variant.ProductVariantID
             );
@@ -236,27 +222,25 @@ const ProductDetail = () => {
     }
   }, [product]);
 
-  // ✅ Cập nhật số lượng đã có trong giỏ hàng khi selectedVariant thay đổi
-  useEffect(() => {
-    if (selectedVariant && cart) {
-      const cartItem = cart.find(
-        (item) => item.ProductVariantID === selectedVariant.ProductVariantID
-      );
-      setCartQuantity(cartItem ? cartItem.Quantity : 0);
-    } else {
-      setCartQuantity(0);
-    }
-  }, [selectedVariant, cart]);
+ useEffect(() => {
+  if (selectedVariant && cart) {
+    const cartItem = cart.find(
+      (item) => item.ProductVariantID == selectedVariant.ProductVariantID
+    );
+    console.log("Cart item found:", cartItem);
+    setCartQuantity(cartItem ? cartItem.Quantity : 0);
+  } else {
+    setCartQuantity(0);
+  }
+}, [selectedVariant, cart]);
 
-  // ✅ Tính số lượng tối đa có thể thêm
-// ✅ Tính số lượng tối đa có thể thêm
   const getMaxQuantity = () => {
     if (!selectedVariant) return 0;
     const max = selectedVariant.Stock - cartQuantity;
-    return Math.max(0, max); // Đảm bảo không trả về số âm
+    console.log("Max quantity calculatd:", max);
+    return Math.max(0, max);
   };
 
-  // ✅ Cập nhật giá trị thuộc tính khả dụng
   const updateAvailableAttributeValues = (currentAttributes, variants) => {
     if (!variants) return;
     const available = {};
@@ -294,7 +278,6 @@ const ProductDetail = () => {
     setAvailableAttributeValues(available);
   };
 
-  // ✅ Xử lý chọn thuộc tính
   const handleAttributeSelect = (attributeId, value) => {
     const updatedAttributes = { ...selectedAttributes, [attributeId]: value };
     setSelectedAttributes(updatedAttributes);
@@ -313,13 +296,11 @@ const ProductDetail = () => {
         setSelectedVariant(matchingVariant);
         noMatchingVariantRef.current = false;
 
-        // Ảnh chính là ảnh của biến thể được chọn
         setMainImage({
           image: matchingVariant.Image,
           id: matchingVariant.ProductVariantID,
         });
 
-        // Ảnh nhỏ là ảnh của các biến thể còn lại (trừ biến thể đang chọn)
         const thumbnails = product.variants
           .filter((v) => v.ProductVariantID !== matchingVariant.ProductVariantID)
           .map((variant) => ({
@@ -336,13 +317,14 @@ const ProductDetail = () => {
     }
   };
 
-  // ✅ Xử lý thay đổi số lượng từ input
-  // ✅ Xử lý thay đổi số lượng từ input
 const handleQuantityInputChange = (e) => {
   const value = e.target.value;
   
   // Chỉ cho phép nhập số
   if (!/^\d*$/.test(value)) return;
+  
+  // Giới hạn độ dài để tránh nhập số quá lớn
+  if (value.length > 2) return; // Giả sử số lượng tối đa là 2 chữ số (99)
   
   setInputQuantity(value);
   
@@ -351,10 +333,11 @@ const handleQuantityInputChange = (e) => {
     const numValue = parseInt(value, 10);
     const maxQuantity = getMaxQuantity();
     
-    // Kiểm tra nếu số lượng vượt quá tồn kho
+    // Ép kiểu: không cho phép nhập vượt quá maxQuantity
     if (numValue > maxQuantity) {
       setQuantity(maxQuantity);
       setInputQuantity(maxQuantity.toString());
+      message.info(`Bạn chỉ có thể thêm tối đa ${maxQuantity} sản phẩm`);
     } else if (numValue < 1) {
       setQuantity(1);
       setInputQuantity("1");
@@ -364,73 +347,66 @@ const handleQuantityInputChange = (e) => {
   }
 };
 
-  // ✅ Xử lý thêm vào giỏ hàng
-  // ✅ Xử lý thêm vào giỏ hàng
-const handleAddToCart = async () => {
-  if (!token) {
-    message.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
-    navigate("/login");
-    return;
-  }
-
-  let variantToAdd = selectedVariant;
-  if (!variantToAdd && product?.variants?.length > 0) {
-    variantToAdd = product.variants[0];
-  }
-
-  if (!variantToAdd) {
-    message.error("Sản phẩm này hiện không có sẵn!");
-    return;
-  }
-
-  // Kiểm tra tồn kho
-  if (variantToAdd.Stock <= 0) {
-    message.error("Sản phẩm này đã hết hàng!");
-    return;
-  }
-
-  const maxQuantity = getMaxQuantity();
-  if (quantity > maxQuantity) {
-    message.error(`Chỉ có thể thêm tối đa ${maxQuantity} sản phẩm vào giỏ hàng!`);
-    return;
-  }
-
-  // Nếu không thể thêm sản phẩm nào
-  if (maxQuantity <= 0) {
-    message.error("Không thể thêm sản phẩm vào giỏ hàng. Số lượng trong giỏ đã đạt tối đa theo tồn kho.");
-    return;
-  }
-
-  try {
-    await addToCartMutation.mutateAsync({
-      variantId: variantToAdd.ProductVariantID,
-      quantity: quantity,
-    });
-  } catch (error) {
-    if (error.response?.status === 422) {
-      const maxAdditional = error.response.data.max_additional;
-      message.error(error.response.data.message);
-      
-      // Tự động điều chỉnh số lượng về mức tối đa có thể thêm
-      if (maxAdditional > 0) {
-        setQuantity(maxAdditional);
-        setInputQuantity(maxAdditional.toString());
-      } else {
-        // Nếu không thể thêm bất kỳ sản phẩm nào
-        setQuantity(0);
-        setInputQuantity("0");
-      }
-    } else {
-      message.error(
-        error.response?.data?.message || 
-        error.message || 
-        "Có lỗi xảy ra khi thêm vào giỏ hàng."
-      );
+  const handleAddToCart = async () => {
+    if (!token) {
+      message.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
+      navigate("/login");
+      return;
     }
-  }
-};
 
-  // ✅ Xử lý toggle yêu thích
+    let variantToAdd = selectedVariant;
+    if (!variantToAdd && product?.variants?.length > 0) {
+      variantToAdd = product.variants[0];
+    }
+
+    if (!variantToAdd) {
+      message.error("Sản phẩm này hiện không có sẵn!");
+      return;
+    }
+
+    if (variantToAdd.Stock <= 0) {
+      message.error("Sản phẩm này đã hết hàng!");
+      return;
+    }
+
+    const maxQuantity = getMaxQuantity();
+    if (quantity > maxQuantity) {
+      message.error(`Chỉ có thể thêm tối đa ${maxQuantity} sản phẩm vào giỏ hàng!`);
+      return;
+    }
+
+    if (maxQuantity <= 0) {
+      message.error("Không thể thêm sản phẩm vào giỏ hàng. Số lượng trong giỏ đã đạt tối đa.");
+      return;
+    }
+
+    try {
+      await addToCartMutation.mutateAsync({
+        variantId: variantToAdd.ProductVariantID,
+        quantity: quantity,
+      });
+    } catch (error) {
+      if (error.response?.status === 422) {
+        const maxAdditional = error.response.data.max_additional;
+        message.error(error.response.data.message);
+        
+        if (maxAdditional > 0) {
+          setQuantity(maxAdditional);
+          setInputQuantity(maxAdditional.toString());
+        } else {
+          setQuantity(0);
+          setInputQuantity("0");
+        }
+      } else {
+        message.error(
+          error.response?.data?.message || 
+          error.message || 
+          "Có lỗi xảy ra khi thêm vào giỏ hàng."
+        );
+      }
+    }
+  };
+
   const handleToggleFavorite = () => {
     if (!token || !userId) {
       message.error("Vui lòng đăng nhập để sử dụng tính năng yêu thích!");
@@ -454,7 +430,6 @@ const handleAddToCart = async () => {
     }
   };
 
-  // ✅ Xử lý gửi đánh giá
   const handleSubmitReview = () => {
     if (!newReview.rating || !newReview.comment.trim()) {
       message.error("Vui lòng chọn số sao và nhập nội dung đánh giá!");
@@ -467,23 +442,20 @@ const handleAddToCart = async () => {
     });
   };
 
-  // ✅ Xử lý click thumbnail
   const handleClickThumbnail = (clickedImage) => {
     setMainImage(clickedImage);
   };
 
-  // ✅ Xử lý tăng/giảm số lượng
-  // ✅ Xử lý tăng/giảm số lượng
-const handleIncrement = () => {
-  const maxQuantity = getMaxQuantity();
-  if (quantity < maxQuantity) {
-    const newQuantity = quantity + 1;
-    setQuantity(newQuantity);
-    setInputQuantity(newQuantity.toString());
-  } else {
-    message.info(`Bạn chỉ có thể thêm tối đa ${maxQuantity} sản phẩm`);
-  }
-};
+  const handleIncrement = () => {
+    const maxQuantity = getMaxQuantity();
+    if (quantity < maxQuantity) {
+      const newQuantity = quantity + 1;
+      setQuantity(newQuantity);
+      setInputQuantity(newQuantity.toString());
+    } else {
+      message.info(`Bạn chỉ có thể thêm tối đa ${maxQuantity} sản phẩm`);
+    }
+  };
 
   const handleDecrement = () => {
     if (quantity > 1) {
@@ -628,14 +600,6 @@ const handleIncrement = () => {
                 <p className="tw-text-sm tw-text-gray-600">
                   Tồn kho: {selectedVariant.Stock} sản phẩm
                 </p>
-                {cartQuantity > 0 && (
-                  <p className="tw-text-sm tw-text-gray-600">
-                    Đã có {cartQuantity} sản phẩm trong giỏ hàng
-                  </p>
-                )}
-                <p className="tw-text-sm tw-text-gray-600">
-                  Có thể thêm tối đa: {maxQuantity} sản phẩm
-                </p>
                 {selectedVariant.Stock <= 0 && (
                   <p className="tw-text-red-500 tw-font-medium">Sản phẩm đã hết hàng</p>
                 )}
@@ -655,16 +619,13 @@ const handleIncrement = () => {
             {/* Thuộc tính sản phẩm */}
             {product?.variants && product.variants.length > 0 && (
               <div className="tw-mb-8">
-                {/** Lấy danh sách các thuộc tính theo thứ tự mong muốn, ví dụ: màu trước, size sau */}
                 {["color", "size"].map((attrKey, idx) => {
-                  // Tìm AttributeID theo tên thuộc tính (giả sử name là 'color' hoặc 'size')
                   const attrObj = Object.values(variantAttributes)
                     .flat()
                     .find((a) => a.name?.toLowerCase() === attrKey);
                   if (!attrObj) return null;
                   const attrId = attrObj.AttributeID;
 
-                  // Lọc variants phù hợp với các thuộc tính đã chọn trước đó
                   let filteredVariants = product.variants;
                   for (let i = 0; i < idx; i++) {
                     const prevAttrKey = ["color", "size"][i];
@@ -682,7 +643,6 @@ const handleIncrement = () => {
                     }
                   }
 
-                  // Lấy các giá trị duy nhất cho thuộc tính này từ các biến thể đã lọc
                   const uniqueValues = [
                     ...new Set(
                       filteredVariants
@@ -700,7 +660,6 @@ const handleIncrement = () => {
                       <div className="tw-flex tw-flex-wrap tw-gap-2">
                         {uniqueValues.map((value, idx2) => {
                           const isSelected = selectedAttributes[attrId] === value;
-                          // Chỉ cho phép chọn nếu giá trị này có trong filteredVariants
                           const isAvailable = true;
 
                           return (
@@ -741,7 +700,6 @@ const handleIncrement = () => {
                   product.variants
                     .flatMap(v => (variantAttributes[v.ProductVariantID] || []))
                     .filter(attr => {
-                      // Sửa lại lấy đúng tên thuộc tính
                       const attrName = attr.attribute?.name?.toLowerCase();
                       return attrName === "màu sắc";
                     })
@@ -830,7 +788,6 @@ const handleIncrement = () => {
                           });
                           setSelectedAttributes({ ...selectedAttributes, size: sizeObj.size });
                           
-                          // Reset số lượng nếu vượt quá tồn kho mới
                           const maxQty = Math.max(0, variant.Stock - cartQuantity);
                           if (quantity > maxQty) {
                             setQuantity(maxQty);
@@ -854,30 +811,44 @@ const handleIncrement = () => {
                   <button
                     className="tw-px-4 tw-py-2 tw-text-lg disabled:tw-opacity-50"
                     onClick={handleDecrement}
-                    disabled={quantity <= 1}
+                    disabled={quantity <= 1 || maxQuantity <= 0}
                   >
                     -
                   </button>
                   <input
-                    type="text"
-                    className="tw-px-4 tw-py-2 tw-w-12 tw-text-center tw-border-0 focus:tw-outline-none"
-                    value={inputQuantity}
-                    onChange={handleQuantityInputChange}
-                    onBlur={() => {
-                      if (inputQuantity === "" || parseInt(inputQuantity, 10) < 1) {
-                        setQuantity(1);
-                        setInputQuantity("1");
+                  type="text"
+                  className="tw-px-4 tw-py-2 tw-w-12 tw-text-center tw-border-0 focus:tw-outline-none"
+                  value={inputQuantity}
+                  onChange={handleQuantityInputChange}
+                  onBlur={() => {
+                    // Khi rời khỏi ô input, đảm bảo giá trị hợp lệ
+                    if (inputQuantity === "" || parseInt(inputQuantity, 10) < 1) {
+                      setQuantity(1);
+                      setInputQuantity("1");
+                    } else {
+                      const numValue = parseInt(inputQuantity, 10);
+                      const maxQuantity = getMaxQuantity();
+                      
+                      // Ép kiểu: không cho phép vượt quá maxQuantity
+                      if (numValue > maxQuantity) {
+                        setQuantity(maxQuantity);
+                        setInputQuantity(maxQuantity.toString());
+                        message.info(`Bạn chỉ có thể thêm tối đa ${maxQuantity} sản phẩm`);
                       }
-                    }}
-                  />
+                    }
+                  }}
+                  disabled={maxQuantity <= 0}
+                  max={maxQuantity} // Thuộc tính HTML max để hỗ trợ ép kiểu
+                />
                   <button
                     className="tw-px-4 tw-py-2 tw-text-lg disabled:tw-opacity-50"
                     onClick={handleIncrement}
-                    disabled={quantity >= maxQuantity}
+                    disabled={quantity >= maxQuantity || maxQuantity <= 0}
                   >
                     +
                   </button>
                 </div>
+                {/* Hiển thị thông tin số lượng tối đa có thể thêm */}
               </div>
 
               <button
@@ -886,8 +857,8 @@ const handleIncrement = () => {
                   addToCartMutation.isPending ||
                   isCheckingStock ||
                   (selectedVariant && selectedVariant.Stock <= 0) ||
-                  maxQuantity <= 0 ||  // Thêm điều kiện này
-                  quantity <= 0        // Và điều kiện này
+                  maxQuantity <= 0 ||
+                  quantity <= 0
                     ? "tw-bg-gray-400 tw-cursor-not-allowed"
                     : "tw-bg-[#99CCD0] hover:tw-bg-[#88bbbf] tw-text-white"
                 }`}
@@ -897,8 +868,8 @@ const handleIncrement = () => {
                   addToCartMutation.isPending ||
                   isCheckingStock ||
                   (selectedVariant && selectedVariant.Stock <= 0) ||
-                  maxQuantity <= 0 ||  // Thêm điều kiện này
-                  quantity <= 0        // Và điều kiện này
+                  maxQuantity <= 0 ||
+                  quantity <= 0
                 }
               >
                 {addToCartMutation.isPending || isCheckingStock ? (
@@ -909,7 +880,7 @@ const handleIncrement = () => {
                 ) : selectedVariant && selectedVariant.Stock <= 0 ? (
                   "Hết hàng"
                 ) : maxQuantity <= 0 ? (
-                  "Đã đạt giới hạn"
+                  "Không thể thêm"
                 ) : (
                   "Thêm vào giỏ hàng"
                 )}
