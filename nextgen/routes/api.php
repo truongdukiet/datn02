@@ -147,7 +147,7 @@ Route::apiResource('vouchers', VoucherController::class); // Tuyến đường R
 Route::apiResource('payment-gateways', PaymentGatewayController::class); // Tuyến đường RESTful cho cổng thanh toán
 Route::apiResource('reviews', ReviewController::class); // Tuyến đường RESTful cho đánh giá
 Route::apiResource('variant-attributes', VariantAttributeController::class); // Tuyến đường RESTful cho thuộc tính biến thể
-
+Route::get('/check-stock/{variantId}', [CartController::class, 'checkStock']);
 // Cart routes (custom, không dùng apiResource)
 Route::middleware('auth:sanctum')->prefix('carts')->group(function () { // Nhóm các tuyến đường liên quan đến giỏ hàng
     Route::get('/', [CartController::class, 'viewCart']); // Xem giỏ hàng

@@ -18,6 +18,9 @@ const ProductDetail = () => {
   const [mainImage, setMainImage] = useState(null);
   const [thumbnailImages, setThumbnailImages] = useState([]);
   const [variantAttributes, setVariantAttributes] = useState({});
+  const [inputQuantity, setInputQuantity] = useState("1");
+  const [cartQuantity, setCartQuantity] = useState(0); // Số lượng đã có trong giỏ
+  const [isCheckingStock, setIsCheckingStock] = useState(false); // Trạng thái kiểm tra tồn kho
 
   const noMatchingVariantRef = useRef(false);
   const navigate = useNavigate();
@@ -90,6 +93,16 @@ const ProductDetail = () => {
     select: (data) => data?.data || [],
   });
 
+  // ✅ Query giỏ hàng
+  const { data: cart } = useQuery({
+    queryKey: ["cart"],
+    queryFn: async () => {
+      const response = await apiClient.get("/api/carts");
+      return response.data.data;
+    },
+    enabled: !!token,
+  });
+
   // ✅ Kiểm tra xem sản phẩm có trong danh sách yêu thích không
   const isFavorite =
     selectedVariant &&
@@ -109,21 +122,37 @@ const ProductDetail = () => {
     },
   });
 
-  // ✅ Mutation thêm vào giỏ hàng
+  // ✅ Mutation thêm vào giỏ hàng với kiểm tra tồn kho
   const addToCartMutation = useMutation({
     mutationFn: async ({ variantId, quantity }) => {
-      const response = await apiClient.post("/api/carts", {
-        ProductVariantID: variantId,
-        Quantity: quantity,
-      });
-      return response.data;
+      // Kiểm tra tồn kho trước khi thêm
+      setIsCheckingStock(true);
+      try {
+        const stockCheckResponse = await apiClient.get(`/api/check-stock/${variantId}?quantity=${quantity}`);
+        
+        if (!stockCheckResponse.data.success) {
+          throw new Error(stockCheckResponse.data.message || "Không đủ tồn kho");
+        }
+        
+        // Nếu tồn kho đủ, thêm vào giỏ hàng
+        const response = await apiClient.post("/api/carts", {
+          ProductVariantID: variantId,
+          Quantity: quantity,
+        });
+        return response.data;
+      } finally {
+        setIsCheckingStock(false);
+      }
     },
     onSuccess: (data) => {
       message.success(data.message || "Đã thêm sản phẩm vào giỏ hàng!");
+      setQuantity(1);
+      setInputQuantity("1");
+      queryClient.invalidateQueries(["cart"]); // Làm mới giỏ hàng
     },
     onError: (error) => {
       message.error(
-        error.response?.data?.message || "Có lỗi xảy ra khi thêm vào giỏ hàng."
+        error.response?.data?.message || error.message || "Có lỗi xảy ra khi thêm vào giỏ hàng."
       );
     },
   });
@@ -207,6 +236,26 @@ const ProductDetail = () => {
     }
   }, [product]);
 
+  // ✅ Cập nhật số lượng đã có trong giỏ hàng khi selectedVariant thay đổi
+  useEffect(() => {
+    if (selectedVariant && cart) {
+      const cartItem = cart.find(
+        (item) => item.ProductVariantID === selectedVariant.ProductVariantID
+      );
+      setCartQuantity(cartItem ? cartItem.Quantity : 0);
+    } else {
+      setCartQuantity(0);
+    }
+  }, [selectedVariant, cart]);
+
+  // ✅ Tính số lượng tối đa có thể thêm
+// ✅ Tính số lượng tối đa có thể thêm
+  const getMaxQuantity = () => {
+    if (!selectedVariant) return 0;
+    const max = selectedVariant.Stock - cartQuantity;
+    return Math.max(0, max); // Đảm bảo không trả về số âm
+  };
+
   // ✅ Cập nhật giá trị thuộc tính khả dụng
   const updateAvailableAttributeValues = (currentAttributes, variants) => {
     if (!variants) return;
@@ -287,29 +336,99 @@ const ProductDetail = () => {
     }
   };
 
+  // ✅ Xử lý thay đổi số lượng từ input
+  // ✅ Xử lý thay đổi số lượng từ input
+const handleQuantityInputChange = (e) => {
+  const value = e.target.value;
+  
+  // Chỉ cho phép nhập số
+  if (!/^\d*$/.test(value)) return;
+  
+  setInputQuantity(value);
+  
+  // Nếu giá trị không rỗng, cập nhật quantity
+  if (value !== "") {
+    const numValue = parseInt(value, 10);
+    const maxQuantity = getMaxQuantity();
+    
+    // Kiểm tra nếu số lượng vượt quá tồn kho
+    if (numValue > maxQuantity) {
+      setQuantity(maxQuantity);
+      setInputQuantity(maxQuantity.toString());
+    } else if (numValue < 1) {
+      setQuantity(1);
+      setInputQuantity("1");
+    } else {
+      setQuantity(numValue);
+    }
+  }
+};
+
   // ✅ Xử lý thêm vào giỏ hàng
-  const handleAddToCart = () => {
-    if (!token) {
-      message.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
-      navigate("/login");
-      return;
-    }
+  // ✅ Xử lý thêm vào giỏ hàng
+const handleAddToCart = async () => {
+  if (!token) {
+    message.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
+    navigate("/login");
+    return;
+  }
 
-    let variantToAdd = selectedVariant;
-    if (!variantToAdd && product?.variants?.length > 0) {
-      variantToAdd = product.variants[0];
-    }
+  let variantToAdd = selectedVariant;
+  if (!variantToAdd && product?.variants?.length > 0) {
+    variantToAdd = product.variants[0];
+  }
 
-    if (!variantToAdd) {
-      message.error("Sản phẩm này hiện không có sẵn!");
-      return;
-    }
+  if (!variantToAdd) {
+    message.error("Sản phẩm này hiện không có sẵn!");
+    return;
+  }
 
-    addToCartMutation.mutate({
+  // Kiểm tra tồn kho
+  if (variantToAdd.Stock <= 0) {
+    message.error("Sản phẩm này đã hết hàng!");
+    return;
+  }
+
+  const maxQuantity = getMaxQuantity();
+  if (quantity > maxQuantity) {
+    message.error(`Chỉ có thể thêm tối đa ${maxQuantity} sản phẩm vào giỏ hàng!`);
+    return;
+  }
+
+  // Nếu không thể thêm sản phẩm nào
+  if (maxQuantity <= 0) {
+    message.error("Không thể thêm sản phẩm vào giỏ hàng. Số lượng trong giỏ đã đạt tối đa theo tồn kho.");
+    return;
+  }
+
+  try {
+    await addToCartMutation.mutateAsync({
       variantId: variantToAdd.ProductVariantID,
       quantity: quantity,
     });
-  };
+  } catch (error) {
+    if (error.response?.status === 422) {
+      const maxAdditional = error.response.data.max_additional;
+      message.error(error.response.data.message);
+      
+      // Tự động điều chỉnh số lượng về mức tối đa có thể thêm
+      if (maxAdditional > 0) {
+        setQuantity(maxAdditional);
+        setInputQuantity(maxAdditional.toString());
+      } else {
+        // Nếu không thể thêm bất kỳ sản phẩm nào
+        setQuantity(0);
+        setInputQuantity("0");
+      }
+    } else {
+      message.error(
+        error.response?.data?.message || 
+        error.message || 
+        "Có lỗi xảy ra khi thêm vào giỏ hàng."
+      );
+    }
+  }
+};
 
   // ✅ Xử lý toggle yêu thích
   const handleToggleFavorite = () => {
@@ -353,6 +472,27 @@ const ProductDetail = () => {
     setMainImage(clickedImage);
   };
 
+  // ✅ Xử lý tăng/giảm số lượng
+  // ✅ Xử lý tăng/giảm số lượng
+const handleIncrement = () => {
+  const maxQuantity = getMaxQuantity();
+  if (quantity < maxQuantity) {
+    const newQuantity = quantity + 1;
+    setQuantity(newQuantity);
+    setInputQuantity(newQuantity.toString());
+  } else {
+    message.info(`Bạn chỉ có thể thêm tối đa ${maxQuantity} sản phẩm`);
+  }
+};
+
+  const handleDecrement = () => {
+    if (quantity > 1) {
+      const newQuantity = quantity - 1;
+      setQuantity(newQuantity);
+      setInputQuantity(newQuantity.toString());
+    }
+  };
+
   if (isLoading) {
     return (
       <>
@@ -379,6 +519,8 @@ const ProductDetail = () => {
       </>
     );
   }
+
+  const maxQuantity = getMaxQuantity();
 
   return (
     <>
@@ -480,6 +622,29 @@ const ProductDetail = () => {
               </p>
             </div>
 
+            {/* Hiển thị tồn kho */}
+            {selectedVariant && (
+              <div className="tw-mb-4">
+                <p className="tw-text-sm tw-text-gray-600">
+                  Tồn kho: {selectedVariant.Stock} sản phẩm
+                </p>
+                {cartQuantity > 0 && (
+                  <p className="tw-text-sm tw-text-gray-600">
+                    Đã có {cartQuantity} sản phẩm trong giỏ hàng
+                  </p>
+                )}
+                <p className="tw-text-sm tw-text-gray-600">
+                  Có thể thêm tối đa: {maxQuantity} sản phẩm
+                </p>
+                {selectedVariant.Stock <= 0 && (
+                  <p className="tw-text-red-500 tw-font-medium">Sản phẩm đã hết hàng</p>
+                )}
+                {maxQuantity <= 0 && selectedVariant.Stock > 0 && (
+                  <p className="tw-text-red-500 tw-font-medium">Đã đạt giới hạn số lượng trong giỏ hàng</p>
+                )}
+              </div>
+            )}
+
             <div className="tw-mb-8">
               <p className="tw-font-semibold tw-mb-2">Mô tả:</p>
               <p className="tw-text-gray-700">
@@ -568,51 +733,6 @@ const ProductDetail = () => {
               </div>
             )}
 
-            {/* Chọn biến thể */}
-            {/* <div className="tw-mb-8">
-              <p className="tw-font-semibold tw-mb-2">Chọn biến thể:</p>
-              <div className="tw-flex tw-flex-wrap tw-gap-3">
-                {product.variants.map((variant) => {
-                  const attrs = (variantAttributes[variant.ProductVariantID] || [])
-                    .map((attr) => `${attr.value}`)
-                    .join(" | ");
-                  const isSelected = selectedVariant?.ProductVariantID === variant.ProductVariantID;
-
-                  return (
-                    <button
-                      key={variant.ProductVariantID}
-                      type="button"
-                      className={
-                        "tw-px-4 tw-py-2 tw-rounded-lg tw-font-medium tw-transition tw-border " +
-                        (isSelected
-                          ? "tw-bg-[#009688] tw-text-white tw-border-[#009688] tw-shadow"
-                          : "tw-bg-white tw-text-[#009688] tw-border-gray-300 hover:tw-bg-[#e0f2f1] hover:tw-border-[#009688]")
-                      }
-                      style={{
-                        minWidth: 80,
-                        minHeight: 40,
-                        outline: isSelected ? "2px solid #009688" : "none",
-                      }}
-                      onClick={() => {
-                        setSelectedVariant(variant);
-                        setMainImage({
-                          image: variant.Image,
-                          id: variant.ProductVariantID,
-                        });
-                        const newAttrs = {};
-                        (variantAttributes[variant.ProductVariantID] || []).forEach(attr => {
-                          newAttrs[attr.AttributeID] = attr.value;
-                        });
-                        setSelectedAttributes(newAttrs);
-                      }}
-                    >
-                      {attrs}
-                    </button>
-                  );
-                })}
-              </div>
-            </div> */}
-
             {/* Chọn màu sắc */}
             <div className="tw-mb-5">
               <p className="tw-font-semibold tw-mb-2">Chọn màu sắc:</p>
@@ -623,7 +743,6 @@ const ProductDetail = () => {
                     .filter(attr => {
                       // Sửa lại lấy đúng tên thuộc tính
                       const attrName = attr.attribute?.name?.toLowerCase();
-                      console.log("Color attribute:", attr); // Debug
                       return attrName === "màu sắc";
                     })
                     .map(attr => attr.value)
@@ -681,7 +800,8 @@ const ProductDetail = () => {
                         ).map(attr => ({
                           size: attr.value,
                           variantId: variant.ProductVariantID,
-                          image: variant.Image
+                          image: variant.Image,
+                          stock: variant.Stock
                         }))
                       )
                   )].map((sizeObj, idx) => {
@@ -702,14 +822,20 @@ const ProductDetail = () => {
                           outline: isSelected ? "2px solid #009688" : "none",
                         }}
                         onClick={() => {
-                          setSelectedVariant(
-                            product.variants.find(v => v.ProductVariantID === sizeObj.variantId)
-                          );
+                          const variant = product.variants.find(v => v.ProductVariantID === sizeObj.variantId);
+                          setSelectedVariant(variant);
                           setMainImage({
                             image: sizeObj.image,
                             id: sizeObj.variantId,
                           });
                           setSelectedAttributes({ ...selectedAttributes, size: sizeObj.size });
+                          
+                          // Reset số lượng nếu vượt quá tồn kho mới
+                          const maxQty = Math.max(0, variant.Stock - cartQuantity);
+                          if (quantity > maxQty) {
+                            setQuantity(maxQty);
+                            setInputQuantity(maxQty.toString());
+                          }
                         }}
                       >
                         {sizeObj.size}
@@ -727,17 +853,27 @@ const ProductDetail = () => {
                 <div className="tw-flex tw-items-center tw-border tw-rounded-lg">
                   <button
                     className="tw-px-4 tw-py-2 tw-text-lg disabled:tw-opacity-50"
-                    onClick={() => setQuantity((q) => Math.max(q - 1, 1))}
+                    onClick={handleDecrement}
                     disabled={quantity <= 1}
                   >
                     -
                   </button>
-                  <span className="tw-px-4 tw-py-2 tw-w-12 tw-text-center">
-                    {quantity}
-                  </span>
+                  <input
+                    type="text"
+                    className="tw-px-4 tw-py-2 tw-w-12 tw-text-center tw-border-0 focus:tw-outline-none"
+                    value={inputQuantity}
+                    onChange={handleQuantityInputChange}
+                    onBlur={() => {
+                      if (inputQuantity === "" || parseInt(inputQuantity, 10) < 1) {
+                        setQuantity(1);
+                        setInputQuantity("1");
+                      }
+                    }}
+                  />
                   <button
-                    className="tw-px-4 tw-py-2 tw-text-lg"
-                    onClick={() => setQuantity((q) => q + 1)}
+                    className="tw-px-4 tw-py-2 tw-text-lg disabled:tw-opacity-50"
+                    onClick={handleIncrement}
+                    disabled={quantity >= maxQuantity}
                   >
                     +
                   </button>
@@ -747,21 +883,33 @@ const ProductDetail = () => {
               <button
                 className={`tw-px-8 tw-py-3 tw-rounded-lg tw-font-medium tw-transition ${
                   (!selectedVariant && !product?.variants?.length) ||
-                  addToCartMutation.isPending
+                  addToCartMutation.isPending ||
+                  isCheckingStock ||
+                  (selectedVariant && selectedVariant.Stock <= 0) ||
+                  maxQuantity <= 0 ||  // Thêm điều kiện này
+                  quantity <= 0        // Và điều kiện này
                     ? "tw-bg-gray-400 tw-cursor-not-allowed"
                     : "tw-bg-[#99CCD0] hover:tw-bg-[#88bbbf] tw-text-white"
                 }`}
                 onClick={handleAddToCart}
                 disabled={
                   (!selectedVariant && !product?.variants?.length) ||
-                  addToCartMutation.isPending
+                  addToCartMutation.isPending ||
+                  isCheckingStock ||
+                  (selectedVariant && selectedVariant.Stock <= 0) ||
+                  maxQuantity <= 0 ||  // Thêm điều kiện này
+                  quantity <= 0        // Và điều kiện này
                 }
               >
-                {addToCartMutation.isPending ? (
+                {addToCartMutation.isPending || isCheckingStock ? (
                   <span className="tw-flex tw-items-center">
                     <i className="fas fa-spinner fa-spin tw-mr-2"></i>
                     Đang thêm...
                   </span>
+                ) : selectedVariant && selectedVariant.Stock <= 0 ? (
+                  "Hết hàng"
+                ) : maxQuantity <= 0 ? (
+                  "Đã đạt giới hạn"
                 ) : (
                   "Thêm vào giỏ hàng"
                 )}
@@ -769,7 +917,6 @@ const ProductDetail = () => {
             </div>
           </div>
         </div>
-
 
         {/* Sản phẩm liên quan */}
         <section className="tw-mb-16">
@@ -804,4 +951,3 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
-
