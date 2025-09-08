@@ -65,48 +65,68 @@ class UserController extends Controller
         }
     }
 
-    public function update(Request $request, $id)
-    {
-        try {
-            $user = User::find($id);
-            
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'User not found'
-                ], 404);
-            }
+  public function update(Request $request, $id)
+{
+    try {
+        $user = User::find($id);
 
-            $validator = Validator::make($request->all(), [
-                'Fullname' => 'sometimes|string|max:255',
-                'Phone' => 'sometimes|string|max:20',
-                'Address' => 'sometimes|string|max:500',
-                'Email' => 'sometimes|email|max:255|unique:users,Email,' . $id . ',UserID',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validation error',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            $user->update($request->only(['Fullname', 'Phone', 'Address', 'Email']));
-
-            return response()->json([
-                'success' => true,
-                'message' => 'User updated successfully',
-                'data' => $user
-            ]);
-
-        } catch (\Exception $e) {
+        if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update user: ' . $e->getMessage()
-            ], 500);
+                'message' => 'User not found'
+            ], 404);
         }
+
+        $validator = Validator::make($request->all(), [
+            'Fullname' => 'sometimes|string|max:255',
+            'Phone' => 'sometimes|string|max:20',
+            'Address' => 'sometimes|string|max:500',
+            'Email' => 'sometimes|email|max:255|unique:users,Email,' . $id . ',UserID',
+            'Role' => 'sometimes|integer|in:0,1',
+            'Status' => 'sometimes|boolean',
+            'Password' => 'nullable|string|min:6',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // Nếu có password mới thì mã hoá
+        if ($request->filled('Password')) {
+            $request->merge(['Password' => bcrypt($request->Password)]);
+        } else {
+            // Nếu không nhập mật khẩu thì giữ nguyên
+            $request->request->remove('Password');
+        }
+
+        // Cập nhật các trường
+        $user->update($request->only([
+            'Fullname',
+            'Phone',
+            'Address',
+            'Email',
+            'Role',
+            'Status',
+            'Password'
+        ]));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User updated successfully',
+            'data' => $user
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to update user: ' . $e->getMessage()
+        ], 500);
     }
+}
 
     public function destroy($id)
     {

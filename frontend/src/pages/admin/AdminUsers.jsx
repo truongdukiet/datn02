@@ -17,6 +17,13 @@ const AdminUsers = () => {
     Status: 1
   });
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  // Phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 7;
+
   const API_BASE_URL = 'http://localhost:8000/api';
 
   const getHeaders = (includeAuth = false) => {
@@ -31,21 +38,40 @@ const AdminUsers = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
     }
-
     return headers;
   };
 
   const handleResponse = async (response) => {
     const data = await response.json();
-
     if (!response.ok) {
       const error = new Error(data.message || 'Có lỗi xảy ra');
       if (data.errors) error.errors = data.errors;
       throw error;
     }
-
     return data;
   };
+
+  // Lọc & tìm kiếm
+  const filteredUsers = users.filter((user) => {
+    const matchSearch =
+      !searchTerm ||
+      (user.Username && user.Username.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (user.Fullname && user.Fullname.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (user.Email && user.Email.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const matchStatus =
+      statusFilter === "all" ||
+      (statusFilter === "active" && parseInt(user.Status) === 1) ||
+      (statusFilter === "inactive" && parseInt(user.Status) === 0);
+
+    return matchSearch && matchStatus;
+  });
+
+  // Phân trang
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
   const fetchUsers = async () => {
     try {
@@ -89,8 +115,7 @@ const AdminUsers = () => {
         setShowModal(false);
         resetForm();
       } else {
-        const errorMessage = data.message || 'Lỗi khi thêm người dùng';
-        alert(errorMessage);
+        alert(data.message || 'Lỗi khi thêm người dùng');
       }
     } catch (err) {
       console.error('Lỗi khi thêm người dùng:', err);
@@ -115,8 +140,7 @@ const AdminUsers = () => {
         setEditingUser(null);
         resetForm();
       } else {
-        const errorMessage = data.message || 'Lỗi khi cập nhật người dùng';
-        alert(errorMessage);
+        alert(data.message || 'Lỗi khi cập nhật người dùng');
       }
     } catch (err) {
       console.error('Lỗi khi cập nhật người dùng:', err);
@@ -131,9 +155,7 @@ const AdminUsers = () => {
         method: 'PUT',
         headers: getHeaders(),
         credentials: 'include',
-        body: JSON.stringify({
-          Status: newStatus
-        })
+        body: JSON.stringify({ Status: newStatus })
       });
 
       const data = await response.json();
@@ -145,8 +167,7 @@ const AdminUsers = () => {
         ));
         alert('Cập nhật trạng thái thành công!');
       } else {
-        const errorMessage = data.message || 'Lỗi khi cập nhật trạng thái';
-        alert(errorMessage);
+        alert(data.message || 'Lỗi khi cập nhật trạng thái');
       }
     } catch (err) {
       console.error('Lỗi khi cập nhật trạng thái:', err);
@@ -190,7 +211,6 @@ const AdminUsers = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     if (!formData.Username || !formData.Email) {
       alert('Vui lòng điền đầy đủ thông tin bắt buộc!');
       return;
@@ -198,9 +218,7 @@ const AdminUsers = () => {
 
     if (editingUser) {
       const updateData = { ...formData };
-      if (!updateData.Password) {
-        delete updateData.Password;
-      }
+      if (!updateData.Password) delete updateData.Password;
       handleUpdateUser(editingUser.UserID, updateData);
     } else {
       if (!formData.Password) {
@@ -216,24 +234,35 @@ const AdminUsers = () => {
 
   return (
     <div>
+      {/* Header + tìm kiếm */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <h2>Quản lý người dùng</h2>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <input
+            type="text"
+            placeholder="Tìm kiếm theo tên, email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ padding: "8px", border: "1px solid #ddd", borderRadius: "4px" }}
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            style={{ padding: "8px", border: "1px solid #ddd", borderRadius: "4px" }}
+          >
+            <option value="all">Tất cả trạng thái</option>
+            <option value="active">Hoạt động</option>
+            <option value="inactive">Không hoạt động</option>
+          </select>
+        </div>
         <button
           onClick={openAddModal}
-          style={{
-            padding: "10px 20px",
-            background: "#28a745",
-            color: "white",
-            border: "none",
-            borderRadius: 4,
-            cursor: "pointer",
-          }}
+          style={{ padding: "10px 20px", background: "#28a745", color: "white", border: "none", borderRadius: 4 }}
         >
           Thêm người dùng
         </button>
       </div>
-
-      {showModal && (
+{showModal && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -414,96 +443,76 @@ const AdminUsers = () => {
         </div>
       )}
 
+      {/* Bảng danh sách user */}
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
-  <thead>
-    <tr style={{ background: "#f5f5f5" }}>
-      <th style={{ padding: 12, textAlign: "left" }}>ID</th>
-      <th style={{ padding: 12, textAlign: "left" }}>Tên đăng nhập</th>
-      <th style={{ padding: 12, textAlign: "left" }}>Họ tên</th>
-      <th style={{ padding: 12, textAlign: "left" }}>Email</th>
-      <th style={{ padding: 12, textAlign: "left" }}>Số điện thoại</th>
-      <th style={{ padding: 12, textAlign: "left" }}>Địa chỉ</th>
-      <th style={{ padding: 12, textAlign: "left" }}>Vai trò</th>
-      <th style={{ padding: 12, textAlign: "left" }}>Trạng thái</th>
-      <th style={{ padding: 12, textAlign: "left" }}>Ngày tạo</th>
-      <th style={{ padding: 12, textAlign: "left" }}>Thao tác</th>
-    </tr>
-  </thead>
-<tbody>
-  {users.map((user) => (
-    <tr key={user.UserID} style={{ borderBottom: "1px solid #eee" }}>
-      <td style={{ padding: 12 }}>{user.UserID}</td>
-      <td style={{ padding: 12 }}>{user.Username}</td>
-      <td style={{ padding: 12 }}>{user.Fullname || "N/A"}</td>
-      <td style={{ padding: 12 }}>{user.Email}</td>
-      <td style={{ padding: 12 }}>{user.Phone || "N/A"}</td>
-      <td style={{ padding: 12 }}>{user.Address || "N/A"}</td>
+        <thead>
+          <tr style={{ background: "#f5f5f5" }}>
+            <th style={{ padding: 12 }}>ID</th>
+            <th style={{ padding: 12 }}>Tên đăng nhập</th>
+            <th style={{ padding: 12 }}>Họ tên</th>
+            <th style={{ padding: 12 }}>Email</th>
+            <th style={{ padding: 12 }}>Số điện thoại</th>
+            <th style={{ padding: 12 }}>Địa chỉ</th>
+            <th style={{ padding: 12 }}>Vai trò</th>
+            <th style={{ padding: 12 }}>Trạng thái</th>
+            <th style={{ padding: 12 }}>Ngày tạo</th>
+            <th style={{ padding: 12 }}>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {currentUsers.map((user) => (
+            <tr key={user.UserID} style={{ borderBottom: "1px solid #eee" }}>
+              <td style={{ padding: 12 }}>{user.UserID}</td>
+              <td style={{ padding: 12 }}>{user.Username}</td>
+              <td style={{ padding: 12 }}>{user.Fullname || "N/A"}</td>
+              <td style={{ padding: 12 }}>{user.Email}</td>
+              <td style={{ padding: 12 }}>{user.Phone || "N/A"}</td>
+              <td style={{ padding: 12 }}>{user.Address || "N/A"}</td>
+              <td style={{ padding: 12 }}>{parseInt(user.Role) === 1 ? "Admin" : "User"}</td>
+              <td style={{ padding: 12 }}>
+                <span style={{
+                  padding: "4px 8px",
+                  borderRadius: 4,
+                  background: parseInt(user.Status) === 1 ? "#d4edda" : "#f8d7da",
+                  color: parseInt(user.Status) === 1 ? "#155724" : "#721c24",
+                }}>
+                  {parseInt(user.Status) === 1 ? "Hoạt động" : "Không hoạt động"}
+                </span>
+              </td>
+              <td style={{ padding: 12 }}>
+                {user.Created_at
+                  ? new Date(user.Created_at).toLocaleDateString("vi-VN")
+                  : "N/A"}
+              </td>
+              <td style={{ padding: 12 }}>
+                <button
+                  onClick={() => openEditModal(user)}
+                  style={{ marginRight: 8, padding: "4px 8px", background: "#ffc107", border: "none", borderRadius: 4 }}
+                >
+                  Sửa
+                </button>
+                <button
+                  onClick={() => handleToggleStatus(user.UserID, parseInt(user.Status))}
+                  style={{ padding: "4px 8px", background: "#007bff", color: "white", border: "none", borderRadius: 4 }}
+                >
+                  {parseInt(user.Status) === 1 ? "Vô hiệu" : "Kích hoạt"}
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
-      {/* Role */}
-      <td style={{ padding: 12 }}>
-        {parseInt(user.Role) === 1 ? "Admin" : "User"}
-      </td>
-
-      {/* Status */}
-      <td style={{ padding: 12 }}>
-        <span
-          style={{
-            padding: "4px 8px",
-            borderRadius: 4,
-            background:
-              parseInt(user.Status) === 1 ? "#d4edda" : "#f8d7da",
-            color: parseInt(user.Status) === 1 ? "#155724" : "#721c24",
-          }}
-        >
-          {parseInt(user.Status) === 1 ? "Hoạt động" : "Không hoạt động"}
-        </span>
-      </td>
-
-      {/* Created At */}
-      <td style={{ padding: 12 }}>
-        {user.Created_at
-          ? new Date(user.Created_at).toLocaleDateString("vi-VN")
-          : "N/A"}
-      </td>
-
-      {/* Actions */}
-      <td style={{ padding: 12 }}>
-        <button
-          onClick={() => openEditModal(user)}
-          style={{
-            marginRight: 8,
-            padding: "4px 8px",
-            background: "#ffc107",
-            color: "black",
-            border: "none",
-            borderRadius: 4,
-            cursor: "pointer",
-          }}
-        >
-          Sửa
+      {/* Phân trang */}
+      <div style={{ marginTop: "20px", textAlign: "center" }}>
+        <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+          « Trước
         </button>
-        <button
-          onClick={() =>
-            handleToggleStatus(user.UserID, parseInt(user.Status))
-          }
-          style={{
-            padding: "4px 8px",
-            background: "#007bff",
-            color: "white",
-            border: "none",
-            borderRadius: 4,
-            cursor: "pointer",
-          }}
-        >
-          {parseInt(user.Status) === 1 ? "Vô hiệu" : "Kích hoạt"}
+        <span style={{ margin: "0 10px" }}>Trang {currentPage} / {totalPages}</span>
+        <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>
+          Sau »
         </button>
-      </td>
-    </tr>
-  ))}
-</tbody>
-
-</table>
-
+      </div>
     </div>
   );
 };
