@@ -415,80 +415,95 @@ const AdminUsers = () => {
       )}
 
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr style={{ background: "#f5f5f5" }}>
-            <th style={{ padding: 12, textAlign: "left" }}>ID</th>
-            <th style={{ padding: 12, textAlign: "left" }}>Tên đăng nhập</th>
-            <th style={{ padding: 12, textAlign: "left" }}>Họ tên</th>
-            <th style={{ padding: 12, textAlign: "left" }}>Email</th>
-            <th style={{ padding: 12, textAlign: "left" }}>Số điện thoại</th>
-            <th style={{ padding: 12, textAlign: "left" }}>Địa chỉ</th>
-            <th style={{ padding: 12, textAlign: "left" }}>Vai trò</th>
-            <th style={{ padding: 12, textAlign: "left" }}>Trạng thái</th>
-            <th style={{ padding: 12, textAlign: "left" }}>Ngày tạo</th>
-            <th style={{ padding: 12, textAlign: "left" }}>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.UserID} style={{ borderBottom: "1px solid #eee" }}>
-              <td style={{ padding: 12 }}>{user.UserID}</td>
-              <td style={{ padding: 12 }}>{user.Username}</td>
-              <td style={{ padding: 12 }}>{user.Fullname || 'N/A'}</td>
-              <td style={{ padding: 12 }}>{user.Email}</td>
-              <td style={{ padding: 12 }}>{user.Phone || 'N/A'}</td>
-              <td style={{ padding: 12 }}>{user.Address || 'N/A'}</td>
-              <td style={{ padding: 12 }}>
-                {user.Role === 1 ? "Admin" : "User"}
-              </td>
-              <td style={{ padding: 12 }}>
-                <span
-                  style={{
-                    padding: "4px 8px",
-                    borderRadius: 4,
-                    background: user.Status === 1 ? "#d4edda" : "#f8d7da",
-                    color: user.Status === 1 ? "#155724" : "#721c24",
-                  }}
-                >
-                  {user.Status === 1 ? "Hoạt động" : "Không hoạt động"}
-                </span>
-              </td>
-              <td style={{ padding: 12 }}>
-                {user.Create_at ? new Date(user.Create_at).toLocaleDateString('vi-VN') : 'N/A'}
-              </td>
-              <td style={{ padding: 12 }}>
-                <button
-                  onClick={() => openEditModal(user)}
-                  style={{
-                    marginRight: 8,
-                    padding: "4px 8px",
-                    background: "#ffc107",
-                    color: "black",
-                    border: "none",
-                    borderRadius: 4,
-                    cursor: "pointer",
-                  }}
-                >
-                  Sửa
-                </button>
-                <button
-                  onClick={() => handleToggleStatus(user.UserID, user.Status)}
-                  style={{
-                    padding: "4px 8px",
-                    background: "#007bff",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 4,
-                    cursor: "pointer",
-                  }}
-                >
-                  {user.Status === 1 ? "Vô hiệu" : "Kích hoạt"}
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+  <thead>
+    <tr style={{ background: "#f5f5f5" }}>
+      <th style={{ padding: 12, textAlign: "left" }}>ID</th>
+      <th style={{ padding: 12, textAlign: "left" }}>Tên đăng nhập</th>
+      <th style={{ padding: 12, textAlign: "left" }}>Họ tên</th>
+      <th style={{ padding: 12, textAlign: "left" }}>Email</th>
+      <th style={{ padding: 12, textAlign: "left" }}>Số điện thoại</th>
+      <th style={{ padding: 12, textAlign: "left" }}>Địa chỉ</th>
+      <th style={{ padding: 12, textAlign: "left" }}>Vai trò</th>
+      <th style={{ padding: 12, textAlign: "left" }}>Trạng thái</th>
+      <th style={{ padding: 12, textAlign: "left" }}>Ngày tạo</th>
+      <th style={{ padding: 12, textAlign: "left" }}>Thao tác</th>
+    </tr>
+  </thead>
+<tbody>
+  {users.map((user) => (
+    <tr key={user.UserID} style={{ borderBottom: "1px solid #eee" }}>
+      <td style={{ padding: 12 }}>{user.UserID}</td>
+      <td style={{ padding: 12 }}>{user.Username}</td>
+      <td style={{ padding: 12 }}>{user.Fullname || "N/A"}</td>
+      <td style={{ padding: 12 }}>{user.Email}</td>
+      <td style={{ padding: 12 }}>{user.Phone || "N/A"}</td>
+      <td style={{ padding: 12 }}>{user.Address || "N/A"}</td>
+
+      {/* Role */}
+      <td style={{ padding: 12 }}>
+        {parseInt(user.Role) === 1 ? "Admin" : "User"}
+      </td>
+
+      {/* Status */}
+      <td style={{ padding: 12 }}>
+        <span
+          style={{
+            padding: "4px 8px",
+            borderRadius: 4,
+            background:
+              parseInt(user.Status) === 1 ? "#d4edda" : "#f8d7da",
+            color: parseInt(user.Status) === 1 ? "#155724" : "#721c24",
+          }}
+        >
+          {parseInt(user.Status) === 1 ? "Hoạt động" : "Không hoạt động"}
+        </span>
+      </td>
+
+      {/* Created At */}
+      <td style={{ padding: 12 }}>
+        {user.Created_at
+          ? new Date(user.Created_at).toLocaleDateString("vi-VN")
+          : "N/A"}
+      </td>
+
+      {/* Actions */}
+      <td style={{ padding: 12 }}>
+        <button
+          onClick={() => openEditModal(user)}
+          style={{
+            marginRight: 8,
+            padding: "4px 8px",
+            background: "#ffc107",
+            color: "black",
+            border: "none",
+            borderRadius: 4,
+            cursor: "pointer",
+          }}
+        >
+          Sửa
+        </button>
+        <button
+          onClick={() =>
+            handleToggleStatus(user.UserID, parseInt(user.Status))
+          }
+          style={{
+            padding: "4px 8px",
+            background: "#007bff",
+            color: "white",
+            border: "none",
+            borderRadius: 4,
+            cursor: "pointer",
+          }}
+        >
+          {parseInt(user.Status) === 1 ? "Vô hiệu" : "Kích hoạt"}
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
+
+</table>
+
     </div>
   );
 };
