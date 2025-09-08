@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getOrderDetail, updateOrderDetail } from "../../api/axiosClient";
+import { Steps } from 'antd';
 import {
     Descriptions,
     Button,
@@ -14,6 +15,7 @@ import {
     message
 } from 'antd';
 import { ArrowLeftOutlined, EditOutlined } from '@ant-design/icons';
+const { Step } = Steps;
 
 const { Option } = Select;
 
@@ -98,7 +100,7 @@ const AdminOrderDetail = () => {
             if (!variantId) return;
             
             try {
-                const response = await fetch(`http://localhost:8000/api/variant-attributes?variant_id=${variantId}`);
+                const response = await fetch(`${API_BASE_URL}/variant-attributes?variant_id=${variantId}`);
                 const data = await response.json();
                 const filteredAttributes = (data.data || []).filter(attr => attr.ProductVariantID === variantId);
                 attributesMap[variantId] = filteredAttributes;
@@ -130,7 +132,24 @@ const AdminOrderDetail = () => {
         };
         return statusMap[status?.toLowerCase()] || 'Chưa có thông tin';
     };
-
+    const getStepStatus = () => {
+        const status = order?.order_info?.status || order?.Status;
+        switch (status?.toLowerCase()) {
+            case 'pending':
+                return 0; // Chờ xử lý
+            case 'processing':
+                return 1; // Đang xử lý
+            case 'shipped':
+                return 2; // Đang giao hàng
+            case 'delivered':
+            case 'completed':
+                return 3; // Đã giao hàng
+            case 'cancelled':
+                return 4; // Đã hủy (optional)
+            default:
+                return -1; // Không xác định
+        }
+    };
     // Màu sắc cho các tag trạng thái
     const getStatusColor = (status) => {
         const colorMap = {
@@ -147,7 +166,6 @@ const AdminOrderDetail = () => {
     // Hiển thị ảnh sản phẩm
     const renderProductImage = (item) => {
         const imagePath = item?.product_variant?.Image || item?.Image || '';
-        console.log(item);
         if (!imagePath) {
             return (
                 <div style={{
@@ -241,6 +259,63 @@ const AdminOrderDetail = () => {
         }
     };
 
+    // Hàm mô tả trạng thái
+    const getStatusDescription = (status) => {
+        const descriptions = {
+            pending: 'Đơn hàng đã được đặt',
+            processing: 'Đơn hàng đang được chuẩn bị',
+            shipped: 'Đơn hàng đã được vận chuyển',
+            completed: 'Đơn hàng đã được giao thành công',
+            cancelled: 'Đơn hàng đã bị hủy'
+        };
+        return descriptions[status.toLowerCase()] || 'Chưa có thông tin';
+    };
+
+    // Hàm render bước trạng thái
+    const renderOrderSteps = () => {
+        const steps = [
+            {
+                title: "Chờ xử lý",
+                description: getStatusDescription('pending'),
+                time: order.order_info?.pending_at || 'Chưa có thông tin'
+            },
+            {
+                title: "Đang xử lý",
+                description: getStatusDescription('processing'),
+                time: order.order_info?.processing_at || 'Chưa có thông tin'
+            },
+            {
+                title: "Đang giao hàng",
+                description: getStatusDescription('shipped'),
+                time: order.order_info?.shipping_at || 'Chưa có thông tin'
+            },
+            {
+                title: "Đã hoàn thành",
+                description: getStatusDescription('completed'),
+                time: order.order_info?.completed_at || 'Chưa có thông tin'
+            }
+        ];
+
+        return (
+            <Steps current={getStepStatus()} status={order.order_info?.cancelled_at ? 'error' : 'process'}>
+                {steps.map((step, index) => (
+                    <Step 
+                        key={index} 
+                        title={step.title} 
+                        description={(
+                            <div>
+                                {step.description}
+                                <div style={{ fontSize: '12px', color: '#888' }}>
+                                    Thời gian: {formatOrderDate(step.time)}
+                                </div>
+                            </div>
+                        )} 
+                    />
+                ))}
+            </Steps>
+        );
+    };
+
     // Hiển thị loading khi đang tải dữ liệu
     if (loading) return <Spin size="large" style={{ display: 'flex', justifyContent: 'center', marginTop: '50px' }} />;
     if (error) return <div style={{ color: 'red', textAlign: 'center', marginTop: '20px' }}>Lỗi: {error}</div>;
@@ -300,6 +375,9 @@ const AdminOrderDetail = () => {
                         : 'Chưa có thông tin'}
                 </Descriptions.Item>
             </Descriptions>
+
+            <Divider orientation="left">Tiến trình đơn hàng</Divider>
+            {renderOrderSteps()}
 
             <Divider orientation="left">Danh sách sản phẩm</Divider>
 

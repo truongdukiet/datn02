@@ -50,7 +50,6 @@ const AdminOrder = () => {
                 const processedOrders = response.data.data.map(order => ({
                     ...order,
                     created_at: order.created_at || new Date().toISOString(),
-                    // Cập nhật logic xử lý thời gian
                     processing_at: order.processing_at ||
                                  (['processing', 'shipped', 'completed'].includes(order.Status)
                                   ? new Date().toISOString()
@@ -111,7 +110,6 @@ const AdminOrder = () => {
                 break;
         }
 
-        // Thêm tùy chọn hủy đơn nếu được phép
         if (canCancel) {
             options.push({ value: 'cancelled', label: 'Đã hủy' });
         }
@@ -123,7 +121,6 @@ const AdminOrder = () => {
         e.preventDefault();
         if (!editingOrder) return;
 
-        // Kiểm tra nếu đơn hàng đã hoàn thành hoặc đã hủy thì không cho cập nhật
         if (editingOrder.Status === 'completed' || editingOrder.Status === 'cancelled') {
             alert('Đơn hàng đã hoàn thành hoặc bị hủy, không thể cập nhật.');
             return;
@@ -134,7 +131,6 @@ const AdminOrder = () => {
             const updateData = {
                 Status: status,
                 created_at: editingOrder.created_at,
-                // Logic cập nhật thời gian chính xác
                 processing_at: status === 'processing' ? now :
                              ['shipped', 'completed'].includes(status) ? editingOrder.processing_at : null,
                 shipped_at: status === 'shipped' ? now :
@@ -239,10 +235,10 @@ const AdminOrder = () => {
                         <p><b>Tên người nhận:</b> {editingOrder.Receiver_name}</p>
                         <p><b>Số điện thoại:</b> {editingOrder.Receiver_phone}</p>
                         <p><b>Tổng số tiền:</b> {editingOrder.Total_amount}</p>
-                        <p><b>Ngày tạo:</b> {formatDateTime(editingOrder.created_at)}</p>
-                        <p><b>Ngày xử lý:</b> {formatDateTime(editingOrder.processing_at)}</p>
-                        <p><b>Ngày giao hàng:</b> {formatDateTime(editingOrder.shipped_at)}</p>
-                        <p><b>Ngày hoàn thành:</b> {formatDateTime(editingOrder.completed_at)}</p>
+                        <p><b>Ngày tạo:</b> {formatDateTime(editingOrder.Pending_at)}</p>
+                        <p><b>Ngày xử lý:</b> {formatDateTime(editingOrder.Processing_at)}</p>
+                        <p><b>Ngày giao hàng:</b> {formatDateTime(editingOrder.Shipping_at)}</p>
+                        <p><b>Ngày hoàn thành:</b> {formatDateTime(editingOrder.Completed_at)}</p>
                         <p><b>Ngày hủy:</b> {formatDateTime(editingOrder.cancelled_at)}</p>
                         <form onSubmit={handleSubmit}>
                             <div style={{ marginBottom: '15px' }}>
@@ -277,7 +273,6 @@ const AdminOrder = () => {
                         <th>Tổng số tiền</th>
                         <th>Trạng thái</th>
                         <th>Ngày tạo</th>
-                        <th>Ngày xử lý</th>
                         <th>Ngày giao</th>
                         <th>Ngày hoàn thành</th>
                         <th>Ngày hủy</th>
@@ -305,11 +300,11 @@ const AdminOrder = () => {
                                 </td>
                                 <td>{formatDateTime(item.created_at)}</td>
                                 <td>{item.Status === 'processing' || item.Status === 'shipped' || item.Status === 'completed'
-                                     ? formatDateTime(item.processing_at) : ''}</td>
+                                     ? formatDateTime(item.Processing_at) : ''}</td>
                                 <td>{item.Status === 'shipped' || item.Status === 'completed'
-                                     ? formatDateTime(item.shipped_at) : ''}</td>
+                                     ? formatDateTime(item.Shipping_at) : ''}</td>
                                 <td>{item.Status === 'completed'
-                                     ? formatDateTime(item.completed_at) : ''}</td>
+                                     ? formatDateTime(item.Completed_at) : ''}</td>
                                 <td>{item.Status === 'cancelled'
                                      ? formatDateTime(item.cancelled_at) : ''}</td>
                                 <td>

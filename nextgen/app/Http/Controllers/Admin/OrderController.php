@@ -27,7 +27,7 @@ class OrderController extends Controller // Định nghĩa class Controller củ
         // người dùng, voucher và phương thức thanh toán.
         // Sử dụng các tên mối quan hệ từ Model Order của bạn: 'user', 'voucher', 'paymentGateway', 'orderDetails'
         $orders = Order::with(['user', 'voucher', 'paymentGateway', 'orderDetails.productVariant.product'])
-                       ->orderBy('Create_at', 'desc') // Sắp xếp theo cột 'Create_at'
+                       ->orderBy('Pending_at', 'desc') // Sắp xếp theo cột 'Pending_at'
                        ->get();
         // Trả về danh sách đơn hàng dưới dạng phản hồi JSON.
         return response()->json($orders);

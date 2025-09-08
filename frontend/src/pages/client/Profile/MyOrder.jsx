@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -57,15 +56,13 @@ const MyOrder = () => {
         setLoading(true);
         try {
             const response = await getOrdersByUser(userId);
-            console.log('API orders data:', response.data.data); // Log dữ liệu nhận được
 
             if (response.data && response.data.success) {
                 const formattedOrders = response.data.data.map(order => ({
                     ...order,
-                    // Kiểm tra và chuyển đổi thời gian
                     created_at: order.created_at
                         ? new Date(order.created_at).toISOString()
-                        : new Date().toISOString() // Nếu không có thì dùng thời gian hiện tại
+                        : new Date().toISOString()
                 }));
                 setOrders(formattedOrders);
                 setError(null);
@@ -73,7 +70,6 @@ const MyOrder = () => {
                 setError(response.data?.message || 'Không thể tải danh sách đơn hàng');
             }
         } catch (err) {
-            console.error('Error fetching orders:', err);
             setError(err.response?.data?.message || 'Lỗi kết nối server');
         } finally {
             setLoading(false);
@@ -94,40 +90,17 @@ const MyOrder = () => {
                 message.error(response.data.message || 'Hủy đơn hàng thất bại');
             }
         } catch (err) {
-            console.error('Error canceling order:', err);
             message.error(err.response?.data?.message || 'Có lỗi xảy ra');
         }
     };
 
     const formatDateTime = (dateString) => {
-        try {
-            if (!dateString) {
-                console.warn('Empty date string');
-                return 'Đang cập nhật';
-            }
+        if (!dateString) return 'Đang cập nhật';
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'Đang cập nhật';
 
-            const date = new Date(dateString);
-
-            if (isNaN(date.getTime())) {
-                console.warn('Invalid date:', dateString);
-                return 'Đang cập nhật';
-            }
-
-            // Format date: dd/mm/yyyy
-            const day = date.getDate().toString().padStart(2, '0');
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const year = date.getFullYear();
-
-            // Format time: hh:mm:ss
-            const hours = date.getHours().toString().padStart(2, '0');
-            const minutes = date.getMinutes().toString().padStart(2, '0');
-            const seconds = date.getSeconds().toString().padStart(2, '0');
-
-            return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
-        } catch (error) {
-            console.error('Error formatting date:', error);
-            return 'Đang cập nhật';
-        }
+        const options = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+        return date.toLocaleString('vi-VN', options);
     };
 
     const filteredOrders = orders.filter(order => {
@@ -182,7 +155,7 @@ const MyOrder = () => {
             title: 'Ngày đặt',
             dataIndex: 'created_at',
             key: 'created_at',
-            render: (date) => formatDateTime(date),
+            render: formatDateTime,
         },
         {
             title: 'Thao tác',
@@ -213,81 +186,90 @@ const MyOrder = () => {
                 </Space>
             ),
         },
+        {
+            title: 'Ngày xử lý',
+            dataIndex: 'Processing_at',
+            key: 'Processing_at',
+            render: (_, item) => (
+                <>
+                    <div>{formatDateTime(item.Pending_at)}</div>
+                    {item.Status === 'processing' && <div>{formatDateTime(item.Processing_at)}</div>}
+                    {item.Status === 'shipped' && <div>{formatDateTime(item.Shipping_at)}</div>}
+                    {item.Status === 'completed' && <div>{formatDateTime(item.Completed_at)}</div>}
+                </>
+            ),
+        },
     ];
-
-    if (loading) {
-        return (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '50px' }}>
-                <Spin size="large" />
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div style={{ textAlign: 'center', padding: '50px' }}>
-                <p style={{ color: 'red', marginBottom: '20px' }}>{error}</p>
-                <Button
-                    type="primary"
-                    icon={<ReloadOutlined />}
-                    onClick={fetchOrders}
-                >
-                    Thử lại
-                </Button>
-            </div>
-        );
-    }
 
     return (
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                marginBottom: '20px',
-                flexWrap: 'wrap',
-                gap: '15px'
-            }}>
-                <h2>Đơn hàng của tôi</h2>
-                <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                    <Search
-                        placeholder="Tìm kiếm..."
-                        allowClear
-                        enterButton={<SearchOutlined />}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{ width: 300 }}
-                    />
-                    <Select
-                        value={filterStatus}
-                        onChange={setFilterStatus}
-                        style={{ width: 200 }}
-                    >
-                        <Option value="all">Tất cả</Option>
-                        <Option value="pending">Chờ xử lý</Option>
-                        <Option value="processing">Đang xử lý</Option>
-                        <Option value="shipped">Đang giao</Option>
-                        <Option value="completed">Hoàn thành</Option>
-                        <Option value="cancelled">Đã hủy</Option>
-                    </Select>
+            {loading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '50px' }}>
+                    <Spin size="large" />
+                </div>
+            ) : error ? (
+                <div style={{ textAlign: 'center', padding: '50px' }}>
+                    <p style={{ color: 'red', marginBottom: '20px' }}>{error}</p>
                     <Button
+                        type="primary"
                         icon={<ReloadOutlined />}
                         onClick={fetchOrders}
                     >
-                        Làm mới
+                        Thử lại
                     </Button>
                 </div>
-            </div>
+            ) : (
+                <>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginBottom: '20px',
+                        flexWrap: 'wrap',
+                        gap: '15px'
+                    }}>
+                        <h2>Đơn hàng của tôi</h2>
+                        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                            <Search
+                                placeholder="Tìm kiếm..."
+                                allowClear
+                                enterButton={<SearchOutlined />}
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                style={{ width: 300 }}
+                            />
+                            <Select
+                                value={filterStatus}
+                                onChange={setFilterStatus}
+                                style={{ width: 200 }}
+                            >
+                                <Option value="all">Tất cả</Option>
+                                <Option value="pending">Chờ xử lý</Option>
+                                <Option value="processing">Đang xử lý</Option>
+                                <Option value="shipped">Đang giao</Option>
+                                <Option value="completed">Hoàn thành</Option>
+                                <Option value="cancelled">Đã hủy</Option>
+                            </Select>
+                            <Button
+                                icon={<ReloadOutlined />}
+                                onClick={fetchOrders}
+                            >
+                                Làm mới
+                            </Button>
+                        </div>
+                    </div>
 
-            <Table
-                columns={columns}
-                dataSource={filteredOrders}
-                rowKey="OrderID"
-                loading={loading}
-                locale={{ emptyText: 'Không có đơn hàng nào' }}
-                onRow={(record) => ({
-                    onClick: () => navigate(`/myorder/${record.OrderID}`),
-                })}
-            />
+                    <Table
+                        columns={columns}
+                        dataSource={filteredOrders}
+                        rowKey="OrderID"
+                        loading={loading}
+                        locale={{ emptyText: 'Không có đơn hàng nào' }}
+                        onRow={(record) => ({
+                            onClick: () => navigate(`/myorder/${record.OrderID}`),
+                        })}
+                    />
+                </>
+            )}
         </div>
     );
 };

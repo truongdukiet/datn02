@@ -17,11 +17,15 @@ class Order extends Model
         'Receiver_name',
         'Receiver_phone',
         'Shipping_address',
-        'Create_at',
+        'Pending_at',
+        'Processing_at',
+        'Shipping_at',
+        'Completed_at',
+        'Cancelled_at',
         'Update_at',
     ];
 
-    const CREATED_AT = 'Create_at';
+    const CREATED_AT = 'Pending_at';
     const UPDATED_AT = 'Update_at';
 
     /**

@@ -86,8 +86,9 @@ class CartController extends Controller // Khai báo lớp CartController, kế 
     // Tìm giỏ hàng của user
     $cart = Cart::firstOrCreate(['UserID' => $userId], [
         'Status' => 'active',
-        'Create_at' => now(),
-        'Update_at' => now(),
+        'SpecialRequests' => null,
+        'Created_at' => now(),
+        'Updated_at' => now(),
     ]);
 
     // Kiểm tra sản phẩm đã có trong giỏ chưa

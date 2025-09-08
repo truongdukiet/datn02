@@ -212,11 +212,11 @@ class DashboardController extends Controller
     private function getRevenueData(): array
     {
         return Order::select([
-                DB::raw('DATE_FORMAT(Create_at, "%Y-%m") as month'),
+                DB::raw('DATE_FORMAT(Pending_at, "%Y-%m") as month'),
                 DB::raw('SUM(Total_amount) as amount')
             ])
             ->where('Status', 'completed')
-            ->where('Create_at', '>=', now()->subMonths(12))
+            ->where('Pending_at', '>=', now()->subMonths(12))
             ->groupBy('month')
             ->orderBy('month')
             ->get()
@@ -232,8 +232,8 @@ class DashboardController extends Controller
     private function getRecentOrdersData(): array
     {
         return Order::with(['user:UserID,username'])
-            ->select(['OrderID', 'UserID', 'Status', 'Total_amount', 'Create_at'])
-            ->orderBy('Create_at', 'desc')
+            ->select(['OrderID', 'UserID', 'Status', 'Total_amount', 'Pending_at'])
+            ->orderBy('Pending_at', 'desc')
             ->limit(10)
             ->get()
             ->map(function ($order) {
@@ -242,7 +242,7 @@ class DashboardController extends Controller
                     'customer_name' => $order->Receiver_name,
                     'status' => $order->Status,
                     'total_amount' => (float) $order->Total_amount,
-                    'created_at' => $order->Create_at ? Carbon::parse($order->Create_at)->format('Y-m-d H:i:s') : null
+                    'Pending_at' => $order->Pending_at ? Carbon::parse($order->Pending_at)->format('Y-m-d H:i:s') : null
                 ];
             })
             ->toArray();
@@ -287,12 +287,12 @@ class DashboardController extends Controller
     private function getMonthlySalesData(int $year): array
     {
         $salesData = Order::select([
-                DB::raw('MONTH(Create_at) as month'),
+                DB::raw('MONTH(Completed_at) as month'),
                 DB::raw('COUNT(*) as count')
             ])
-            ->whereYear('Create_at', $year)
+            ->whereYear('Completed_at', $year)
             ->where('Status', 'completed')
-            ->groupBy(DB::raw('MONTH(Create_at)'))
+            ->groupBy(DB::raw('MONTH(Completed_at)'))
             ->orderBy('month')
             ->get();
 
@@ -309,12 +309,12 @@ class DashboardController extends Controller
     private function getMonthlyRevenueData(int $year): array
     {
         $revenueData = Order::select([
-                DB::raw('MONTH(Create_at) as month'),
+                DB::raw('MONTH(Completed_at) as month'),
                 DB::raw('SUM(Total_amount) as amount')
             ])
-            ->whereYear('Create_at', $year)
+            ->whereYear('Completed_at', $year)
             ->where('Status', 'completed')
-            ->groupBy(DB::raw('MONTH(Create_at)'))
+            ->groupBy(DB::raw('MONTH(Completed_at)'))
             ->orderBy('month')
             ->get();
 
