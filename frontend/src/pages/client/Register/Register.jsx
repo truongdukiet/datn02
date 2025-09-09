@@ -23,7 +23,7 @@ const Register = () => {
     mutationFn: (data) => apiClient.post("/api/register", data),
     onSuccess: () => {
       setServerErrors({});
-      message.success("Đăng ký thành công");
+      message.success("Vui lòng kiểm tra mail để đăng nhập");
       navigate("/login");
     },
     onError: (error) => {
