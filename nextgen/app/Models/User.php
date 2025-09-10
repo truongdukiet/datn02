@@ -16,7 +16,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     protected $table = 'users'; // Chỉ định tên bảng rõ ràng
     protected $primaryKey = 'UserID'; // Đảm bảo khớp với tên cột trong DB
-    public $timestamps = false; // Tắt timestamps tự động vì tên cột khác (Created_at, Updated_at)
+    public $timestamps = true;
 
 
     const CREATED_AT = 'Created_at';
@@ -42,6 +42,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     protected $casts = [ // Sử dụng thuộc tính $casts thay vì phương thức casts() để nhất quán
         'email_verified_at' => 'datetime',
+         'Status' => 'integer',
         'Password' => 'hashed', // Đảm bảo khớp với tên cột trong DB
     ];
 

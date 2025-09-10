@@ -18,59 +18,66 @@ use Illuminate\Support\Facades\DB;
 class AuthController extends Controller
 {
     // Đăng ký
-    public function register(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'Fullname' => 'required|string|max:255',
-            'Username' => 'required|string|max:255|unique:users,Username',
-            'Email' => 'required|email|unique:users,Email',
-            'Password' => 'required|string|min:6|confirmed',
-        ]);
+public function register(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'Fullname' => 'required|string|max:255',
+        'Username' => 'required|string|max:255|unique:users,Username',
+        'Email' => 'required|email|unique:users,Email',
+        'Password' => 'required|string|min:6|confirmed',
+        'Role' => 'nullable|in:0,1',
+        'Status' => 'sometimes|boolean'
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Dữ liệu không hợp lệ',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $user = User::create([
-            'Fullname' => $request->Fullname,
-            'Username' => $request->Username,
-            'Email' => $request->Email,
-            'Password' => Hash::make($request->Password),
-            'email_verified_at' => null,
-            'Role' => 0,
-        ]);
-
-        $verificationToken = Str::random(64);
-
-        DB::table('password_reset_tokens')->updateOrInsert(
-            ['email' => $user->Email],
-            [
-                'email' => $user->Email,
-                'token' => $verificationToken,
-                'created_at' => now(),
-            ]
-        );
-
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:8080');
-        $verificationUrl = $frontendUrl . '/verify-email?userId=' . $user->UserID . '&token=' . $verificationToken;
-
-        Mail::raw(
-            "Chào {$user->Fullname},\n\nVui lòng nhấn vào link sau để xác thực tài khoản:\n$verificationUrl\n\nSau khi xác thực thành công, bạn sẽ được chuyển đến trang đăng nhập.",
-            function ($message) use ($user) {
-                $message->to($user->Email)
-                        ->subject('Xác thực tài khoản - NextGen');
-            }
-        );
-
+    if ($validator->fails()) {
         return response()->json([
-            'success' => true,
-            'message' => 'Đăng ký thành công. Vui lòng kiểm tra email để kích hoạt tài khoản.'
-        ]);
+            'success' => false,
+            'message' => 'Dữ liệu không hợp lệ',
+            'errors' => $validator->errors()
+        ], 422);
     }
+
+    // Tạo user mới
+    $user = User::create([
+        'Fullname' => $request->Fullname,
+        'Username' => $request->Username,
+        'Email' => $request->Email,
+        'Password' => Hash::make($request->Password),
+        'email_verified_at' => null,
+        'Role' => $request->Role ?? 0,     // mặc định 0
+        'Status' => $request->Status ?? 1, // mặc định 1 (active)
+    ]);
+
+    // Tạo token xác thực email
+    $verificationToken = Str::random(64);
+    DB::table('password_reset_tokens')->updateOrInsert(
+        ['email' => $user->Email],
+        [
+            'email' => $user->Email,
+            'token' => $verificationToken,
+            'created_at' => now(),
+        ]
+    );
+
+    // Tạo URL xác thực cho FE
+    $frontendUrl = env('FRONTEND_URL', 'http://localhost:8080');
+    $verificationUrl = $frontendUrl . '/verify-email?userId=' . $user->UserID . '&token=' . $verificationToken;
+
+    // Gửi email xác thực
+    Mail::raw(
+        "Chào {$user->Fullname},\n\nVui lòng nhấn vào link sau để xác thực tài khoản:\n$verificationUrl\n\nSau khi xác thực thành công, bạn sẽ được chuyển đến trang đăng nhập.",
+        function ($message) use ($user) {
+            $message->to($user->Email)
+                    ->subject('Xác thực tài khoản - NextGen');
+        }
+    );
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Đăng ký thành công. Vui lòng kiểm tra email để kích hoạt tài khoản.'
+    ]);
+}
+
 
     // Đăng nhập
     public function login(Request $request)
