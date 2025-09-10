@@ -153,8 +153,8 @@ const MyOrder = () => {
         },
         {
             title: 'Ngày đặt',
-            dataIndex: 'created_at',
-            key: 'created_at',
+            dataIndex: 'Pending_at',
+            key: 'Pending_at',
             render: formatDateTime,
         },
         {

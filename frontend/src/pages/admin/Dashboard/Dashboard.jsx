@@ -304,7 +304,7 @@ const Dashboard = () => {
                           </span>
                         </td>
                         <td>{order.total_amount.toLocaleString('vi-VN')} VNĐ</td>
-                        <td>{new Date(order.created_at).toLocaleDateString('vi-VN')}</td>
+                        <td>{new Date(order.Pending_at).toLocaleDateString('vi-VN')}</td>
                       </tr>
                     ))}
                   </tbody>

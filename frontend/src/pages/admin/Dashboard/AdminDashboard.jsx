@@ -978,7 +978,7 @@ const miniChartOptions = {
                                                         </Badge>
                                                     </td>
                                                     <td>{order.total_amount?.toLocaleString('vi-VN')}₫</td>
-                                                    <td>{order.created_at ? new Date(order.created_at).toLocaleDateString('vi-VN') : 'N/A'}</td>
+                                                    <td>{order.Pending_at ? new Date(order.Pending_at).toLocaleDateString('vi-VN') : 'N/A'}</td>
                                                 </tr>
                                             )) : (
                                                 <tr>
