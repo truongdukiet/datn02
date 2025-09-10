@@ -16,6 +16,7 @@ const AdminUsers = () => {
     Role: 0,
     Status: 1
   });
+  const [formErrors, setFormErrors] = useState({});
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -100,53 +101,54 @@ const AdminUsers = () => {
   }, []);
 
   const handleAddUser = async (userData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/users`, {
-        method: 'POST',
-        headers: getHeaders(),
-        credentials: 'include',
-        body: JSON.stringify(userData)
-      });
+  try {
+    const response = await fetch(`${API_BASE_URL}/users`, {
+      method: 'POST',
+      headers: getHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(userData)
+    });
 
-      const data = await response.json();
-      if (response.ok && data.success) {
-        await fetchUsers();
-        alert('Thêm người dùng thành công!');
-        setShowModal(false);
-        resetForm();
-      } else {
-        alert(data.message || 'Lỗi khi thêm người dùng');
-      }
-    } catch (err) {
-      console.error('Lỗi khi thêm người dùng:', err);
-      alert('Lỗi kết nối server khi thêm người dùng');
+    const data = await response.json();
+    if (response.ok && data.success) {
+      await fetchUsers();
+      setShowModal(false);
+      resetForm();
+      alert("Thêm người dùng thành công!");
+    } else {
+      console.error(data.message || 'Lỗi khi thêm người dùng');
+      alert(data.message || "Thêm người dùng thất bại!");
     }
-  };
-
+  } catch (err) {
+    console.error('Lỗi khi thêm người dùng:', err);
+    alert("Có lỗi xảy ra khi thêm người dùng!");
+  }
+};
   const handleUpdateUser = async (userId, userData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-        method: 'PUT',
-        headers: getHeaders(),
-        credentials: 'include',
-        body: JSON.stringify(userData)
-      });
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(userData)
+    });
 
-      const data = await response.json();
-      if (response.ok && data.success) {
-        await fetchUsers();
-        alert('Cập nhật người dùng thành công!');
-        setShowModal(false);
-        setEditingUser(null);
-        resetForm();
-      } else {
-        alert(data.message || 'Lỗi khi cập nhật người dùng');
-      }
-    } catch (err) {
-      console.error('Lỗi khi cập nhật người dùng:', err);
-      alert('Lỗi kết nối server khi cập nhật người dùng');
+    const data = await response.json();
+    if (response.ok && data.success) {
+      await fetchUsers();
+      setShowModal(false);
+      setEditingUser(null);
+      resetForm();
+      alert("Cập nhật người dùng thành công!");
+    } else {
+      console.error(data.message || 'Lỗi khi cập nhật người dùng');
+      alert(data.message || "Cập nhật người dùng thất bại!");
     }
-  };
+  } catch (err) {
+    console.error('Lỗi khi cập nhật người dùng:', err);
+    alert("Có lỗi xảy ra khi cập nhật người dùng!");
+  }
+};
 
   const handleToggleStatus = async (userId, currentStatus) => {
     const newStatus = currentStatus === 1 ? 0 : 1;
@@ -165,13 +167,11 @@ const AdminUsers = () => {
             ? { ...user, Status: newStatus }
             : user
         ));
-        alert('Cập nhật trạng thái thành công!');
       } else {
-        alert(data.message || 'Lỗi khi cập nhật trạng thái');
+        console.error(data.message || 'Lỗi khi cập nhật trạng thái');
       }
     } catch (err) {
       console.error('Lỗi khi cập nhật trạng thái:', err);
-      alert('Lỗi kết nối server khi cập nhật trạng thái');
     }
   };
 
@@ -207,24 +207,41 @@ const AdminUsers = () => {
       Role: 0,
       Status: 1
     });
+    setFormErrors({});
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.Username || !formData.Email) {
-      alert('Vui lòng điền đầy đủ thông tin bắt buộc!');
+    const errors = {};
+
+    if (!formData.Username) errors.Username = "Tên đăng nhập là bắt buộc";
+    if (!formData.Email) errors.Email = "Email là bắt buộc";
+
+    // Validate số điện thoại (10 số)
+    if (formData.Phone && !/^[0-9]{10}$/.test(formData.Phone)) {
+      errors.Phone = "Số điện thoại phải gồm đúng 10 chữ số";
+    }
+
+    // Validate địa chỉ (ít nhất 5 ký tự)
+    if (formData.Address && formData.Address.trim().length < 5) {
+      errors.Address = "Địa chỉ phải có ít nhất 5 ký tự";
+    }
+
+    if (!editingUser && !formData.Password) {
+      errors.Password = "Mật khẩu là bắt buộc khi tạo mới";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       return;
     }
 
+    setFormErrors({});
     if (editingUser) {
       const updateData = { ...formData };
       if (!updateData.Password) delete updateData.Password;
       handleUpdateUser(editingUser.UserID, updateData);
     } else {
-      if (!formData.Password) {
-        alert('Vui lòng nhập mật khẩu!');
-        return;
-      }
       handleAddUser(formData);
     }
   };
@@ -262,7 +279,7 @@ const AdminUsers = () => {
           Thêm người dùng
         </button>
       </div>
-{showModal && (
+      {showModal && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -286,7 +303,7 @@ const AdminUsers = () => {
             <h3>{editingUser ? 'Sửa người dùng' : 'Thêm người dùng mới'}</h3>
 
             <form onSubmit={handleSubmit}>
-              {/* Username (ReadOnly khi sửa) */}
+              {/* Username */}
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Tên đăng nhập *</label>
                 <input
@@ -304,9 +321,10 @@ const AdminUsers = () => {
                   }}
                   required
                 />
+                {formErrors.Username && <div style={{ color: 'red' }}>{formErrors.Username}</div>}
               </div>
 
-              {/* Email (ReadOnly khi sửa) */}
+              {/* Email */}
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Email *</label>
                 <input
@@ -324,6 +342,7 @@ const AdminUsers = () => {
                   }}
                   required
                 />
+                {formErrors.Email && <div style={{ color: 'red' }}>{formErrors.Email}</div>}
               </div>
 
               {/* Fullname */}
@@ -346,6 +365,7 @@ const AdminUsers = () => {
                   onChange={(e) => setFormData({ ...formData, Phone: e.target.value })}
                   style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
                 />
+                {formErrors.Phone && <div style={{ color: 'red' }}>{formErrors.Phone}</div>}
               </div>
 
               {/* Address */}
@@ -356,6 +376,7 @@ const AdminUsers = () => {
                   onChange={(e) => setFormData({ ...formData, Address: e.target.value })}
                   style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd', minHeight: '60px' }}
                 />
+                {formErrors.Address && <div style={{ color: 'red' }}>{formErrors.Address}</div>}
               </div>
 
               {/* Password */}
@@ -372,6 +393,7 @@ const AdminUsers = () => {
                     required
                   />
                 )}
+                {formErrors.Password && <div style={{ color: 'red' }}>{formErrors.Password}</div>}
                 {editingUser && (
                   <div style={{ fontStyle: 'italic', color: '#6c757d' }}>
                     Không thể xem mật khẩu.

@@ -37,33 +37,47 @@ class UserController extends Controller
         }
     }
 
-    public function store(Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'Username' => 'required|string|max:255|unique:users,Username',
-                'Password' => 'required|string|min:6',
-                'Email' => 'required|email|unique:users,Email',
-                'Fullname' => 'nullable|string|max:255',
-                'Phone' => 'nullable|string|max:255',
-                'Address' => 'nullable|string|max:255',
-                'Status' => 'nullable|boolean',
-                'Role' => 'nullable|integer|in:0,1',
-            ]);
+public function store(Request $request)
+{
+    try {
+        $validated = $request->validate([
+            'Username' => 'required|string|max:255|unique:users,Username',
+            'Password' => 'required|string|min:6',
+            'Email' => 'required|email|unique:users,Email',
+            'Fullname' => 'nullable|string|max:255',
+            'Phone' => 'nullable|string|max:255',
+            'Address' => 'nullable|string|max:255',
+            'Status' => 'sometimes|boolean',
+            'Role' => 'nullable|integer|in:0,1',
+        ]);
 
-            $validated['Password'] = bcrypt($validated['Password']);
-            $validated['Created_at'] = now();
-            $validated['Updated_at'] = now();
+        // ép Status mặc định = 1 nếu không gửi
+        $validated['Status'] = $validated['Status'] ?? 1;
 
-            $user = User::create($validated);
-            return response()->json(['success' => true, 'data' => $user], 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['success' => false, 'message' => 'Validation failed', 'errors' => $e->errors()], 422);
-        } catch (\Exception $e) {
-            Log::error('Error creating user: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Internal server error'], 500);
-        }
+        // hash password
+        $validated['Password'] = bcrypt($validated['Password']);
+
+        // ✅ Log dữ liệu trước khi insert
+        Log::info('User validated data:', $validated);
+
+        // tạo user
+        $user = User::create($validated);
+
+        return response()->json(['success' => true, 'data' => $user], 201);
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation failed',
+            'errors' => $e->errors()
+        ], 422);
+    } catch (\Exception $e) {
+        Log::error('Error creating user: ' . $e->getMessage());
+        return response()->json(['success' => false, 'message' => 'Internal server error'], 500);
     }
+}
+
+
 
   public function update(Request $request, $id)
 {
