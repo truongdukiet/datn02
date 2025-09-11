@@ -3,10 +3,10 @@ import ClientHeader from "../../../layouts/MainLayout/ClientHeader";
 import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import { message, Select, Input } from "antd";
 import { formatPrice } from "../../../utils/formatPrice";
-import { 
-  addOrder, 
-  clearCart, 
-  getPaymentGateways, 
+import {
+  addOrder,
+  clearCart,
+  getPaymentGateways,
   getAvailableVouchers,
   updateUserProfile
 } from "../../../api/api";
@@ -16,7 +16,7 @@ const Checkout = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
-  
+
   // State for shipping information
   const [receiverName, setReceiverName] = useState(user?.Fullname || "");
   const [receiverPhone, setReceiverPhone] = useState(user?.Phone || "");
@@ -32,7 +32,7 @@ const Checkout = () => {
   const [cartItems, setCartItems] = useState([]);
   const [totalAmount, setTotalAmount] = useState(0);
   const [totalAfterDiscount, setTotalAfterDiscount] = useState(0);
-  
+
   // State for validation errors
   const [errors, setErrors] = useState({
     phone: "",
@@ -63,7 +63,7 @@ const Checkout = () => {
         if (paymentResponse.data && paymentResponse.data.success) {
           setPaymentMethods(paymentResponse.data.data || []);
         }
-        
+
         // Get vouchers
         const voucherResponse = await getAvailableVouchers();
         if (voucherResponse.data && voucherResponse.data.success) {
@@ -74,20 +74,20 @@ const Checkout = () => {
         message.error("Không tải được dữ liệu thanh toán.");
       }
     };
-    
+
     fetchData();
   }, []);
 
   // Handle voucher selection
   const handleVoucherChange = (voucherId) => {
     setSelectedVoucher(voucherId);
-    
+
     if (!voucherId) {
       setDiscount(0);
       setTotalAfterDiscount(totalAmount);
       return;
     }
-    
+
     const voucher = vouchers.find(v => v.VoucherID === voucherId);
     if (voucher) {
       const discountValue = voucher.Value;
@@ -116,24 +116,24 @@ const Checkout = () => {
     } else if (address.length > 200) {
       return "Địa chỉ quá dài, vui lòng rút ngắn lại";
     }
-    
+
     // Check for meaningless/repeating characters
     const repeatingCharRegex = /(.)\1{5,}/; // 5 or more repeating characters
     if (repeatingCharRegex.test(address)) {
       return "Địa chỉ chứa ký tự lặp lại không hợp lệ";
     }
-    
+
     // Check for minimum number of words (at least 2 meaningful words)
     const words = address.trim().split(/\s+/).filter(word => word.length > 2);
     if (words.length < 2) {
       return "Địa chỉ phải chứa ít nhất 2 từ có nghĩa";
     }
-    
+
     // Check for Vietnamese characters and meaningful patterns
     const hasVietnameseChars = /[àáâãèéêìíòóôõùúăđĩũơưăạảấầẩẫậắằẳẵặẹẻẽềềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/i.test(address);
     const hasLetters = /[a-z]/i.test(address);
     const hasNumbers = /[0-9]/.test(address);
-    
+
     // If no Vietnamese characters, check for meaningful word patterns
     if (!hasVietnameseChars && hasLetters) {
       // Check for random character sequences (like "kffjjjjjjjj")
@@ -141,7 +141,7 @@ const Checkout = () => {
       if (randomCharPattern.test(address)) {
         return "Địa chỉ chứa từ không có nghĩa";
       }
-      
+
       // Check for minimum meaningful content
       const meaningfulWordCount = words.filter(word => {
         // A word is considered meaningful if it has vowel-consonant patterns
@@ -149,40 +149,40 @@ const Checkout = () => {
         const consonantCount = (word.match(/[bcdfghjklmnpqrstvwxz]/gi) || []).length;
         return hasVowels && consonantCount > 0;
       }).length;
-      
+
       if (meaningfulWordCount < 2) {
         return "Địa chỉ phải chứa từ có nghĩa";
       }
     }
-    
+
     return "";
   };
 
   // Validate voucher
   const validateVoucher = () => {
     if (!selectedVoucher) return true;
-    
+
     const voucher = vouchers.find(v => v.VoucherID === selectedVoucher);
     if (!voucher) return false;
-    
+
     const now = new Date();
     const expiryDate = new Date(voucher.Expiry_date);
-    
+
     if (now > expiryDate) {
       message.warning("Voucher đã hết hạn sử dụng");
       return false;
     }
-    
+
     if (voucher.Quantity <= 0) {
       message.warning("Voucher đã hết lượt sử dụng");
       return false;
     }
-    
+
     if (totalAmount < voucher.Value) {
       message.warning("Giá trị đơn hàng không đủ để áp dụng voucher");
       return false;
     }
-    
+
     return true;
   };
 
@@ -191,7 +191,7 @@ const Checkout = () => {
     // Only allow numbers
     const numericValue = value.replace(/\D/g, '');
     setReceiverPhone(numericValue);
-    
+
     // Validate and set error
     const error = validatePhone(numericValue);
     setErrors(prev => ({ ...prev, phone: error }));
@@ -199,7 +199,7 @@ const Checkout = () => {
 
   const handleAddressChange = (value) => {
     setAddress(value);
-    
+
     // Validate and set error
     const error = validateAddress(value);
     setErrors(prev => ({ ...prev, address: error }));
@@ -207,7 +207,7 @@ const Checkout = () => {
 
   const handlePaymentChange = (value) => {
     setPaymentId(value);
-    
+
     // Clear payment error when a method is selected
     if (value) {
       setErrors(prev => ({ ...prev, payment: "" }));
@@ -218,32 +218,32 @@ const Checkout = () => {
   const updateUserInfo = async () => {
     try {
       const updateData = {};
-      
+
       // Only update fields that are missing in user profile
       if (!user.Phone && receiverPhone) {
         updateData.Phone = receiverPhone;
       }
-      
+
       if (!user.Address && address) {
         updateData.Address = address;
       }
-      
+
       if (!user.Fullname && receiverName) {
         updateData.Fullname = receiverName;
       }
-      
+
       // If there's data to update
       if (Object.keys(updateData).length > 0) {
         await updateUserProfile(user.UserID, updateData, token);
-        
+
         // Update local storage
         const updatedUser = { ...user, ...updateData };
         localStorage.setItem('user', JSON.stringify(updatedUser));
-        
+
         message.success("Thông tin của bạn đã được cập nhật");
         return true;
       }
-      
+
       return false;
     } catch (error) {
       console.error("Error updating user profile:", error);
@@ -258,23 +258,23 @@ const Checkout = () => {
     const phoneError = validatePhone(receiverPhone);
     const addressError = validateAddress(address);
     const paymentError = !paymentId ? "Vui lòng chọn phương thức thanh toán" : "";
-    
+
     setErrors({
       phone: phoneError,
       address: addressError,
       payment: paymentError
     });
-    
+
     if (phoneError || addressError || paymentError || !validateVoucher()) {
       message.warning("Vui lòng kiểm tra lại thông tin đã nhập.");
       return;
     }
-    
+
     if (!receiverName) {
       message.warning("Vui lòng nhập tên người nhận.");
       return;
     }
-    
+
     setLoading(true);
     try {
       // Update user profile information if needed
@@ -322,26 +322,26 @@ const Checkout = () => {
         }
       } else {
         const response = await addOrder(orderData);
-        
+
         // Check if server also updated user info
         if (response.data.user_updated) {
           const updatedUser = { ...user, ...response.data.updated_user_data };
           localStorage.setItem('user', JSON.stringify(updatedUser));
         }
-        
+
         await clearCart();
         message.success("Đặt hàng thành công!");
-        
+
         // Pass order data to ThankYou page
-        navigate("/thank-you", { 
-          state: { 
+        navigate("/thank-you", {
+          state: {
             order: response.data.data,
             orderDetails: cartItems,
             voucher: vouchers.find(v => v.VoucherID === selectedVoucher),
             discount,
             totalAfterDiscount,
             paymentMethod: paymentMethods.find(m => m.PaymentID === paymentId)
-          } 
+          }
         });
       }
     } catch (error) {
@@ -381,7 +381,7 @@ const Checkout = () => {
               {cartItems.length === 0 ? (
                 <div className="tw-text-center tw-py-10">
                   <p>Giỏ hàng của bạn đang trống</p>
-                  <button 
+                  <button
                     onClick={() => navigate("/products")}
                     className="tw-mt-4 tw-bg-blue-500 hover:tw-bg-blue-600 tw-text-white tw-py-2 tw-px-4 tw-rounded"
                   >
@@ -434,14 +434,14 @@ const Checkout = () => {
                   className="tw-mb-3"
                 />
                 <Input
-                  placeholder="Số điện thoại (8 chữ số)"
+                  placeholder="Số điện thoại (11 chữ số)"
                   value={receiverPhone}
                   onChange={(e) => handlePhoneChange(e.target.value)}
-                  maxLength={8}
+                  maxLength={11}
                   className="tw-mb-1"
                 />
                 {errors.phone && <div className="tw-text-red-500 tw-text-sm tw-mb-3">{errors.phone}</div>}
-                
+
                 <Input.TextArea
                   rows={3}
                   placeholder="Địa chỉ giao hàng (ví dụ: Số 123, đường Nguyễn Văn A, phường B, quận C)"
@@ -489,14 +489,14 @@ const Checkout = () => {
                     <p className="tw-m-0">Tổng tiền:</p>
                     <p className="tw-m-0 tw-font-bold">{formatPrice(totalAmount)}</p>
                   </div>
-                  
+
                   {discount > 0 && (
                     <div className="tw-flex tw-justify-between">
                       <p className="tw-m-0">Giảm giá:</p>
                       <p className="tw-m-0 tw-font-bold tw-text-red-500">-{formatPrice(discount)}</p>
                     </div>
                   )}
-                  
+
                   <div className="tw-flex tw-justify-between tw-border-t tw-border-gray-200 tw-pt-3">
                     <p className="tw-m-0 tw-font-bold">Tổng thanh toán:</p>
                     <p className="tw-m-0 tw-font-bold tw-text-lg tw-text-[#1A1C20]">
