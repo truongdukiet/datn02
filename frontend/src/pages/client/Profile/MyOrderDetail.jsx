@@ -6,6 +6,7 @@ import { ArrowLeftOutlined } from '@ant-design/icons';
 
 const { Step } = Steps;
 const { Item } = Descriptions;
+const { TextArea } = Input;
 
 // Hàm định dạng ngày tháng
 const formatOrderDate = (dateString) => {
@@ -44,6 +45,8 @@ const MyOrderDetail = () => {
     const [form] = Form.useForm();
     const [lastUpdated, setLastUpdated] = useState(null);
     const [variantAttributes, setVariantAttributes] = useState({});
+    const [cancelling, setCancelling] = useState(false);
+    const [submittingReview, setSubmittingReview] = useState(false);
 
     // Hàm lấy chi tiết đơn hàng
     const fetchOrderDetail = async () => {
@@ -64,7 +67,7 @@ const MyOrderDetail = () => {
 
                 setOrder(processedOrder);
                 setLastUpdated(new Date());
-                
+
                 // Lấy thuộc tính cho các biến thể sản phẩm
                 if (processedOrder.order_details && processedOrder.order_details.length > 0) {
                     fetchAllVariantAttributes(processedOrder.order_details);
@@ -87,7 +90,7 @@ const MyOrderDetail = () => {
         await Promise.all(orderDetails.map(async (item) => {
             const variantId = item.ProductVariantID || item.productVariant?.id;
             if (!variantId) return;
-            
+
             try {
                 const response = await fetch(`${API_BASE_URL}/variant-attributes?variant_id=${variantId}`);
                 const data = await response.json();
@@ -111,7 +114,8 @@ const MyOrderDetail = () => {
     }, [orderId]);
 
     // Hàm hủy đơn hàng
-    const handleCancelOrder = async (orderId) => {
+    const handleCancelOrder = async () => {
+        setCancelling(true);
         try {
             const response = await cancelOrder(orderId);
             if (response.data.success) {
@@ -122,6 +126,8 @@ const MyOrderDetail = () => {
             }
         } catch (err) {
             message.error(err.response?.data?.message || 'Có lỗi xảy ra');
+        } finally {
+            setCancelling(false);
         }
     };
 
@@ -129,15 +135,25 @@ const MyOrderDetail = () => {
     const handleReviewClick = (product) => {
         setCurrentProduct(product);
         setReviewModalVisible(true);
+        // Đặt giá trị mặc định nếu sản phẩm đã được đánh giá
+        if (product.is_reviewed && product.review) {
+            form.setFieldsValue({
+                rating: product.review.Star_rating,
+                comment: product.review.Comment
+            });
+        } else {
+            form.resetFields();
+        }
     };
 
     // Gửi đánh giá sản phẩm
     const handleReviewSubmit = async () => {
+        setSubmittingReview(true);
         try {
             const values = await form.validateFields();
             const payload = {
-                OrderDetailID: currentProduct.OrderDetailID,
-                ProductVariantID: currentProduct.ProductVariantID,
+                OrderDetailID: currentProduct.OrderDetailID || currentProduct.id,
+                ProductVariantID: currentProduct.ProductVariantID || currentProduct.productVariant?.id,
                 Star_rating: values.rating,
                 Comment: values.comment
             };
@@ -152,6 +168,8 @@ const MyOrderDetail = () => {
             }
         } catch (err) {
             message.error(err.response?.data?.message || 'Gửi đánh giá thất bại');
+        } finally {
+            setSubmittingReview(false);
         }
     };
 
@@ -165,7 +183,7 @@ const MyOrderDetail = () => {
             shipped: 'Đang giao hàng',
             delivered: 'Đã giao hàng'
         };
-        return statusMap[status?.toLowerCase()] || 'Chưa có thông tin';
+        return statusMap[status?.toLowerCase()] || status || 'Chưa có thông tin';
     };
 
     // Màu sắc cho các tag trạng thái
@@ -183,7 +201,7 @@ const MyOrderDetail = () => {
 
     // Hiển thị ảnh sản phẩm
     const renderProductImage = (item) => {
-        const imagePath = item?.product_variant?.Image || item?.Image || '';
+        const imagePath = item?.product_variant?.Image || item?.Image || item?.productVariant?.Image || '';
         if (!imagePath) {
             return (
                 <div style={{
@@ -200,17 +218,17 @@ const MyOrderDetail = () => {
                 </div>
             );
         }
-        
+
         const imageUrl = imagePath.startsWith('http') ? imagePath : `http://localhost:8000/storage/${imagePath}`;
-        
+
         return (
-            <Image 
-                width={80} 
+            <Image
+                width={80}
                 height={80}
-                src={imageUrl} 
+                src={imageUrl}
                 alt={item?.product_name || 'Sản phẩm'}
                 style={{ objectFit: 'cover', borderRadius: '4px' }}
-                fallback="data:image/svg+xml;base64,..."
+                fallback="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjRjBGMEYwIi8+CjxwYXRoIGQ9Ik0zNiAyOEgyOFYzNkgzNlYyOFoiIGZpbGw9IiM5OTk5OTkiLz4KPHBhdGggZD0iTTMyIDhDMjAuOTU0NSA4IDEyIDE2Ljk1NDUgMTIgMjhTMjAuOTU0NSA0OCAzMiA0OFM1MiAzOS4wNDU1IDUyIDI4UzQzLjA0NTUgOCAzMiA4Wk0zMiA0NEMyMy4xNjM0IDQ0IDE2IDM2LjgzNjYgMTYgMjhTMTkuMTYzNCAxMiAzMiAxMlM0OCAxOS4xNjM0IDQ4IDI4UzQwLjgzNjYgNDQgMzIgNDRaIiBmaWxsPSIjOTk5OTk5Ii8+Cjwvc3ZnPg=="
             />
         );
     };
@@ -219,7 +237,7 @@ const MyOrderDetail = () => {
     const renderAttributes = (item) => {
         const variantId = item?.ProductVariantID || item?.productVariant?.id;
         const attributes = variantAttributes[variantId] || [];
-        
+
         if (!attributes.length) return null;
 
         return (
@@ -251,6 +269,7 @@ const MyOrderDetail = () => {
             case 'shipped': return 2;
             case 'delivered':
             case 'completed': return 3;
+            case 'cancelled': return -1;
             default: return -1; // Không xác định
         }
     };
@@ -261,7 +280,7 @@ const MyOrderDetail = () => {
             {
                 title: "Chờ xử lý",
                 description: 'Đơn hàng đã được đặt',
-                time: order.order_info?.pending_at || 'Chưa có thông tin'
+                time: order.order_info?.pending_at || order.order_info?.created_at || 'Chưa có thông tin'
             },
             {
                 title: "Đang xử lý",
@@ -276,16 +295,16 @@ const MyOrderDetail = () => {
             {
                 title: "Đã hoàn thành",
                 description: 'Đơn hàng đã được giao thành công',
-                time: order.order_info?.completed_at || 'Chưa có thông tin'
+                time: order.order_info?.completed_at || order.order_info?.delivered_at || 'Chưa có thông tin'
             }
         ];
 
         return (
             <Steps current={getStepStatus()} status={order.order_info?.cancelled_at ? 'error' : 'process'}>
                 {steps.map((step, index) => (
-                    <Step 
-                        key={index} 
-                        title={step.title} 
+                    <Step
+                        key={index}
+                        title={step.title}
                         description={(
                             <div>
                                 {step.description}
@@ -293,7 +312,7 @@ const MyOrderDetail = () => {
                                     Thời gian: {formatOrderDate(step.time)}
                                 </div>
                             </div>
-                        )} 
+                        )}
                     />
                 ))}
             </Steps>
@@ -306,6 +325,7 @@ const MyOrderDetail = () => {
     if (!order) return <div style={{ textAlign: 'center', marginTop: '20px' }}>Không tìm thấy đơn hàng</div>;
 
     const orderInfo = order?.order_info || order || {};
+    const orderStatus = orderInfo.status || orderInfo.Status;
 
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
@@ -328,9 +348,20 @@ const MyOrderDetail = () => {
                 <Item label="Mã đơn hàng">{orderInfo.id || orderInfo.OrderID || 'Chưa có thông tin'}</Item>
                 <Item label="Ngày đặt hàng">{formatOrderDate(orderInfo.created_at || orderInfo.CreatedAt)}</Item>
                 <Item label="Trạng thái">
-                    <Tag color={getStatusColor(orderInfo.status || orderInfo.Status)}>
-                        {translateStatus(orderInfo.status || orderInfo.Status)}
+                    <Tag color={getStatusColor(orderStatus)}>
+                        {translateStatus(orderStatus)}
                     </Tag>
+                    {orderStatus === 'pending' && (
+                        <Button
+                            type="danger"
+                            size="small"
+                            onClick={handleCancelOrder}
+                            loading={cancelling}
+                            style={{ marginLeft: '10px' }}
+                        >
+                            Hủy đơn hàng
+                        </Button>
+                    )}
                 </Item>
                 <Item label="Thông tin người nhận">
                     <div>Tên: {orderInfo.receiver_name || 'Chưa có thông tin'}</div>
@@ -356,7 +387,7 @@ const MyOrderDetail = () => {
                     (order.order_details || []).map((item, index) => (
                         <div key={index} style={{
                             display: 'flex',
-                            alignItems: 'center',
+                            alignItems: 'flex-start',
                             marginBottom: '20px',
                             paddingBottom: '20px',
                             borderBottom: '1px solid #f0f0f0'
@@ -364,20 +395,37 @@ const MyOrderDetail = () => {
                             {renderProductImage(item)}
                             <div style={{ marginLeft: '20px', flex: 1 }}>
                                 <h4 style={{ marginBottom: '5px' }}>
-                                    {item?.product_name || 'Chưa có tên sản phẩm'}
+                                    {item?.product_name || item?.product_variant?.product?.name || 'Chưa có tên sản phẩm'}
                                 </h4>
                                 {renderAttributes(item)}
                                 <div>Số lượng: {item?.quantity || '0'}</div>
                                 <div>
-                                    Đơn giá: {item.Unit_price
-                                        ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.Unit_price)
+                                    Đơn giá: {item.Unit_price || item?.unit_price
+                                        ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.Unit_price || item?.unit_price)
                                         : 'Chưa có thông tin'}
                                 </div>
                                 <div style={{ fontWeight: 'bold', marginTop: '5px' }}>
-                                    Thành tiền: {item?.Subtotal
-                                        ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.Subtotal)
+                                    Thành tiền: {item?.Subtotal || item?.subtotal
+                                        ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.Subtotal || item?.subtotal)
                                         : 'Chưa có thông tin'}
                                 </div>
+
+                                {/* Nút đánh giá sản phẩm */}
+                                {(orderStatus === 'completed' || orderStatus === 'delivered') && (
+                                    <div style={{ marginTop: '10px' }}>
+                                        {item.is_reviewed ? (
+                                            <Tag color="green">Đã đánh giá</Tag>
+                                        ) : (
+                                            <Button
+                                                type="primary"
+                                                size="small"
+                                                onClick={() => handleReviewClick(item)}
+                                            >
+                                                Đánh giá sản phẩm
+                                            </Button>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))
@@ -390,8 +438,8 @@ const MyOrderDetail = () => {
 
             {/* Modal đánh giá sản phẩm */}
             <Modal
-                title={`Đánh giá sản phẩm ${currentProduct?.product_name || 'Chưa có tên sản phẩm'}`}
-                visible={reviewModalVisible}
+                title={`Đánh giá sản phẩm ${currentProduct?.product_name || currentProduct?.product_variant?.product?.name || 'Chưa có tên sản phẩm'}`}
+                open={reviewModalVisible}
                 onOk={handleReviewSubmit}
                 onCancel={() => {
                     setReviewModalVisible(false);
@@ -399,6 +447,7 @@ const MyOrderDetail = () => {
                 }}
                 okText="Gửi đánh giá"
                 cancelText="Hủy"
+                confirmLoading={submittingReview}
             >
                 <Form form={form} layout="vertical">
                     <Form.Item
@@ -413,7 +462,12 @@ const MyOrderDetail = () => {
                         label="Nhận xét"
                         rules={[{ required: true, message: 'Vui lòng nhập nhận xét' }]}
                     >
-                        <Input.TextArea rows={4} placeholder="Hãy chia sẻ cảm nhận của bạn về sản phẩm..." />
+                        <TextArea
+                            rows={4}
+                            placeholder="Hãy chia sẻ cảm nhận của bạn về sản phẩm..."
+                            maxLength={500}
+                            showCount
+                        />
                     </Form.Item>
                 </Form>
             </Modal>
