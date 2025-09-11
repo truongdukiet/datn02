@@ -96,13 +96,13 @@ const Checkout = () => {
     }
   };
 
-  // Validate phone number
+  // Validate phone number - CHANGED TO 10 DIGITS
   const validatePhone = (phone) => {
-    const phoneRegex = /^\d{8}$/;
+    const phoneRegex = /^\d{10}$/; // Changed from 8 to 10 digits
     if (!phone) {
       return "Số điện thoại không được để trống";
     } else if (!phoneRegex.test(phone)) {
-      return "Số điện thoại phải là 8 chữ số";
+      return "Số điện thoại phải là 10 chữ số"; // Updated error message
     }
     return "";
   };
@@ -434,10 +434,10 @@ const Checkout = () => {
                   className="tw-mb-3"
                 />
                 <Input
-                  placeholder="Số điện thoại (11 chữ số)"
+                  placeholder="Số điện thoại (10 chữ số)" // Updated placeholder
                   value={receiverPhone}
                   onChange={(e) => handlePhoneChange(e.target.value)}
-                  maxLength={11}
+                  maxLength={10} // Updated maxLength
                   className="tw-mb-1"
                 />
                 {errors.phone && <div className="tw-text-red-500 tw-text-sm tw-mb-3">{errors.phone}</div>}
