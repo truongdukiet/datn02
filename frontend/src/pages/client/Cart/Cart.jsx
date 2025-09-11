@@ -292,20 +292,17 @@ const Cart = () => {
                             {item.product_variant?.product?.Name || "Tên sản phẩm không xác định"}
                           </p>
                           {renderAttributes(item.ProductVariantID)}
-                          
-                          
+
+                          {/* ĐÃ SỬA: Bỏ gạch ngang ở giá */}
                           <p className="tw-my-3 tw-flex tw-items-center tw-gap-x-3">
-                            <span className="tw-text-sm tw-text-[#757575] tw-line-through">
-                              {formatPrice(item.product_variant?.Price)}
-                            </span>
-                            <span className="tw-text-[#1A1C20]">
+                            <span className="tw-text-[#1A1C20] tw-text-xl">
                               {formatPrice(item.product_variant?.Price * item.Quantity)}
                             </span>
                           </p>
-                          
+
                           <div className="tw-inline-flex tw-items-center tw-gap-x-2 tw-border tw-border-solid tw-border-[#EEEEEE] tw-rounded-full tw-h-9">
-                            <button 
-                              className="tw-pl-4 tw-pr-2 tw-cursor-pointer" 
+                            <button
+                              className="tw-pl-4 tw-pr-2 tw-cursor-pointer"
                               onClick={() => handleDecrement(item.ProductVariantID)}
                               disabled={item.Quantity <= 1 || isUpdating}
                             >
@@ -314,7 +311,7 @@ const Cart = () => {
                             <input
                               type="text"
                               value={item.Quantity}
-                              className="tw-text-center tw-bg-transparent tw-outline-none tw-border-none tw-w-16 tw-text-black tw-text-base" // Increased width and font size
+                              className="tw-text-center tw-bg-transparent tw-outline-none tw-border-none tw-w-16 tw-text-black tw-text-base"
                               onChange={(e) => handleQuantityInputChange(item.ProductVariantID, e.target.value)}
                               onBlur={(e) => {
                                 if (e.target.value === "" || parseInt(e.target.value) < 1) {
@@ -323,8 +320,8 @@ const Cart = () => {
                               }}
                               disabled={isUpdating}
                             />
-                            <button 
-                              className="tw-pr-4 tw-pl-2 tw-cursor-pointer" 
+                            <button
+                              className="tw-pr-4 tw-pl-2 tw-cursor-pointer"
                               onClick={() => handleIncrement(item.ProductVariantID)}
                               disabled={item.Quantity >= stock || isUpdating}
                             >
