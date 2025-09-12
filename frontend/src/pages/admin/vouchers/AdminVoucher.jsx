@@ -39,7 +39,10 @@ const AdminVoucher = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setFormData(prev => ({
+            ...prev,
+            [name]: name === "Status" ? Number(value) : value
+        }));
     };
 
     const handleSubmit = async (e) => {
@@ -49,8 +52,10 @@ const AdminVoucher = () => {
         try {
             if (selectedVoucher) {
                 await updateVoucher({ ...formData, id: selectedVoucher.VoucherID });
+                alert('✅ Cập nhật mã giảm giá thành công!');
             } else {
                 await addVoucher(formData);
+                alert('✅ Thêm mã giảm giá thành công!');
             }
             setFormData({ Code: '', Value: '', Quantity: '', Status: true, Description: '', Expiry_date: '' });
             setSelectedVoucher(null);
@@ -62,12 +67,19 @@ const AdminVoucher = () => {
 
     const handleEdit = (voucher) => {
         setSelectedVoucher(voucher);
-        setFormData(voucher);
+        setFormData({
+            ...voucher,
+            Status: Number(voucher.Status), 
+            Expiry_date: voucher.Expiry_date
+                ? voucher.Expiry_date.split("T")[0]
+                : ""
+        });
     };
 
     const handleDelete = async (id) => {
         try {
             await deleteVoucher(id);
+            alert('🗑️ Xóa mã giảm giá thành công!');
             fetchVouchers();
         } catch (err) {
             setError('Lỗi: ' + (err.response?.data?.message || 'Không thể xóa'));
@@ -78,6 +90,7 @@ const AdminVoucher = () => {
         <div className="voucher-management">
             <h2>Quản lý mã giảm giá</h2>
             {error && <p className="error">{error}</p>}
+
             {loading ? (
                 <p>Đang tải dữ liệu...</p>
             ) : (
@@ -140,10 +153,15 @@ const AdminVoucher = () => {
                     onChange={handleChange}
                     required
                 />
-                <select name="Status" value={formData.Status} onChange={handleChange}>
-                    <option value={true}>Kích hoạt</option>
-                    <option value={false}>Không kích hoạt</option>
+                <select
+                    name="Status"
+                    value={Number(formData.Status)}
+                    onChange={handleChange}
+                >
+                    <option value={1}>Kích hoạt</option>
+                    <option value={0}>Không kích hoạt</option>
                 </select>
+
                 <textarea
                     name="Description"
                     placeholder="Mô tả mã giảm giá"
