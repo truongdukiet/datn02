@@ -73,7 +73,6 @@ const ProductVariantList = () => {
         }
     };
 
-
     const fetchProductName = async () => {
         try {
             const response = await axios.get(`${API_BASE_URL}/products/${productId}`);
@@ -84,11 +83,15 @@ const ProductVariantList = () => {
     };
 
     const handleDelete = async (ProductVariantID) => {
-        try {
-            await axios.delete(`${API_BASE_URL}/product-variants/${ProductVariantID}`);
-            fetchProducts();
-        } catch (error) {
-            console.error('Error deleting variant:', error);
+        if (window.confirm("Bạn có chắc muốn xóa biến thể này?")) {
+            try {
+                await axios.delete(`${API_BASE_URL}/product-variants/${ProductVariantID}`);
+                fetchProducts();
+                alert("Xóa biến thể thành công!");
+            } catch (error) {
+                console.error('Error deleting variant:', error);
+                alert("Lỗi khi xóa biến thể!");
+            }
         }
     };
 
@@ -113,7 +116,7 @@ const ProductVariantList = () => {
         setEditVariant(null);
     };
 
-     const renderAttributes = (variantId) => {
+    const renderAttributes = (variantId) => {
         const attributes = variantAttributes[variantId] || [];
         if (!attributes.length) return null;
         
@@ -157,12 +160,15 @@ const ProductVariantList = () => {
             </div>
             
             {showForm && (
-                <div className="form-container" style={{ marginBottom: '20px', padding: '20px', border: '1px solid #ddd', borderRadius: '5px' }}>
+                <div className="form-container" style={{ marginBottom: '20px', padding: '20px', border: '1px solid #ddd', borderRadius: '5px', backgroundColor: '#f8f9fa' }}>
                     <ProductVariantForm 
                         variant={editVariant} 
                         onSubmit={handleFormSubmit}
                         onCancel={handleCancel}
                         productId={productId}
+                        existingVariants={variants.filter(v => 
+                            !editVariant || v.ProductVariantID !== editVariant.ProductVariantID
+                        )}
                     />
                 </div>
             )}
@@ -175,6 +181,7 @@ const ProductVariantList = () => {
                         <th>Image</th>
                         <th>SKU</th>
                         <th>Giá</th>
+                        <th>Tồn kho</th>
                         <th>Thuộc tính</th>
                         <th>Hành động</th>
                     </tr>
@@ -191,13 +198,17 @@ const ProductVariantList = () => {
                                             src={`http://localhost:8000/storage/${variant.Image}`}
                                             alt="Product"
                                             className="product-image"
+                                            onError={(e) => {
+                                                e.target.src = 'https://via.placeholder.com/50';
+                                            }}
                                         />
                                     ) : (
                                         <span className="no-image">No Image</span>
                                     )}
                                 </td>
                                 <td>{variant.Sku}</td>
-                                <td>{variant.Price.toLocaleString()}đ</td>
+                                <td>{variant.Price ? variant.Price.toLocaleString() + 'đ' : 'N/A'}</td>
+                                <td>{variant.Stock !== undefined ? variant.Stock : 'N/A'}</td>
                                 <td>
                                     {renderAttributes(variant.ProductVariantID)}
                                 </td>
@@ -219,7 +230,7 @@ const ProductVariantList = () => {
                         ))
                     ) : (
                         <tr>
-                            <td colSpan={productId ? "6" : "7"} className="no-variants">
+                            <td colSpan={productId ? "7" : "8"} className="no-variants">
                                 Không có biến thể nào
                             </td>
                         </tr>
@@ -228,6 +239,13 @@ const ProductVariantList = () => {
             </table>
             
             <style jsx>{`
+                .product-variant-list {
+                    padding: 20px;
+                    background-color: #fff;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                }
+                
                 .attribute-tags {
                     display: flex;
                     flex-wrap: wrap;
@@ -256,11 +274,13 @@ const ProductVariantList = () => {
                 }
                 
                 .btn {
-                    padding: 6px 12px;
+                    padding: 8px 16px;
                     border-radius: 4px;
                     cursor: pointer;
                     border: none;
                     margin-right: 5px;
+                    font-size: 14px;
+                    transition: all 0.2s;
                 }
                 
                 .btn-primary {
@@ -268,9 +288,17 @@ const ProductVariantList = () => {
                     color: white;
                 }
                 
+                .btn-primary:hover {
+                    background-color: #0069d9;
+                }
+                
                 .btn-secondary {
                     background-color: #6c757d;
                     color: white;
+                }
+                
+                .btn-secondary:hover {
+                    background-color: #5a6268;
                 }
                 
                 .btn-sm {
@@ -283,9 +311,17 @@ const ProductVariantList = () => {
                     color: #212529;
                 }
                 
+                .btn-edit:hover {
+                    background-color: #e0a800;
+                }
+                
                 .btn-delete {
                     background-color: #dc3545;
                     color: white;
+                }
+                
+                .btn-delete:hover {
+                    background-color: #c82333;
                 }
                 
                 .variant-table {
@@ -296,11 +332,16 @@ const ProductVariantList = () => {
                 
                 .variant-table th, .variant-table td {
                     border: 1px solid #dee2e6;
-                    padding: 8px;
+                    padding: 12px;
                     text-align: left;
                 }
                 
                 .variant-table th {
+                    background-color: #f8f9fa;
+                    font-weight: 600;
+                }
+                
+                .variant-table tr:hover {
                     background-color: #f8f9fa;
                 }
                 
@@ -308,22 +349,31 @@ const ProductVariantList = () => {
                     text-align: center;
                     color: #6c757d;
                     padding: 20px;
+                    font-style: italic;
                 }
                 
                 .form-container {
                     background-color: #f8f9fa;
+                    border-radius: 5px;
                 }
                 
                 .loading {
                     text-align: center;
-                    padding: 20px;
+                    padding: 40px;
                     font-size: 18px;
+                    color: #6c757d;
                 }
                 
                 .error {
                     color: #dc3545;
                     text-align: center;
-                    padding: 20px;
+                    padding: 40px;
+                    font-size: 18px;
+                }
+                
+                h1 {
+                    color: #333;
+                    margin-bottom: 20px;
                 }
             `}</style>
         </div>

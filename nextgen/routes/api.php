@@ -188,3 +188,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/orders/{orderId}', [OrderController::class, 'getOrderDetail']); // Chi tiết đơn hàng (Admin)
     });
 });
+
+
+Route::get('/variant-attributes/variant/{variantId}', [VariantAttributeController::class, 'getByVariant']);

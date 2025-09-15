@@ -18,7 +18,7 @@ class ProductVariantController extends Controller
      */
     public function index(Request $request)
     {
-        $query = ProductVariant::query();
+        $query = ProductVariant::with(['attributes.attribute']);
         
         // Lọc theo productId nếu có
         if ($request->has('product_id')) {

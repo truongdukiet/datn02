@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../../../public/css/ProductVariantForm.css';
 
-const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
+const ProductVariantForm = ({ variant, onSubmit, onCancel, productId, existingVariants = [] }) => {
     const [formData, setFormData] = useState({
         ProductID: productId || '',
         Sku: '',
@@ -16,6 +16,7 @@ const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
     const [currentImage, setCurrentImage] = useState(null);
     const [fieldErrors, setFieldErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [duplicateError, setDuplicateError] = useState('');
     
     const API_BASE_URL = 'http://localhost:8000/api';
 
@@ -46,7 +47,9 @@ const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
             
             const fetchVariantAttributes = async () => {
                 try {
-                    const response = await axios.get(`${API_BASE_URL}/variant-attributes?variant_id=${variant.ProductVariantID}`);
+                    const response = await axios.get(
+                        `${API_BASE_URL}/variant-attributes/variant/${variant.ProductVariantID}`
+                    );
                     const attrs = {};
                     response.data.data.forEach(attr => {
                         attrs[attr.AttributeID] = attr.value;
@@ -102,6 +105,90 @@ const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
         return error;
     };
 
+    const checkDuplicateVariant = () => {
+        if (!productId || attributes.length === 0) return false;
+        
+        // Tìm ID của thuộc tính màu sắc và kích thước
+        const colorAttr = attributes.find(attr => attr.name.toLowerCase() === 'màu sắc');
+        const sizeAttr = attributes.find(attr => attr.name.toLowerCase() === 'kích thước');
+        
+        // Nếu không có thuộc tính màu sắc thì không cần kiểm tra
+        if (!colorAttr) return false;
+        
+        const selectedColor = selectedAttributes[colorAttr.AttributeID] || '';
+        
+        // Nếu chưa chọn màu sắc thì không kiểm tra
+        if (!selectedColor.trim()) return false;
+        
+        // Lọc chỉ các biến thể có cùng ProductID
+        const variantsWithSameProduct = existingVariants.filter(v => 
+            v.ProductID.toString() === productId.toString()
+        );
+        
+        // Kiểm tra trong danh sách biến thể có cùng ProductID
+        const isDuplicate = variantsWithSameProduct.some(v => {
+            // Bỏ qua biến thể hiện tại đang chỉnh sửa
+            if (variant && v.ProductVariantID === variant.ProductVariantID) return false;
+            
+            // Lấy attributes của variant hiện có
+            const variantAttributes = v.attributes || [];
+            
+            // Tìm thuộc tính màu sắc và kích thước của biến thể hiện có
+            const variantColorValue = variantAttributes.find(a => 
+                a.attribute?.AttributeID === colorAttr.AttributeID
+            )?.value || '';
+            
+            const variantSizeValue = sizeAttr ? 
+                (variantAttributes.find(a => 
+                    a.attribute?.AttributeID === sizeAttr.AttributeID
+                )?.value || '') : '';
+            
+            const selectedSizeValue = sizeAttr ? (selectedAttributes[sizeAttr.AttributeID] || '') : '';
+            
+            // Nếu cùng màu sắc
+            if (variantColorValue.toLowerCase() === selectedColor.toLowerCase()) {
+                // Nếu có thuộc tính kích thước và cả hai đều có giá trị kích thước giống nhau
+                if (sizeAttr && variantSizeValue && selectedSizeValue && 
+                    variantSizeValue.toLowerCase() === selectedSizeValue.toLowerCase()) {
+                    return true;
+                }
+                // Nếu không có thuộc tính kích thước hoặc một trong hai không có giá trị kích thước
+                else if (!sizeAttr || (!variantSizeValue && !selectedSizeValue)) {
+                    return true;
+                }
+            }
+            
+            return false;
+        });
+        
+        return isDuplicate;
+    };
+
+    const validateAttributes = () => {
+        const errors = {};
+        let hasError = false;
+        
+        // Kiểm tra các thuộc tính bắt buộc
+        attributes.forEach(attr => {
+            const value = selectedAttributes[attr.AttributeID] || '';
+            if (!value.trim()) {
+                errors[`attribute_${attr.AttributeID}`] = "Giá trị thuộc tính không được để trống";
+                hasError = true;
+            }
+        });
+        
+        // Kiểm tra trùng lặp biến thể
+        if (checkDuplicateVariant()) {
+            setDuplicateError('Đã tồn tại biến thể với cùng màu sắc và kích thước. Vui lòng chọn kích thước khác.');
+            hasError = true;
+        } else {
+            setDuplicateError('');
+        }
+        
+        setFieldErrors({ ...fieldErrors, ...errors });
+        return !hasError;
+    };
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
@@ -154,6 +241,11 @@ const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
             [attributeId]: value
         });
         
+        // Xóa thông báo lỗi trùng lặp khi người dùng thay đổi
+        if (duplicateError) {
+            setDuplicateError('');
+        }
+        
         // Validate attribute
         const error = !value.trim() ? "Giá trị thuộc tính không được để trống" : "";
         setFieldErrors({ 
@@ -171,30 +263,29 @@ const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
 
     const validateForm = () => {
         const errors = {};
+        let isValid = true;
         
         // Validate all fields
         Object.keys(formData).forEach(key => {
-            if (key !== 'Image') { // Skip image for general validation
+            if (key !== 'Image') {
                 const error = validateField(key, formData[key]);
-                if (error) errors[key] = error;
-            }
-        });
-        
-        // Validate attributes
-        attributes.forEach(attr => {
-            const attrValue = selectedAttributes[attr.AttributeID] || '';
-            if (!attrValue.trim()) {
-                errors[`attribute_${attr.AttributeID}`] = "Giá trị thuộc tính không được để trống";
+                if (error) {
+                    errors[key] = error;
+                    isValid = false;
+                }
             }
         });
         
         // Validate image for new variant
         if (!variant && !formData.Image && !currentImage) {
             errors.Image = 'Vui lòng chọn ảnh cho biến thể sản phẩm';
+            isValid = false;
         }
         
         setFieldErrors(errors);
-        return Object.keys(errors).length === 0;
+        
+        // Validate thuộc tính và kiểm tra trùng lặp
+        return isValid && validateAttributes();
     };
 
     const handleSubmit = async (e) => {
@@ -286,6 +377,20 @@ const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
     return (
         <div className="variant-form">
             <h2>{variant ? "Sửa biến thể" : "Thêm biến thể mới"}</h2>
+            
+            {/* Hiển thị lỗi trùng lặp */}
+            {duplicateError && (
+                <div className="error-message" style={{ 
+                    padding: '10px', 
+                    backgroundColor: '#f8d7da', 
+                    color: '#721c24', 
+                    borderRadius: '4px',
+                    marginBottom: '15px'
+                }}>
+                    {duplicateError}
+                </div>
+            )}
+            
             <form onSubmit={handleSubmit} className="variant-form-container">
                 <div className="form-columns">
                     <div className="form-column">

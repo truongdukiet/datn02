@@ -73,4 +73,15 @@ class VariantAttributeController extends Controller
         $variantAttribute->delete();
         return response()->json(['success' => true, 'message' => 'Variant attribute deleted']);
     }
+    public function getByVariant($variantId)
+    {
+        $variantAttributes = VariantAttribute::with('attribute')
+            ->where('ProductVariantID', $variantId)
+            ->get();
+        
+        return response()->json([
+            'success' => true, 
+            'data' => $variantAttributes
+        ]);
+    }
 }
