@@ -14,6 +14,8 @@ const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
     const [selectedAttributes, setSelectedAttributes] = useState({});
     const [imagePreview, setImagePreview] = useState(null);
     const [currentImage, setCurrentImage] = useState(null);
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
     
     const API_BASE_URL = 'http://localhost:8000/api';
 
@@ -35,10 +37,9 @@ const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
                 Sku: variant.Sku,
                 Price: variant.Price,
                 Stock: variant.Stock,
-                Image: null // Để null vì đã có currentImage
+                Image: null
             });
             
-            // Lưu ảnh hiện tại nếu có
             if (variant.Image) {
                 setCurrentImage(`http://localhost:8000/storage/${variant.Image}`);
             }
@@ -60,24 +61,91 @@ const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
         }
     }, [variant, productId]);
 
+    const validateField = (name, value) => {
+        let error = '';
+        
+        switch (name) {
+            case "Sku":
+                if (!value.trim()) {
+                    error = "SKU không được để trống";
+                } else if (!/^[A-Za-z0-9\-_]+$/.test(value)) {
+                    error = "SKU chỉ được chứa chữ cái, số, dấu gạch ngang và gạch dưới";
+                }
+                break;
+            case "Price":
+                if (!value) {
+                    error = "Giá không được để trống";
+                } else if (isNaN(value) || parseFloat(value) < 0) {
+                    error = "Giá phải là số dương";
+                } else if (!/^\d+$/.test(value)) {
+                    error = "Giá phải là số tự nhiên";
+                }
+                break;
+            case "Stock":
+                if (!value && value !== 0) {
+                    error = "Số lượng tồn kho không được để trống";
+                } else if (isNaN(value) || parseInt(value) < 0) {
+                    error = "Số lượng tồn kho phải là số nguyên dương";
+                } else if (!/^\d+$/.test(value)) {
+                    error = "Số lượng tồn kho phải là số tự nhiên";
+                }
+                break;
+            case "ProductID":
+                if (!value) {
+                    error = "Product ID không được để trống";
+                }
+                break;
+            default:
+                break;
+        }
+        
+        return error;
+    };
+
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
+        
+        // Validate field on change
+        const error = validateField(name, value);
+        setFieldErrors({ ...fieldErrors, [name]: error });
+    };
+
+    const handleBlur = (e) => {
+        const { name, value } = e.target;
+        const error = validateField(name, value);
+        setFieldErrors({ ...fieldErrors, [name]: error });
     };
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        setFormData({ ...formData, Image: file });
+        if (!file) return;
         
-        // Tạo URL cho ảnh preview
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result);
-            };
-            reader.readAsDataURL(file);
-        } else {
-            setImagePreview(null);
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        
+        if (!allowedTypes.includes(file.type)) {
+            setFieldErrors({ ...fieldErrors, Image: 'Chỉ chấp nhận file ảnh định dạng JPEG, PNG, JPG hoặc GIF' });
+            e.target.value = '';
+            return;
         }
+        
+        if (file.size > maxSize) {
+            setFieldErrors({ ...fieldErrors, Image: 'Kích thước file không được vượt quá 5MB' });
+            e.target.value = '';
+            return;
+        }
+        
+        setFormData({ ...formData, Image: file });
+        setFieldErrors({ ...fieldErrors, Image: '' });
+        
+        // Create preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setImagePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
     };
 
     const handleAttributeChange = (attributeId, value) => {
@@ -85,19 +153,66 @@ const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
             ...selectedAttributes,
             [attributeId]: value
         });
+        
+        // Validate attribute
+        const error = !value.trim() ? "Giá trị thuộc tính không được để trống" : "";
+        setFieldErrors({ 
+            ...fieldErrors, 
+            [`attribute_${attributeId}`]: error 
+        });
+    };
+
+    const handleRemoveImage = () => {
+        setFormData({ ...formData, Image: null });
+        setImagePreview(null);
+        setCurrentImage(null);
+        setFieldErrors({ ...fieldErrors, Image: '' });
+    };
+
+    const validateForm = () => {
+        const errors = {};
+        
+        // Validate all fields
+        Object.keys(formData).forEach(key => {
+            if (key !== 'Image') { // Skip image for general validation
+                const error = validateField(key, formData[key]);
+                if (error) errors[key] = error;
+            }
+        });
+        
+        // Validate attributes
+        attributes.forEach(attr => {
+            const attrValue = selectedAttributes[attr.AttributeID] || '';
+            if (!attrValue.trim()) {
+                errors[`attribute_${attr.AttributeID}`] = "Giá trị thuộc tính không được để trống";
+            }
+        });
+        
+        // Validate image for new variant
+        if (!variant && !formData.Image && !currentImage) {
+            errors.Image = 'Vui lòng chọn ảnh cho biến thể sản phẩm';
+        }
+        
+        setFieldErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        const dataToSend = {
-            ProductID: formData.ProductID,
-            Sku: formData.Sku,
-            Price: formData.Price,
-            Stock: formData.Stock,
-            attributes: selectedAttributes
-        };
-
+        if (!validateForm()) {
+            // Scroll to first error
+            const firstErrorField = Object.keys(fieldErrors)[0];
+            if (firstErrorField) {
+                const element = document.querySelector(`[name="${firstErrorField}"]`) || 
+                               document.querySelector(`[data-attribute="${firstErrorField}"]`);
+                if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return;
+        }
+        
+        setIsSubmitting(true);
+        
         try {
             if (variant) {
                 // Xử lý update - dùng FormData để hỗ trợ cả ảnh
@@ -120,7 +235,7 @@ const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
                     formDataToSend,
                     {
                         headers: { 'Content-Type': 'multipart/form-data' },
-                        params: { _method: 'PUT' } // For Laravel to recognize as PUT
+                        params: { _method: 'PUT' }
                     }
                 );
             } else {
@@ -152,18 +267,20 @@ const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
             console.error('Lỗi khi lưu biến thể:', error);
             
             if (error.response?.data?.errors) {
+                const serverErrors = {};
+                Object.keys(error.response.data.errors).forEach(key => {
+                    serverErrors[key] = error.response.data.errors[key].join(', ');
+                });
+                setFieldErrors(serverErrors);
+                
                 const errorMessages = Object.values(error.response.data.errors).flat().join('\n');
-                alert(`Lỗi:\n${errorMessages}`);
+                alert(`Lỗi từ server:\n${errorMessages}`);
             } else {
                 alert('Lỗi khi lưu biến thể: ' + (error.response?.data.message || error.message));
             }
+        } finally {
+            setIsSubmitting(false);
         }
-    };
-
-    const handleRemoveImage = () => {
-        setFormData({ ...formData, Image: null });
-        setImagePreview(null);
-        setCurrentImage(null);
     };
 
     return (
@@ -180,8 +297,13 @@ const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
                                     name="ProductID"
                                     value={formData.ProductID}
                                     onChange={handleChange}
+                                    onBlur={handleBlur}
                                     required
+                                    style={{ borderColor: fieldErrors.ProductID ? '#dc3545' : '' }}
                                 />
+                                {fieldErrors.ProductID && (
+                                    <div className="error-message">{fieldErrors.ProductID}</div>
+                                )}
                             </div>
                         )}
                         
@@ -192,8 +314,13 @@ const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
                                 name="Sku"
                                 value={formData.Sku}
                                 onChange={handleChange}
+                                onBlur={handleBlur}
                                 required
+                                style={{ borderColor: fieldErrors.Sku ? '#dc3545' : '' }}
                             />
+                            {fieldErrors.Sku && (
+                                <div className="error-message">{fieldErrors.Sku}</div>
+                            )}
                         </div>
                         
                         <div className="form-group">
@@ -203,8 +330,15 @@ const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
                                 name="Price"
                                 value={formData.Price}
                                 onChange={handleChange}
+                                onBlur={handleBlur}
                                 required
+                                min="0"
+                                step="1000"
+                                style={{ borderColor: fieldErrors.Price ? '#dc3545' : '' }}
                             />
+                            {fieldErrors.Price && (
+                                <div className="error-message">{fieldErrors.Price}</div>
+                            )}
                         </div>
                         
                         <div className="form-group">
@@ -214,8 +348,14 @@ const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
                                 name="Stock"
                                 value={formData.Stock}
                                 onChange={handleChange}
+                                onBlur={handleBlur}
                                 required
+                                min="0"
+                                style={{ borderColor: fieldErrors.Stock ? '#dc3545' : '' }}
                             />
+                            {fieldErrors.Stock && (
+                                <div className="error-message">{fieldErrors.Stock}</div>
+                            )}
                         </div>
                     </div>
                     
@@ -263,7 +403,12 @@ const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
                                 type="file"
                                 onChange={handleFileChange}
                                 accept="image/*"
+                                style={{ borderColor: fieldErrors.Image ? '#dc3545' : '' }}
                             />
+                            
+                            {fieldErrors.Image && (
+                                <div className="error-message">{fieldErrors.Image}</div>
+                            )}
                             
                             {/* Hiển thị preview ảnh mới */}
                             {imagePreview && (
@@ -296,16 +441,34 @@ const ProductVariantForm = ({ variant, onSubmit, onCancel, productId }) => {
                                     type="text"
                                     value={selectedAttributes[attr.AttributeID] || ''}
                                     onChange={(e) => handleAttributeChange(attr.AttributeID, e.target.value)}
+                                    onBlur={(e) => handleAttributeChange(attr.AttributeID, e.target.value)}
                                     placeholder={`Nhập ${attr.name}`}
+                                    data-attribute={`attribute_${attr.AttributeID}`}
+                                    style={{ 
+                                        borderColor: fieldErrors[`attribute_${attr.AttributeID}`] ? '#dc3545' : '' 
+                                    }}
                                 />
+                                {fieldErrors[`attribute_${attr.AttributeID}`] && (
+                                    <div className="error-message">
+                                        {fieldErrors[`attribute_${attr.AttributeID}`]}
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
                 </div>
                 
                 <div className="form-actions">
-                    <button type="submit" className="submit-btn">
-                        {variant ? "Cập nhật" : "Thêm mới"}
+                    <button 
+                        type="submit" 
+                        className="submit-btn"
+                        disabled={isSubmitting}
+                        style={{ 
+                            backgroundColor: isSubmitting ? '#6c757d' : '#28a745',
+                            cursor: isSubmitting ? 'not-allowed' : 'pointer'
+                        }}
+                    >
+                        {isSubmitting ? "Đang xử lý..." : (variant ? "Cập nhật" : "Thêm mới")}
                     </button>
                     <button 
                         type="button" 

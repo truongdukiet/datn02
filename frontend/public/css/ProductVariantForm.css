@@ -149,3 +149,23 @@
     text-align: center;
     margin-bottom: 10px;
 }
+
+
+.error-message {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.attribute-item {
+    margin-bottom: 15px;
+}
+
+.submit-btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
