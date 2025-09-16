@@ -91,6 +91,7 @@ class OrderController extends Controller
 
             // Thêm thời gian trạng thái
             $now = now();
+            $validated['Create_at'] = $now;
             $validated['Pending_at'] = $now;
 
             // Tạo đơn hàng
@@ -165,7 +166,7 @@ class OrderController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Order created successfully',
+                'message' => 'Order Create successfully',
                 'data' => $order
             ], 201);
 
@@ -273,7 +274,7 @@ class OrderController extends Controller
         try {
             $orders = Order::where('UserID', $userId)
                          ->with(['orderDetails.productVariant.product'])
-                         ->orderBy('Pending_at', 'desc')
+                         ->orderBy('Create_at', 'desc')
                          ->get();
 
             return response()->json([
@@ -347,7 +348,7 @@ class OrderController extends Controller
                     'receiver_name' => $order->Receiver_name,
                     'receiver_phone' => $order->Receiver_phone,
                     'shipping_address' => $order->Shipping_address,
-                    'created_at' => $order->Pending_at,
+                    'Create_at' => $order->Create_at,
                     'pending_at' => $order->Pending_at,
                     'processing_at' => $order->Processing_at,
                     'shipping_at' => $order->Shipping_at,
@@ -376,7 +377,7 @@ class OrderController extends Controller
                             'Sku'              => $detail->productVariant->Sku ?? null,
                             'Stock'            => $detail->productVariant->Stock ?? null,
                             'Update_at'        => $detail->productVariant->updated_at,
-                            'created_at'       => $detail->productVariant->created_at,
+                            'Create_at'       => $detail->productVariant->Create_at,
                         ]
                     ];
                 }),

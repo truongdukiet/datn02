@@ -235,7 +235,8 @@ const AdminOrder = () => {
                         <p><b>Tên người nhận:</b> {editingOrder.Receiver_name}</p>
                         <p><b>Số điện thoại:</b> {editingOrder.Receiver_phone}</p>
                         <p><b>Tổng số tiền:</b> {editingOrder.Total_amount}</p>
-                        <p><b>Ngày tạo:</b> {formatDateTime(editingOrder.Pending_at)}</p>
+                        <p><b>Ngày tạo:</b> {formatDateTime(editingOrder.Create_at)}</p>
+                        <p><b>Ngày chờ xử lý:</b> {formatDateTime(editingOrder.Pending_at)}</p>
                         <p><b>Ngày xử lý:</b> {formatDateTime(editingOrder.Processing_at)}</p>
                         <p><b>Ngày giao hàng:</b> {formatDateTime(editingOrder.Shipping_at)}</p>
                         <p><b>Ngày hoàn thành:</b> {formatDateTime(editingOrder.Completed_at)}</p>
@@ -273,6 +274,7 @@ const AdminOrder = () => {
                         <th>Tổng số tiền</th>
                         <th>Trạng thái</th>
                         <th>Ngày tạo</th>
+                        <th>Ngày xử lý</th>
                         <th>Ngày giao</th>
                         <th>Ngày hoàn thành</th>
                         <th>Ngày hủy</th>
@@ -298,7 +300,7 @@ const AdminOrder = () => {
                                 }}>
                                     {translateStatus(item.Status)}
                                 </td>
-                                <td>{formatDateTime(item.created_at)}</td>
+                                <td>{formatDateTime(item.Create_at)}</td>
                                 <td>{item.Status === 'processing' || item.Status === 'shipped' || item.Status === 'completed'
                                      ? formatDateTime(item.Processing_at) : ''}</td>
                                 <td>{item.Status === 'shipped' || item.Status === 'completed'

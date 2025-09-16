@@ -17,6 +17,7 @@ class Order extends Model
         'Receiver_name',
         'Receiver_phone',
         'Shipping_address',
+        'Create_at',
         'Pending_at',
         'Processing_at',
         'Shipping_at',
@@ -25,7 +26,7 @@ class Order extends Model
         'Update_at',
     ];
 
-    const CREATED_AT = 'Pending_at';
+    const CREATED_AT = 'Create_at';
     const UPDATED_AT = 'Update_at';
 
     /**

@@ -77,7 +77,7 @@ const ThankYou = () => {
             <p className="tw-mb-1">
               <span className="tw-text-[#1A1C20]">Thời gian đặt hàng:</span>
               <span className="tw-text-[#1A1C20] tw-ml-1 tw-font-bold">
-                {formatDate(order.Pending_at)}
+                {formatDate(order.Create_at)}
               </span>
             </p>
           </section>
