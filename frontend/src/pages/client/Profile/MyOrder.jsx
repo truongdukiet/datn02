@@ -8,9 +8,10 @@ import {
   message,
   Tag,
   Spin,
-  Space
+  Space,
+  Breadcrumb
 } from 'antd';
-import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { SearchOutlined, ReloadOutlined, HomeOutlined } from '@ant-design/icons';
 import { getOrdersByUser, cancelOrder } from '../../../api/axiosClient';
 
 const { Search } = Input;
@@ -64,6 +65,12 @@ const MyOrder = () => {
                         ? new Date(order.created_at).toISOString()
                         : new Date().toISOString()
                 }));
+
+                // Sắp xếp đơn hàng theo thời gian tạo mới nhất
+                formattedOrders.sort((a, b) => {
+                    return new Date(b.created_at) - new Date(a.created_at);
+                });
+
                 setOrders(formattedOrders);
                 setError(null);
             } else {
@@ -96,11 +103,22 @@ const MyOrder = () => {
 
     const formatDateTime = (dateString) => {
         if (!dateString) return 'Đang cập nhật';
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return 'Đang cập nhật';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return 'Đang cập nhật';
 
-        const options = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-        return date.toLocaleString('vi-VN', options);
+            const options = {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            };
+            return date.toLocaleString('vi-VN', options);
+        } catch (error) {
+            return 'Đang cập nhật';
+        }
     };
 
     const filteredOrders = orders.filter(order => {
@@ -153,9 +171,9 @@ const MyOrder = () => {
         },
         {
             title: 'Ngày đặt',
-            dataIndex: 'Pending_at',
-            key: 'Pending_at',
-            render: formatDateTime,
+            dataIndex: 'created_at',
+            key: 'created_at',
+            render: (date) => formatDateTime(date),
         },
         {
             title: 'Thao tác',
@@ -187,22 +205,35 @@ const MyOrder = () => {
             ),
         },
         {
-            title: 'Ngày xử lý',
-            dataIndex: 'Processing_at',
-            key: 'Processing_at',
-            render: (_, item) => (
-                <>
-                    <div>{formatDateTime(item.Pending_at)}</div>
-                    {item.Status === 'processing' && <div>{formatDateTime(item.Processing_at)}</div>}
-                    {item.Status === 'shipped' && <div>{formatDateTime(item.Shipping_at)}</div>}
-                    {item.Status === 'completed' && <div>{formatDateTime(item.Completed_at)}</div>}
-                </>
-            ),
+            title: 'Ngày cập nhật',
+            key: 'updated_at',
+            render: (_, record) => {
+                // Hiển thị thời gian cập nhật mới nhất dựa trên trạng thái
+                if (record.Status === 'completed' && record.Completed_at) {
+                    return formatDateTime(record.Completed_at);
+                } else if (record.Status === 'shipped' && record.Shipping_at) {
+                    return formatDateTime(record.Shipping_at);
+                } else if (record.Status === 'processing' && record.Processing_at) {
+                    return formatDateTime(record.Processing_at);
+                } else if (record.Status === 'cancelled' && record.Cancelled_at) {
+                    return formatDateTime(record.Cancelled_at);
+                } else {
+                    return formatDateTime(record.created_at);
+                }
+            },
         },
     ];
 
     return (
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
+            {/* Thêm breadcrumb để điều hướng về trang chủ */}
+            <Breadcrumb style={{ marginBottom: '20px' }}>
+                <Breadcrumb.Item onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
+                    <HomeOutlined /> Trang chủ
+                </Breadcrumb.Item>
+                <Breadcrumb.Item>Đơn hàng của tôi</Breadcrumb.Item>
+            </Breadcrumb>
+
             {loading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '50px' }}>
                     <Spin size="large" />
