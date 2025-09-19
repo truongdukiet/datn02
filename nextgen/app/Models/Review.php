@@ -40,19 +40,16 @@ class Review extends Model
      * Lấy ProductVariant mà đánh giá này thuộc về.
      * Database của bạn liên kết Review với ProductVariantID, không phải ProductID trực tiếp.
      */
-    public function productVariant() // Đã đổi tên phương thức từ product() sang productVariant()
-    {
-        return $this->belongsTo(ProductVariant::class, 'ProductVariantID', 'ProductVariantID');
-    }
+// Trong Model Review
+public function productVariant()
+{
+    return $this->belongsTo(ProductVariant::class, 'ProductVariantID', 'ProductVariantID');
+}
 
-    /**
-     * Lấy User mà đánh giá này thuộc về.
-     */
-    public function user()
-    {
-        // Khóa ngoại trong bảng review là UserID, khóa chính của bảng users cũng là UserID
-        return $this->belongsTo(User::class, 'UserID', 'UserID');
-    }
+public function user()
+{
+    return $this->belongsTo(User::class, 'UserID', 'UserID');
+}
 
     /**
      * Lấy OrderDetail mà đánh giá này thuộc về (nếu có).

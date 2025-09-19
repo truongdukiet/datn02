@@ -18,7 +18,7 @@ use App\Http\Controllers\Api\OrderDetailController; // Import OrderDetailControl
 use App\Http\Controllers\Api\UserController; // Import UserController
 use App\Http\Controllers\Api\VoucherController; // Import VoucherController
 use App\Http\Controllers\Api\PaymentGatewayController; // Import PaymentGatewayController
-use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\ReviewController; // Import ReviewController
 use App\Http\Controllers\Api\FavoriteProductController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\VariantAttributeController;
@@ -146,6 +146,14 @@ Route::apiResource('users', UserController::class); // Tuyến đường RESTful
 Route::apiResource('vouchers', VoucherController::class); // Tuyến đường RESTful cho voucher
 Route::apiResource('payment-gateways', PaymentGatewayController::class); // Tuyến đường RESTful cho cổng thanh toán
 Route::apiResource('reviews', ReviewController::class); // Tuyến đường RESTful cho đánh giá
+// Review
+// Admin review management
+Route::put('/reviews/{id}/status', [ReviewController::class, 'updateStatus']);
+Route::post('/reviews/{id}/approve', [ReviewController::class, 'approve']);
+Route::post('/reviews/{id}/hide', [ReviewController::class, 'hide']);
+// Thêm route này vào phần public routes (không cần auth)
+Route::get('/products/{productId}/reviews', [ReviewController::class, 'getProductReviews']);
+// Product reviews
 Route::apiResource('variant-attributes', VariantAttributeController::class); // Tuyến đường RESTful cho thuộc tính biến thể
 Route::get('/check-stock/{variantId}', [CartController::class, 'checkStock']);
 // Cart routes (custom, không dùng apiResource)

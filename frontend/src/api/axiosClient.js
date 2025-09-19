@@ -91,4 +91,11 @@ export const updateOrderDetail = async (orderId, data) => {
   }
 };
 // ✅ Giữ nguyên export default
+
+export const getProductReviews = (productId) => axiosClient.get(`/products/${productId}/reviews`);
+
+
+
+
+
 export default axiosClient;

@@ -8,6 +8,7 @@ import { message } from "antd";
 import ClientHeader from "../../../layouts/MainLayout/ClientHeader";
 import { favoriteApi } from "../../../api/favoriteApi";
 import axios from "axios";
+import ProductReviews from './ProductReviews';
 
 const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
@@ -888,6 +889,8 @@ const handleQuantityInputChange = (e) => {
             </div>
           </div>
         </div>
+
+        <ProductReviews product={product} />
 
         {/* Sản phẩm liên quan */}
         <section className="tw-mb-16">
