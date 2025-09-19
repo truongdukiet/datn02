@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import ClientHeader from "../../../layouts/MainLayout/ClientHeader";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { Checkbox, message } from "antd";
 import { formatPrice } from "../../../utils/formatPrice";
 import apiClient from "../../../api/api";
@@ -15,10 +15,37 @@ const Cart = () => {
   const [variantAttributes, setVariantAttributes] = useState({});
   const [updatingItems, setUpdatingItems] = useState({});
   const user = JSON.parse(localStorage.getItem("user"));
+  const location = useLocation();
 
   if (!user) {
     return <Navigate to="/login" />;
   }
+
+  // Xử lý xóa sản phẩm đã thanh toán thành công
+  useEffect(() => {
+    // Kiểm tra nếu có thông tin thanh toán thành công từ localStorage
+    const checkoutSuccess = localStorage.getItem("checkoutSuccess");
+    const purchasedItems = localStorage.getItem("purchasedItems");
+
+    if (checkoutSuccess === "true" && purchasedItems) {
+      try {
+        const purchasedItemsArray = JSON.parse(purchasedItems);
+
+        // Xóa các sản phẩm đã thanh toán khỏi giỏ hàng
+        setCartItems(prevItems =>
+          prevItems.filter(item => !purchasedItemsArray.includes(item.ProductVariantID))
+        );
+
+        // Xóa thông tin thanh toán khỏi localStorage
+        localStorage.removeItem("checkoutSuccess");
+        localStorage.removeItem("purchasedItems");
+
+        message.success("Đã xóa sản phẩm đã thanh toán thành công khỏi giỏ hàng.");
+      } catch (error) {
+        console.error("Lỗi khi xử lý xóa sản phẩm đã thanh toán:", error);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const fetchCartItems = async () => {
