@@ -1,4 +1,4 @@
-import { Radio, Slider, Spin } from "antd";
+import { Radio, Slider, Spin, Pagination } from "antd";
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import ClientHeader from "../../../layouts/MainLayout/ClientHeader";
@@ -37,6 +37,8 @@ const Products = () => {
     query: "",
     category: null,
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6); // 6 sản phẩm mỗi trang (2 hàng x 3 sản phẩm)
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -50,6 +52,7 @@ const Products = () => {
     }));
 
     setSelectedCategory(category || null);
+    setCurrentPage(1); // Reset về trang đầu tiên khi filter thay đổi
   }, [location.search]);
 
   const { data, isLoading } = useQuery({
@@ -99,6 +102,11 @@ const Products = () => {
   const products = sortProducts(activeProducts, filters.sortBy);
   const productsCount = activeProducts.length;
 
+  // Tính toán sản phẩm cho trang hiện tại
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const currentProducts = products.slice(startIndex, endIndex);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setFilters((prev) => ({
@@ -121,6 +129,12 @@ const Products = () => {
       ...prev,
       category: categoryId,
     }));
+    setCurrentPage(1); // Reset về trang đầu tiên khi category thay đổi
+  };
+
+  const handlePageChange = (page, pageSize) => {
+    setCurrentPage(page);
+    setPageSize(pageSize);
   };
 
   const searchTitle = filters.query
@@ -224,7 +238,7 @@ const Products = () => {
             <div className="tw-col-span-9">
               <div className="tw-flex tw-items-center tw-justify-between tw-mb-6">
                 <p className="tw-m-0 tw-text-xs tw-uppercase tw-text-[#666]">
-                  Hiển thị {products.length} sản phẩm,trong số {productsCount}{" "}
+                  Hiển thị {currentProducts.length} sản phẩm,trong số {productsCount}{" "}
                   sản phẩm
                 </p>
               </div>
@@ -234,8 +248,8 @@ const Products = () => {
                   <div className="tw-col-span-3 tw-flex tw-justify-center tw-py-12">
                     <Spin size="large" />
                   </div>
-                ) : products.length > 0 ? (
-                  products.map((product) => (
+                ) : currentProducts.length > 0 ? (
+                  currentProducts.map((product) => (
                     <ProductItem key={product.ProductID} product={product} />
                   ))
                 ) : (
@@ -246,6 +260,19 @@ const Products = () => {
                   </div>
                 )}
               </div>
+
+              {/* Phân trang */}
+              {products.length > pageSize && (
+                <div className="tw-mt-8 tw-flex tw-justify-center">
+                  <Pagination
+                    current={currentPage}
+                    pageSize={pageSize}
+                    total={products.length}
+                    onChange={handlePageChange}
+                    showSizeChanger={false}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
