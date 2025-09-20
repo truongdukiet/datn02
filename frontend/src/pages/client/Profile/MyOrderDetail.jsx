@@ -152,11 +152,11 @@ const MyOrderDetail = () => {
         try {
             const values = await form.validateFields();
             const payload = {
-                OrderDetailID: currentProduct.OrderDetailID || currentProduct.id,
                 ProductVariantID: currentProduct.ProductVariantID || currentProduct.productVariant?.id,
                 Star_rating: values.rating,
                 Comment: values.comment
             };
+            
             const response = await submitReview(payload);
             if(response.data.success){
                 message.success('Đã gửi đánh giá thành công');

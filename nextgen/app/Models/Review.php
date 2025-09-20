@@ -54,14 +54,15 @@ public function user()
     /**
      * Lấy OrderDetail mà đánh giá này thuộc về (nếu có).
      */
-    public function orderDetail()
-    {
-        // Khóa ngoại trong bảng review là OrderDetailID, khóa chính của bảng orderdetail cũng là OrderDetailID
-        return $this->belongsTo(OrderDetail::class, 'OrderDetailID', 'OrderDetailID');
-    }
+ 
 
-    public function reviews()
-    {
-        return $this->hasMany(Review::class, 'ProductID', 'ProductID');
-    }
+// Trong model OrderDetail
+public function reviews()
+{
+    return $this->hasMany(Review::class, 'OrderDetailID', 'OrderDetailID');
+}
+public function orderDetail()
+{
+    return $this->belongsTo(OrderDetail::class, 'OrderDetailID', 'OrderDetailID');
+}
 }

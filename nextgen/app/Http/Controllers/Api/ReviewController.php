@@ -144,18 +144,10 @@ class ReviewController extends Controller
      */
     public function store(Request $request)
     {
-        // Check if user is authenticated
-        if (!Auth::check()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You must be logged in to submit a review.'
-            ], 401);
-        }
-
         $validator = Validator::make($request->all(), [
-            'product_id' => 'required|integer|exists:products,ProductID',
-            'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'required|string|min:10|max:1000',
+            'ProductVariantID' => 'required|integer|exists:productvariants,ProductVariantID',
+            'Star_rating' => 'required|integer|min:1|max:5',
+            'Comment' => 'required|string|min:10|max:1000',
         ]);
 
         if ($validator->fails()) {
@@ -166,54 +158,40 @@ class ReviewController extends Controller
             ], 422);
         }
 
-        $user = Auth::user();
+        $userID = Auth::id();
         
-        // Check if user has already reviewed this product
-        $existingReview = Review::where('UserID', $user->UserID)
-            ->whereHas('productVariant', function($query) use ($request) {
-                $query->where('ProductID', $request->product_id);
-            })
+        // Kiểm tra xem user đã đánh giá product variant này chưa
+        $existingReview = Review::where('UserID', $userID)
+            ->where('ProductVariantID', $request->ProductVariantID)
             ->first();
 
         if ($existingReview) {
             return response()->json([
                 'success' => false,
-                'message' => 'You have already reviewed this product.'
+                'message' => 'Bạn đã đánh giá sản phẩm này rồi.'
             ], 422);
-        }
-
-        // Get the default variant for the product
-        $defaultVariant = ProductVariant::where('ProductID', $request->product_id)
-            ->orderBy('ProductVariantID')
-            ->first();
-
-        if (!$defaultVariant) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No variants found for this product.'
-            ], 404);
         }
 
         try {
             $review = Review::create([
-                'UserID' => $user->UserID,
-                'ProductVariantID' => $defaultVariant->ProductVariantID,
-                'Star_rating' => $request->rating,
-                'Comment' => $request->comment,
+                'UserID' => $userID,
+                'ProductVariantID' => $request->ProductVariantID,
+                'Star_rating' => $request->Star_rating,
+                'Comment' => $request->Comment,
                 'Status' => 0, // Default to pending approval
                 'Create_at' => Carbon::now(),
-                'Update_at' => Carbon::now(),
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Review submitted successfully. It will be visible after approval.',
+                'message' => 'Đánh giá đã được gửi thành công. Đánh giá sẽ được hiển thị sau khi được phê duyệt.',
                 'data' => $review
             ], 201);
         } catch (\Exception $e) {
+            \Log::error('Review submission error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Error submitting review: ' . $e->getMessage()
+                'message' => 'Lỗi khi gửi đánh giá: ' . $e->getMessage()
             ], 500);
         }
     }

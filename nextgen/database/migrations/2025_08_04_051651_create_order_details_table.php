@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->decimal('Subtotal', 15, 2);
 
             $table->foreign('OrderID')->references('OrderID')->on('orders')->onDelete('cascade');
-            $table->foreign('ProductVariantID')->references('ProductVariantID')->on('product_variants')->onDelete('cascade');
+            $table->foreign('ProductVariantID')->references('ProductVariantID')->on('productvariants')->onDelete('cascade');
         });
     }
 

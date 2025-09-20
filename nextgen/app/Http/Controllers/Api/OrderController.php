@@ -12,6 +12,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\User;
 use App\Models\ProductVariant;
+use App\Models\Review;
 
 class OrderController extends Controller
 {
@@ -333,9 +334,12 @@ class OrderController extends Controller
                 ], 404);
             }
 
-            // Lấy chi tiết đơn hàng
+            // Lấy chi tiết đơn hàng với reviews của user đã đặt hàng
             $orderDetails = OrderDetail::where('OrderID', $orderId)
-                                    ->with(['productVariant.product'])
+                                    ->with(['productVariant.product', 
+                                        'reviews' => function($query) use ($order) {
+                                            $query->where('UserID', $order->UserID);
+                                        }])
                                     ->get();
 
             // Format dữ liệu trả về
@@ -357,10 +361,23 @@ class OrderController extends Controller
                     'payment_method' => $order->paymentGateway->Name ?? null,
                     'voucher_code' => $order->voucher->Code ?? null
                 ],
-                'order_details' => $orderDetails->map(function($detail) {
+                'order_details' => $orderDetails->map(function($detail) use ($order) {
+                    // Kiểm tra xem người dùng đã đánh giá sản phẩm này chưa
+                    $isReviewed = Review::where('UserID', $order->UserID)
+                        ->where('ProductVariantID', $detail->ProductVariantID)
+                        ->exists();
+                    
+                    // Lấy thông tin đánh giá nếu có
+                    $review = null;
+                    if ($isReviewed) {
+                        $review = Review::where('UserID', $order->UserID)
+                            ->where('ProductVariantID', $detail->ProductVariantID)
+                            ->first();
+                    }
+                    
                     return [
                         'OrderDetailID'    => $detail->OrderDetailID,
-                        'UserID'          => $detail->Order->UserID,
+                        'UserID'          => $order->UserID,
                         'ProductVariantID' => $detail->ProductVariantID,
                         'product_name'     => $detail->productVariant->product->Name ?? null,
                         'variant_name'     => $detail->productVariant->Name ?? null,
@@ -378,7 +395,16 @@ class OrderController extends Controller
                             'Stock'            => $detail->productVariant->Stock ?? null,
                             'Update_at'        => $detail->productVariant->updated_at,
                             'Create_at'       => $detail->productVariant->Create_at,
-                        ]
+                        ],
+                        // Thêm thông tin đánh giá
+                        'is_reviewed' => $isReviewed,
+                        'review' => $review ? [
+                            'ReviewID' => $review->ReviewID,
+                            'Star_rating' => $review->Star_rating,
+                            'Comment' => $review->Comment,
+                            'Status' => $review->Status,
+                            'Create_at' => $review->Create_at,
+                        ] : null
                     ];
                 }),
             ];
@@ -389,10 +415,10 @@ class OrderController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            // \Log::error('Order detail error: ' . $e->getMessage());
+            \Log::error('Order detail error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to get order details'
+                'message' => 'Failed to get order details: ' . $e->getMessage()
             ], 500);
         }
     }

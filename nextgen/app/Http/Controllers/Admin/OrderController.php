@@ -12,6 +12,8 @@ use Illuminate\Http\Request; // Import class Request để lấy dữ liệu t�
 use Illuminate\Support\Facades\Validator; // Import Validator để xác thực dữ liệu đầu vào.
 use Illuminate\Validation\Rule; // Import Rule để sử dụng các quy tắc xác thực nâng cao.
 use Illuminate\Support\Facades\DB; // Import DB facade để sử dụng transaction.
+use App\Models\Review; // Import model Order để tương tác với bảng 'orders'.
+
 
 class OrderController extends Controller // Định nghĩa class Controller của chúng ta.
 {
@@ -51,7 +53,7 @@ class OrderController extends Controller // Định nghĩa class Controller củ
             'VoucherID' => 'nullable|integer|exists:vouchers,VoucherID', // ID voucher, có thể rỗng, phải tồn tại.
             'PaymentID' => 'required|integer|exists:payment_gateways,PaymentID', // ID thanh toán, phải tồn tại.
             'products' => 'required|array|min:1', // Danh sách sản phẩm trong đơn hàng.
-            'products.*.product_variant_id' => 'required|integer|exists:product_variants,id', // ID biến thể sản phẩm, phải tồn tại.
+            'products.*.product_variant_id' => 'required|integer|exists:productvariants,id', // ID biến thể sản phẩm, phải tồn tại.
             'products.*.quantity' => 'required|integer|min:1', // Số lượng sản phẩm, tối thiểu 1.
         ], [
             // Thông báo lỗi tùy chỉnh.
@@ -183,7 +185,7 @@ class OrderController extends Controller // Định nghĩa class Controller củ
             'Status' => ['required', 'string', Rule::in(['pending', 'processing', 'completed', 'cancelled'])],
             'products' => 'required|array|min:1',
             'products.*.id' => 'nullable|exists:order_items,orderid', // ID của order_item có thể rỗng (nếu là item mới) hoặc phải tồn tại.
-            'products.*.product_variant_id' => 'required|integer|exists:product_variants,id',
+            'products.*.product_variant_id' => 'required|integer|exists:productvariants,id',
             'products.*.quantity' => 'required|integer|min:1',
         ], [
             // Thông báo lỗi tùy chỉnh.
