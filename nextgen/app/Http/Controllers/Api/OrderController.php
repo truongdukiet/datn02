@@ -323,6 +323,9 @@ class OrderController extends Controller
     public function getOrderDetail($orderId)
     {
         try {
+            // Get the authenticated user ID
+            $userId = Auth::id();
+            
             // Lấy đơn hàng với các thông tin cơ bản
             $order = Order::with(['user', 'voucher', 'paymentGateway'])
                         ->find($orderId);
@@ -336,10 +339,7 @@ class OrderController extends Controller
 
             // Lấy chi tiết đơn hàng với reviews của user đã đặt hàng
             $orderDetails = OrderDetail::where('OrderID', $orderId)
-                                    ->with(['productVariant.product', 
-                                        'reviews' => function($query) use ($order) {
-                                            $query->where('UserID', $order->UserID);
-                                        }])
+                                    ->with(['productVariant.product'])
                                     ->get();
 
             // Format dữ liệu trả về
@@ -361,23 +361,23 @@ class OrderController extends Controller
                     'payment_method' => $order->paymentGateway->Name ?? null,
                     'voucher_code' => $order->voucher->Code ?? null
                 ],
-                'order_details' => $orderDetails->map(function($detail) use ($order) {
-                    // Kiểm tra xem người dùng đã đánh giá sản phẩm này chưa
-                    $isReviewed = Review::where('UserID', $order->UserID)
+                'order_details' => $orderDetails->map(function($detail) use ($userId) {
+                    // Kiểm tra xem người dùng hiện tại đã đánh giá sản phẩm này chưa
+                    $isReviewed = Review::where('UserID', $userId)
                         ->where('ProductVariantID', $detail->ProductVariantID)
                         ->exists();
                     
                     // Lấy thông tin đánh giá nếu có
                     $review = null;
                     if ($isReviewed) {
-                        $review = Review::where('UserID', $order->UserID)
+                        $review = Review::where('UserID', $userId)
                             ->where('ProductVariantID', $detail->ProductVariantID)
                             ->first();
                     }
                     
                     return [
                         'OrderDetailID'    => $detail->OrderDetailID,
-                        'UserID'          => $order->UserID,
+                        'UserID'          => $userId,
                         'ProductVariantID' => $detail->ProductVariantID,
                         'product_name'     => $detail->productVariant->product->Name ?? null,
                         'variant_name'     => $detail->productVariant->Name ?? null,
