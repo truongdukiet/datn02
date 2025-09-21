@@ -7,32 +7,24 @@ import {
   Tag,
   Spin,
   Empty,
-  Button,
   Row,
   Col,
   Card,
-  Space,
   Typography,
   Pagination,
-  Form,
-  Input,
-  Modal,
-  message,
+  Progress,
   Select,
-  Progress
+  Button
 } from "antd";
 import {
   UserOutlined,
   CalendarOutlined,
-  StarOutlined,
-  FilterOutlined,
   SortAscendingOutlined
 } from '@ant-design/icons';
-import { getProductReviews, submitReview } from "../../../api/axiosClient";
+import { getProductReviews } from "../../../api/axiosClient";
 import { formatPrice } from "../../../utils/formatPrice";
 
 const { Title, Text, Paragraph } = Typography;
-const { TextArea } = Input;
 const { Option } = Select;
 
 // Hàm định dạng ngày tháng
@@ -68,9 +60,6 @@ const ProductReviews = ({ product }) => {
   const [sortBy, setSortBy] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
-  const [showReviewForm, setShowReviewForm] = useState(false);
-  const [reviewForm] = Form.useForm();
-  const [submitting, setSubmitting] = useState(false);
 
   // Thống kê đánh giá
   const stats = {
@@ -94,7 +83,6 @@ const ProductReviews = ({ product }) => {
       const response = await getProductReviews(id);
       
       if (response.data.success) {
-        // Sử dụng dữ liệu trực tiếp từ API mà không cần transform nhiều
         const reviewsData = response.data.data.map((review) => ({
           ...review,
           key: review.id,
@@ -112,12 +100,10 @@ const ProductReviews = ({ product }) => {
         setFilteredReviews(reviewsData);
       } else {
         setError(response.data.message || "Không thể tải đánh giá");
-        message.error(response.data.message || "Không thể tải đánh giá");
       }
     } catch (err) {
       const errorMsg = err.response?.data?.message || "Lỗi kết nối server";
       setError(errorMsg);
-      message.error(errorMsg);
       console.error("Lỗi khi tải đánh giá:", err);
     } finally {
       setLoading(false);
@@ -173,33 +159,6 @@ const ProductReviews = ({ product }) => {
         <Text style={{ width: 40, textAlign: 'right' }}>{count}</Text>
       </div>
     );
-  };
-
-  // Xử lý gửi đánh giá
-  const handleSubmitReview = async (values) => {
-    setSubmitting(true);
-    try {
-      const response = await submitReview({
-        product_id: id,
-        rating: values.rating,
-        comment: values.comment
-      });
-      
-      if (response.data.success) {
-        message.success("Đánh giá của bạn đã được gửi và đang chờ duyệt!");
-        reviewForm.resetFields();
-        setShowReviewForm(false);
-        fetchReviews(); // Làm mới danh sách đánh giá
-      } else {
-        message.error(response.data.message || "Gửi đánh giá thất bại");
-      }
-    } catch (err) {
-      const errorMsg = err.response?.data?.message || "Lỗi kết nối server";
-      message.error(errorMsg);
-      console.error("Lỗi khi gửi đánh giá:", err);
-    } finally {
-      setSubmitting(false);
-    }
   };
 
   // Tính toán reviews hiển thị trên trang hiện tại
@@ -289,16 +248,6 @@ const ProductReviews = ({ product }) => {
               </Select>
             </div>
           </Card>
-
-          <Button 
-            type="primary" 
-            block
-            onClick={() => setShowReviewForm(true)}
-            icon={<StarOutlined />}
-            size="large"
-          >
-            Viết đánh giá
-          </Button>
         </Col>
 
         {/* Danh sách đánh giá */}
@@ -319,15 +268,14 @@ const ProductReviews = ({ product }) => {
                 backgroundColor: '#fafafa',
                 borderRadius: '4px'
               }}
-            >
-              <Button type="primary" onClick={() => setShowReviewForm(true)}>
-                Trở thành người đầu tiên đánh giá
-              </Button>
-            </Empty>
+            />
           ) : (
             <div>
               <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text strong>Hiển thị {paginatedReviews.length} của {filteredReviews.length} đánh giá</Text>
+                <Text strong>
+                  Hiển thị {paginatedReviews.length} của {filteredReviews.length} đánh giá
+                  {filteredReviews.length > pageSize && ` (Trang ${currentPage})`}
+                </Text>
               </div>
 
               {paginatedReviews.map(review => (
@@ -361,6 +309,7 @@ const ProductReviews = ({ product }) => {
                 </Card>
               ))}
               
+              {/* Phân trang - HIỆN ĐANG HOẠT ĐỘNG TỐT */}
               {filteredReviews.length > pageSize && (
                 <div style={{ textAlign: 'center', marginTop: '24px' }}>
                   <Pagination
@@ -373,6 +322,9 @@ const ProductReviews = ({ product }) => {
                     }}
                     showSizeChanger
                     pageSizeOptions={['5', '10', '20', '50']}
+                    showTotal={(total, range) => 
+                      `${range[0]}-${range[1]} của ${total} đánh giá`
+                    }
                   />
                 </div>
               )}
@@ -380,82 +332,6 @@ const ProductReviews = ({ product }) => {
           )}
         </Col>
       </Row>
-
-      {/* Modal viết đánh giá */}
-      <Modal
-        title="Viết đánh giá sản phẩm"
-        open={showReviewForm}
-        onCancel={() => {
-          setShowReviewForm(false);
-          reviewForm.resetFields();
-        }}
-        footer={null}
-        width={600}
-        centered
-      >
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-            <img 
-              src={`http://localhost:8000/storage/${product?.Image}`} 
-              alt={product?.Name}
-              style={{ width: '60px', height: '60px', objectFit: 'cover', marginRight: 12, borderRadius: 4 }}
-            />
-            <div>
-              <div style={{ fontWeight: 'bold' }}>{product?.Name}</div>
-              <div>{formatPrice(product?.base_price)}</div>
-            </div>
-          </div>
-        </div>
-
-        <Form
-          form={reviewForm}
-          layout="vertical"
-          onFinish={handleSubmitReview}
-        >
-          <Form.Item
-            name="rating"
-            label="Đánh giá của bạn"
-            rules={[{ required: true, message: 'Vui lòng chọn số sao' }]}
-          >
-            <Rate style={{ fontSize: 24 }} />
-          </Form.Item>
-
-          <Form.Item
-            name="comment"
-            label="Nhận xét chi tiết"
-            rules={[
-              { required: true, message: 'Vui lòng nhập nhận xét' },
-              { min: 10, message: 'Nhận xét phải có ít nhất 10 ký tự' }
-            ]}
-          >
-            <TextArea
-              rows={4}
-              placeholder="Chia sẻ trải nghiệm của bạn với sản phẩm này..."
-              maxLength={500}
-              showCount
-            />
-          </Form.Item>
-
-          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
-            <Button 
-              onClick={() => {
-                setShowReviewForm(false);
-                reviewForm.resetFields();
-              }}
-              style={{ marginRight: 8 }}
-            >
-              Hủy
-            </Button>
-            <Button 
-              type="primary" 
-              htmlType="submit" 
-              loading={submitting}
-            >
-              Gửi đánh giá
-            </Button>
-          </Form.Item>
-        </Form>
-      </Modal>
     </div>
   );
 };
