@@ -136,7 +136,7 @@ const ThankYou = () => {
             <div className="tw-flex tw-items-center tw-justify-between tw-mt-6">
               <p className="tw-m-0 tw-text-[#1A1C20]">Tổng đơn hàng</p>
               <p className="tw-m-0 tw-font-bold tw-text-[#1A1C20]">
-                {formatPrice(order.Total_amount + discount)}
+                {formatPrice(parseInt(order.Total_amount) + parseInt(discount))}
               </p>
             </div>
 
