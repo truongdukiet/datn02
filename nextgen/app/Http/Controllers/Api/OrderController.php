@@ -393,7 +393,7 @@ class OrderController extends Controller
                             'ProductVariantID' => $detail->productVariant->ProductVariantID ?? null,
                             'Sku'              => $detail->productVariant->Sku ?? null,
                             'Stock'            => $detail->productVariant->Stock ?? null,
-                            'Update_at'        => $detail->productVariant->updated_at,
+                            'Update_at'        => $detail->productVariant->Update_at,
                             'Create_at'       => $detail->productVariant->Create_at,
                         ],
                         // Thêm thông tin đánh giá

@@ -8,6 +8,7 @@ class OrderDetail extends Model
 {
     protected $table = 'orderdetail';
     protected $primaryKey = 'OrderDetailID';
+    public $timestamps = false; // Add this line to disable timestamps
 
     protected $fillable = [
         'OrderID',

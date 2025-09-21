@@ -33,8 +33,8 @@ class OrderController extends Controller
             'receiver_phone' => $validated['receiver_phone'],
             'shipping_address' => $validated['shipping_address'],
             'status' => 'pending',
-            'created_at' => now(),
-            'updated_at' => now(),
+            'create_at' => now(),
+            'update_at' => now(),
         ]);
 
         $orderDetails = [];

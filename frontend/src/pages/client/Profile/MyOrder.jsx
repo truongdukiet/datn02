@@ -206,7 +206,7 @@ const MyOrder = () => {
         },
         {
             title: 'Ngày cập nhật',
-            key: 'updated_at',
+            key: 'update_at',
             render: (_, record) => {
                 // Hiển thị thời gian cập nhật mới nhất dựa trên trạng thái
                 if (record.Status === 'completed' && record.Completed_at) {
