@@ -118,6 +118,9 @@ const NewsDetail = () => {
         được ưa chuộng nhất trong thiết kế nội thất hiện đại. Việc sử dụng vật liệu
         thân thiện môi trường và thiết kế tối giản không chỉ mang lại sự tinh tế
         mà còn bảo vệ môi trường sống của chúng ta.</p>
+        <p>Hãy lựa chọn những món đồ nội thất có thiết kế đơn giản, màu sắc trung tính
+        và ưu tiên sử dụng các vật liệu tái chế hoặc có nguồn gốc tự nhiên như gỗ,
+        tre, nứa để tạo nên không gian sống hài hòa và bền vững.</p>
       `,
     },
     {
@@ -129,6 +132,8 @@ const NewsDetail = () => {
         <p>Thiết kế thông minh giúp bạn tận dụng tối đa diện tích trong các căn hộ
         nhỏ. Hãy thử các giải pháp như nội thất đa năng, gam màu sáng và ánh sáng
         tự nhiên để không gian trở nên rộng rãi hơn.</p>
+        <p> Sử dụng gương để tạo cảm giác không gian mở rộng, và lựa chọn các món đồ nội
+        thất có kích thước phù hợp để tránh làm chật chội căn phòng của bạn.</p>
       `,
     },
     {
@@ -140,6 +145,9 @@ const NewsDetail = () => {
         <p>Màu sắc và ánh sáng đóng vai trò quan trọng trong việc tạo nên cảm giác
         ấm áp cho căn nhà của bạn. Kết hợp ánh sáng vàng và các tông màu trung tính
         để tạo ra một không gian thân thiện và thoải mái.</p>
+        <p>Hãy sử dụng đèn bàn, đèn sàn và nến để tạo điểm nhấn ánh sáng mềm mại,
+        đồng thời lựa chọn các màu sắc như be, nâu nhạt, và xanh pastel để mang lại
+        cảm giác dễ chịu và thư giãn.</p>
       `,
     },
   ];
