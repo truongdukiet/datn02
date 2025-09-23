@@ -22,24 +22,8 @@ const News = () => {
       image: "/images/img_3.jpg",
       date: "18 Tháng 6, 2024",
     },
-    {
-      id: 4,
-      title: "Thiết kế văn phòng hiện đại: Productivity meets Aesthetics",
-      image: "/images/img_4.jpg",
-      date: "15 Tháng 6, 2024",
-    },
-    {
-      id: 5,
-      title: "Smart Home Integration: Công nghệ trong thiết kế nội thất",
-      image: "/images/img_5.jpg",
-      date: "12 Tháng 6, 2024",
-    },
-    {
-      id: 6,
-      title: "Kinh nghiệm lựa chọn nội thất cho căn hộ chung cư",
-      image: "/images/img_1.jpg",
-      date: "10 Tháng 6, 2024",
-    },
+
+
   ];
 
   return (
@@ -85,35 +69,7 @@ const News = () => {
           </div>
 
           {/* Pagination */}
-          <div className="row">
-            <div className="col-md-12 text-center">
-              <div className="site-block-27">
-                <ul>
-                  <li>
-                    <a href="#">&lt;</a>
-                  </li>
-                  <li className="active">
-                    <span>1</span>
-                  </li>
-                  <li>
-                    <a href="#">2</a>
-                  </li>
-                  <li>
-                    <a href="#">3</a>
-                  </li>
-                  <li>
-                    <a href="#">4</a>
-                  </li>
-                  <li>
-                    <a href="#">5</a>
-                  </li>
-                  <li>
-                    <a href="#">&gt;</a>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
+
         </div>
       </div>
     </>
