@@ -80,40 +80,98 @@ const AdminReview = () => {
         setLoading(true);
         try {
             const response = await getReviews();
+            console.log('API Reviews Response:', response); // Debug log
+
             if (response.data.success) {
                 const reviewsData = response.data.data.map((review) => {
+                    console.log('Raw review data:', review); // Debug log
+
+                    // Xử lý thông tin người dùng - dựa trên cấu trúc từ MyOrderDetail
                     let userInfo = {
                         name: 'Khách hàng',
                         phone: 'Chưa có số điện thoại',
                         email: 'Chưa có email'
                     };
 
-                    if (review.user && (review.user.Name || review.user.Phone || review.user.Email)) {
+                    // Kiểm tra nhiều cấu trúc user có thể có
+                    if (review.user) {
                         userInfo = {
-                            name: review.user.Name || 'Khách hàng',
-                            phone: review.user.Phone || 'Chưa có số điện thoại',
-                            email: review.user.Email || 'Chưa có email'
+                            name: review.user.Name || review.user.name || review.user.username || 'Khách hàng',
+                            phone: review.user.Phone || review.user.phone || review.user.phone_number || 'Chưa có số điện thoại',
+                            email: review.user.Email || review.user.email || 'Chưa có email'
+                        };
+                    } else if (review.user_info) {
+                        // Nếu có sẵn user_info từ API
+                        userInfo = {
+                            name: review.user_info.name || 'Khách hàng',
+                            phone: review.user_info.phone || 'Chưa có số điện thoại',
+                            email: review.user_info.email || 'Chưa có email'
                         };
                     }
 
+                    // Xử lý thông tin sản phẩm - dựa trên cấu trúc từ MyOrderDetail
                     let productName = 'Sản phẩm không xác định';
                     let productId = null;
 
+                    // Kiểm tra nhiều cấu trúc dữ liệu sản phẩm có thể có
                     if (review.product_variant?.product?.Name) {
-                        productName = review.product_variant?.product?.Name;
-                        productId = review.product_variant?.product?.id || review.product_variant?.product?.ID;
+                        productName = review.product_variant.product.Name;
+                        productId = review.product_variant.product.id || review.product_variant.product.ID;
+                    } else if (review.product_variant?.product?.name) {
+                        productName = review.product_variant.product.name;
+                        productId = review.product_variant.product.id || review.product_variant.product.ID;
+                    } else if (review.product?.Name) {
+                        productName = review.product.Name;
+                        productId = review.product.id || review.product.ID;
+                    } else if (review.product?.name) {
+                        productName = review.product.name;
+                        productId = review.product.id || review.product.ID;
+                    } else if (review.product_name) {
+                        productName = review.product_name;
+                        productId = review.product_id || null;
+                    } else if (review.product_info?.name) {
+                        productName = review.product_info.name;
+                        productId = review.product_info.id || null;
                     }
 
-                    const rating = review.Star_rating || review.rating || 0;
+                    // Xử lý rating và comment
+                    const rating = review.Star_rating || review.rating || review.star_rating || 0;
                     const comment = review.Comment || review.comment || 'Không có nhận xét';
-                    const createdAt = review.created_at || review.CreatedAt || new Date().toISOString();
-                    const isApproved = review.is_approved !== undefined ? review.is_approved : true;
-                    const isHidden = review.is_hidden || false;
+
+                    // Xử lý ngày tháng
+                    const createdAt = review.created_at || review.CreatedAt || review.createdAt || new Date().toISOString();
+                    const updatedAt = review.updated_at || review.UpdatedAt || review.updatedAt || new Date().toISOString();
+
+                    // Xử lý trạng thái - kiểm tra nhiều trường có thể có
+                    let status = 'pending';
+                    let isApproved = false;
+                    let isHidden = false;
+
+                    // Ưu tiên trường status nếu có
+                    if (review.status) {
+                        status = review.status;
+                        isApproved = status === 'approved';
+                        isHidden = status === 'hidden';
+                    } else {
+                        // Fallback về các trường cũ
+                        isApproved = review.is_approved !== undefined ? review.is_approved :
+                                    (review.approved !== undefined ? review.approved : false);
+                        isHidden = review.is_hidden !== undefined ? review.is_hidden :
+                                  (review.hidden !== undefined ? review.hidden : false);
+
+                        if (isHidden) {
+                            status = 'hidden';
+                        } else if (isApproved) {
+                            status = 'approved';
+                        } else {
+                            status = 'pending';
+                        }
+                    }
 
                     return {
                         ...review,
-                        key: review.id,
-                        id: review.id,
+                        key: review.id || review.ID || Math.random().toString(36).substr(2, 9),
+                        id: review.id || review.ID,
                         user_info: userInfo,
                         product_info: {
                             id: productId,
@@ -122,20 +180,22 @@ const AdminReview = () => {
                         rating: rating,
                         comment: comment,
                         created_at: createdAt,
-                        updated_at: review.updated_at || review.UpdatedAt || new Date().toISOString(),
+                        updated_at: updatedAt,
                         is_approved: isApproved,
                         is_hidden: isHidden,
-                        status: isHidden ? 'hidden' : (isApproved ? 'approved' : 'pending')
+                        status: status
                     };
                 });
 
                 const sortedReviews = reviewsData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
                 setReviews(sortedReviews);
                 setFilteredReviews(sortedReviews);
+                console.log('Processed reviews:', sortedReviews); // Debug log
             } else {
                 setError(response.data.message || "Không thể tải danh sách đánh giá");
             }
         } catch (err) {
+            console.error('Error fetching reviews:', err);
             setError(err.response?.data?.message || "Lỗi kết nối server");
         } finally {
             setLoading(false);
@@ -156,11 +216,11 @@ const AdminReview = () => {
         if (searchText) {
             const lowerSearch = searchText.toLowerCase();
             result = result.filter(review =>
-                review.user_info.name.toLowerCase().includes(lowerSearch) ||
-                review.user_info.phone.toLowerCase().includes(lowerSearch) ||
-                review.user_info.email.toLowerCase().includes(lowerSearch) ||
-                review.product_info.name.toLowerCase().includes(lowerSearch) ||
-                review.comment.toLowerCase().includes(lowerSearch)
+                (review.user_info.name && review.user_info.name.toLowerCase().includes(lowerSearch)) ||
+                (review.user_info.phone && review.user_info.phone.toLowerCase().includes(lowerSearch)) ||
+                (review.user_info.email && review.user_info.email.toLowerCase().includes(lowerSearch)) ||
+                (review.product_info.name && review.product_info.name.toLowerCase().includes(lowerSearch)) ||
+                (review.comment && review.comment.toLowerCase().includes(lowerSearch))
             );
         }
 
@@ -189,19 +249,32 @@ const AdminReview = () => {
             if (newStatus === 'approved') {
                 updateData.is_approved = true;
                 updateData.is_hidden = false;
+                // Cũng có thể gửi status nếu API hỗ trợ
+                updateData.status = 'approved';
             } else if (newStatus === 'hidden') {
                 updateData.is_approved = false;
                 updateData.is_hidden = true;
+                updateData.status = 'hidden';
             } else if (newStatus === 'pending') {
                 updateData.is_approved = false;
                 updateData.is_hidden = false;
+                updateData.status = 'pending';
             }
 
-            await updateReview(currentReview.id, updateData);
-            message.success("Cập nhật trạng thái thành công");
-            setModalVisible(false);
-            fetchReviews();
+            console.log('Updating review with data:', updateData); // Debug log
+
+            const response = await updateReview(currentReview.id, updateData);
+            console.log('Update response:', response); // Debug log
+
+            if (response.data.success) {
+                message.success("Cập nhật trạng thái thành công");
+                setModalVisible(false);
+                fetchReviews(); // Refresh data
+            } else {
+                message.error(response.data.message || "Cập nhật thất bại");
+            }
         } catch (err) {
+            console.error('Update error:', err);
             message.error(err.response?.data?.message || "Cập nhật thất bại");
         }
     };
@@ -212,15 +285,26 @@ const AdminReview = () => {
             if (newStatus === 'approved') {
                 updateData.is_approved = true;
                 updateData.is_hidden = false;
+                updateData.status = 'approved';
             } else if (newStatus === 'hidden') {
                 updateData.is_approved = false;
                 updateData.is_hidden = true;
+                updateData.status = 'hidden';
             }
 
-            await updateReview(review.id, updateData);
-            message.success("Cập nhật trạng thái thành công");
-            fetchReviews();
+            console.log('Quick update with data:', updateData); // Debug log
+
+            const response = await updateReview(review.id, updateData);
+            console.log('Quick update response:', response); // Debug log
+
+            if (response.data.success) {
+                message.success("Cập nhật trạng thái thành công");
+                fetchReviews(); // Refresh data
+            } else {
+                message.error(response.data.message || "Cập nhật thất bại");
+            }
         } catch (err) {
+            console.error('Quick update error:', err);
             message.error(err.response?.data?.message || "Cập nhật thất bại");
         }
     };
@@ -258,13 +342,12 @@ const AdminReview = () => {
         },
         {
             title: "Sản phẩm",
-            dataIndex: ["product_info", "name"],
             key: "product",
-            render: (name, record) => (
+            render: (_, record) => (
                 <div>
                     <div style={{ fontWeight: 500, display: 'flex', alignItems: 'center' }}>
                         <ShopOutlined style={{ marginRight: 5, color: '#52c41a' }} />
-                        {name}
+                        {record.product_info.name}
                     </div>
                     {record.product_info.id && (
                         <div style={{ fontSize: '12px', color: '#888', marginLeft: '20px' }}>
@@ -298,7 +381,7 @@ const AdminReview = () => {
             dataIndex: "status",
             key: "status",
             render: (status) => getStatusTag(status),
-            width: 120,
+            width: 150,
             align: 'center',
             filters: [
                 { text: 'Đã duyệt', value: 'approved' },
@@ -313,12 +396,12 @@ const AdminReview = () => {
             key: "comment",
             render: (text) => (
                 <div style={{
-                    maxWidth: 250,
+                    maxWidth: 300,
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
                 }}>
-                    {text}
+                    {text || 'Không có nhận xét'}
                 </div>
             )
         },
@@ -333,13 +416,13 @@ const AdminReview = () => {
                 </Tag>
             ),
             sorter: (a, b) => new Date(a.created_at) - new Date(b.created_at),
-            width: 160
+            width: 200
         },
         {
             title: "Thao tác",
             key: "action",
             fixed: 'right',
-            width: 180,
+            width: 200,
             render: (_, record) => (
                 <Space>
                     <Button
@@ -566,7 +649,7 @@ const AdminReview = () => {
 
             <Modal
                 title={`Chi tiết đánh giá #${currentReview?.id || ''}`}
-                visible={detailModalVisible}
+                open={detailModalVisible}
                 onCancel={() => setDetailModalVisible(false)}
                 footer={[
                     <Button key="close" onClick={() => setDetailModalVisible(false)}>
@@ -656,10 +739,9 @@ const AdminReview = () => {
                 )}
             </Modal>
 
-            {/* Modal chỉnh sửa đánh giá (đã được sửa đổi) */}
             <Modal
                 title={`Chỉnh sửa trạng thái đánh giá #${currentReview?.id || ''}`}
-                visible={modalVisible}
+                open={modalVisible}
                 onOk={handleUpdate}
                 onCancel={() => setModalVisible(false)}
                 okText="Cập nhật trạng thái"
