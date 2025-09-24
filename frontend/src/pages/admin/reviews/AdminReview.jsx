@@ -109,11 +109,11 @@ const AdminReview = () => {
                         };
                     }
 
-                    // Xử lý thông tin sản phẩm - dựa trên cấu trúc từ MyOrderDetail
+                    // Xử lý thông tin sản phẩm - CẢI THIỆN PHẦN NÀY
                     let productName = 'Sản phẩm không xác định';
                     let productId = null;
 
-                    // Kiểm tra nhiều cấu trúc dữ liệu sản phẩm có thể có
+                    // Kiểm tra nhiều cấu trúc dữ liệu sản phẩm có thể có - THEO THỨ TỰ ƯU TIÊN
                     if (review.product_variant?.product?.Name) {
                         productName = review.product_variant.product.Name;
                         productId = review.product_variant.product.id || review.product_variant.product.ID;
@@ -132,7 +132,28 @@ const AdminReview = () => {
                     } else if (review.product_info?.name) {
                         productName = review.product_info.name;
                         productId = review.product_info.id || null;
+                    } else if (review.product_variant?.name) {
+                        // Thêm trường hợp product_variant có name trực tiếp
+                        productName = review.product_variant.name;
+                        productId = review.product_variant.id || null;
+                    } else if (review.order_item?.product_variant?.product?.name) {
+                        // Thêm trường hợp từ order_item
+                        productName = review.order_item.product_variant.product.name;
+                        productId = review.order_item.product_variant.product.id || null;
+                    } else if (review.order_item?.product_name) {
+                        // Thêm trường hợp từ order_item có product_name
+                        productName = review.order_item.product_name;
+                        productId = review.order_item.product_id || null;
                     }
+
+                    // Debug thông tin sản phẩm
+                    console.log('Product info for review', review.id, ':', {
+                        productName,
+                        productId,
+                        rawProduct: review.product,
+                        rawProductVariant: review.product_variant,
+                        rawOrderItem: review.order_item
+                    });
 
                     // Xử lý rating và comment
                     const rating = review.Star_rating || review.rating || review.star_rating || 0;
@@ -246,19 +267,20 @@ const AdminReview = () => {
             const newStatus = values.status;
 
             const updateData = {};
+
+            // Cập nhật theo cấu trúc API mới - chỉ sử dụng trường status
+            updateData.status = newStatus;
+
+            // Vẫn giữ các trường cũ để tương thích ngược nếu cần
             if (newStatus === 'approved') {
                 updateData.is_approved = true;
                 updateData.is_hidden = false;
-                // Cũng có thể gửi status nếu API hỗ trợ
-                updateData.status = 'approved';
             } else if (newStatus === 'hidden') {
                 updateData.is_approved = false;
                 updateData.is_hidden = true;
-                updateData.status = 'hidden';
             } else if (newStatus === 'pending') {
                 updateData.is_approved = false;
                 updateData.is_hidden = false;
-                updateData.status = 'pending';
             }
 
             console.log('Updating review with data:', updateData); // Debug log
@@ -282,14 +304,17 @@ const AdminReview = () => {
     const handleStatusChange = async (review, newStatus) => {
         try {
             const updateData = {};
+
+            // Cập nhật theo cấu trúc API mới - chỉ sử dụng trường status
+            updateData.status = newStatus;
+
+            // Vẫn giữ các trường cũ để tương thích ngược nếu cần
             if (newStatus === 'approved') {
                 updateData.is_approved = true;
                 updateData.is_hidden = false;
-                updateData.status = 'approved';
             } else if (newStatus === 'hidden') {
                 updateData.is_approved = false;
                 updateData.is_hidden = true;
-                updateData.status = 'hidden';
             }
 
             console.log('Quick update with data:', updateData); // Debug log
@@ -333,8 +358,8 @@ const AdminReview = () => {
                         {record.user_info.name}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', fontSize: '12px', color: '#666' }}>
-                        <PhoneOutlined style={{ marginRight: 5 }} />
-                        {record.user_info.phone}
+                        <MailOutlined style={{ marginRight: 5 }} />
+                        {record.user_info.email}
                     </div>
                 </div>
             ),
@@ -381,7 +406,7 @@ const AdminReview = () => {
             dataIndex: "status",
             key: "status",
             render: (status) => getStatusTag(status),
-            width: 150,
+            width: 120,
             align: 'center',
             filters: [
                 { text: 'Đã duyệt', value: 'approved' },
@@ -396,7 +421,7 @@ const AdminReview = () => {
             key: "comment",
             render: (text) => (
                 <div style={{
-                    maxWidth: 300,
+                    maxWidth: 250,
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
@@ -416,13 +441,13 @@ const AdminReview = () => {
                 </Tag>
             ),
             sorter: (a, b) => new Date(a.created_at) - new Date(b.created_at),
-            width: 200
+            width: 160
         },
         {
             title: "Thao tác",
             key: "action",
             fixed: 'right',
-            width: 200,
+            width: 180,
             render: (_, record) => (
                 <Space>
                     <Button
@@ -580,7 +605,7 @@ const AdminReview = () => {
                 <Row gutter={16} align="middle">
                     <Col span={8}>
                         <Input
-                            placeholder="Tìm kiếm theo tên, sđt, email, sản phẩm hoặc nhận xét..."
+                            placeholder="Tìm kiếm theo tên, email, sản phẩm hoặc nhận xét..."
                             value={searchText}
                             onChange={(e) => setSearchText(e.target.value)}
                             allowClear
@@ -684,10 +709,6 @@ const AdminReview = () => {
                                 <div style={{ fontWeight: 'bold', marginBottom: 5 }}>
                                     <UserOutlined style={{ marginRight: 5 }} />
                                     {currentReview.user_info.name}
-                                </div>
-                                <div style={{ marginBottom: 3 }}>
-                                    <PhoneOutlined style={{ marginRight: 5 }} />
-                                    {currentReview.user_info.phone}
                                 </div>
                                 <div>
                                     <MailOutlined style={{ marginRight: 5 }} />
