@@ -320,106 +320,110 @@ class OrderController extends Controller
         }
     }
 
-    public function getOrderDetail($orderId)
-    {
-        try {
-            // Get the authenticated user ID
-            $userId = Auth::id();
-            
-            // Lấy đơn hàng với các thông tin cơ bản
-            $order = Order::with(['user', 'voucher', 'paymentGateway'])
-                        ->find($orderId);
+public function getOrderDetail($orderId)
+{
+    try {
+        // Get the authenticated user ID
+        $userId = Auth::id();
+        
+        // Lấy đơn hàng với các thông tin cơ bản
+        $order = Order::with(['user', 'voucher', 'paymentGateway'])
+                    ->find($orderId);
 
-            if (!$order) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Order not found'
-                ], 404);
-            }
-
-            // Lấy chi tiết đơn hàng với reviews của user đã đặt hàng
-            $orderDetails = OrderDetail::where('OrderID', $orderId)
-                                    ->with(['productVariant.product'])
-                                    ->get();
-
-            // Format dữ liệu trả về
-            $response = [
-                'order_info' => [
-                    'id' => $order->OrderID,
-                    'user_id' => $order->UserID,
-                    'status' => $order->Status,
-                    'total_amount' => $order->Total_amount,
-                    'receiver_name' => $order->Receiver_name,
-                    'receiver_phone' => $order->Receiver_phone,
-                    'shipping_address' => $order->Shipping_address,
-                    'Create_at' => $order->Create_at,
-                    'pending_at' => $order->Pending_at,
-                    'processing_at' => $order->Processing_at,
-                    'shipping_at' => $order->Shipping_at,
-                    'completed_at' => $order->Completed_at,
-                    'cancelled_at' => $order->Cancelled_at,
-                    'payment_method' => $order->paymentGateway->Name ?? null,
-                    'voucher_code' => $order->voucher->Code ?? null
-                ],
-                'order_details' => $orderDetails->map(function($detail) use ($userId) {
-                    // Kiểm tra xem người dùng hiện tại đã đánh giá sản phẩm này chưa
-                    $isReviewed = Review::where('UserID', $userId)
-                        ->where('ProductVariantID', $detail->ProductVariantID)
-                        ->exists();
-                    
-                    // Lấy thông tin đánh giá nếu có
-                    $review = null;
-                    if ($isReviewed) {
-                        $review = Review::where('UserID', $userId)
-                            ->where('ProductVariantID', $detail->ProductVariantID)
-                            ->first();
-                    }
-                    
-                    return [
-                        'OrderDetailID'    => $detail->OrderDetailID,
-                        'UserID'          => $userId,
-                        'ProductVariantID' => $detail->ProductVariantID,
-                        'product_name'     => $detail->productVariant->product->Name ?? null,
-                        'variant_name'     => $detail->productVariant->Name ?? null,
-                        'quantity'         => $detail->Quantity,
-                        'Unit_price'       => $detail->Unit_price,
-                        'Subtotal'         => $detail->Subtotal,
-                        'Image'            => $detail->productVariant->product->Image ?? null,
-                        // Thêm thông tin product_variant
-                        'product_variant' => [
-                            'Image'            => $detail->productVariant->Image ?? null,
-                            'Price'            => $detail->productVariant->Price ?? null,
-                            'ProductID'        => $detail->productVariant->product->ProductID ?? null,
-                            'ProductVariantID' => $detail->productVariant->ProductVariantID ?? null,
-                            'Sku'              => $detail->productVariant->Sku ?? null,
-                            'Stock'            => $detail->productVariant->Stock ?? null,
-                            'Update_at'        => $detail->productVariant->Update_at,
-                            'Create_at'       => $detail->productVariant->Create_at,
-                        ],
-                        // Thêm thông tin đánh giá
-                        'is_reviewed' => $isReviewed,
-                        'review' => $review ? [
-                            'ReviewID' => $review->ReviewID,
-                            'Star_rating' => $review->Star_rating,
-                            'Comment' => $review->Comment,
-                            'Status' => $review->Status,
-                            'Create_at' => $review->Create_at,
-                        ] : null
-                    ];
-                }),
-            ];
-
-            return response()->json([
-                'success' => true,
-                'data' => $response
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('Order detail error: ' . $e->getMessage());
+        if (!$order) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to get order details: ' . $e->getMessage()
-            ], 500);
+                'message' => 'Order not found'
+            ], 404);
         }
+
+        // Lấy chi tiết đơn hàng với reviews của user đã đặt hàng
+        $orderDetails = OrderDetail::where('OrderID', $orderId)
+                                ->with(['productVariant.product'])
+                                ->get();
+
+        // Format dữ liệu trả về
+        $response = [
+            'order_info' => [
+                'id' => $order->OrderID,
+                'user_id' => $order->UserID,
+                'status' => $order->Status,
+                'total_amount' => $order->Total_amount,
+                'receiver_name' => $order->Receiver_name,
+                'receiver_phone' => $order->Receiver_phone,
+                'shipping_address' => $order->Shipping_address,
+                'Create_at' => $order->Create_at,
+                'pending_at' => $order->Pending_at,
+                'processing_at' => $order->Processing_at,
+                'shipping_at' => $order->Shipping_at,
+                'completed_at' => $order->Completed_at,
+                'cancelled_at' => $order->Cancelled_at,
+                'payment_method' => $order->paymentGateway->Name ?? null,
+                'voucher_code' => $order->voucher->Code ?? null
+            ],
+            'order_details' => $orderDetails->map(function($detail) use ($userId) {
+                // KIỂM TRA XÁC ĐỊNH SẢN PHẨM ĐÃ ĐÁNH GIÁ HAY CHƯA
+                // Kiểm tra theo cả ProductVariantID và OrderDetailID để chính xác hơn
+                $isReviewed = Review::where('UserID', $userId)
+                    ->where('ProductVariantID', $detail->ProductVariantID)
+                    ->where('OrderDetailID', $detail->OrderDetailID) // Thêm điều kiện OrderDetailID
+                    ->exists();
+                
+                // Lấy thông tin đánh giá nếu có
+                $review = null;
+                if ($isReviewed) {
+                    $review = Review::where('UserID', $userId)
+                        ->where('ProductVariantID', $detail->ProductVariantID)
+                        ->where('OrderDetailID', $detail->OrderDetailID)
+                        ->first();
+                }
+                // KẾT THÚC PHẦN XÁC ĐỊNH ĐÁNH GIÁ
+                
+                return [
+                    'OrderDetailID'    => $detail->OrderDetailID,
+                    'UserID'          => $userId,
+                    'ProductVariantID' => $detail->ProductVariantID,
+                    'product_name'     => $detail->productVariant->product->Name ?? null,
+                    'variant_name'     => $detail->productVariant->Name ?? null,
+                    'quantity'         => $detail->Quantity,
+                    'Unit_price'       => $detail->Unit_price,
+                    'Subtotal'         => $detail->Subtotal,
+                    'Image'            => $detail->productVariant->product->Image ?? null,
+                    // Thêm thông tin product_variant
+                    'product_variant' => [
+                        'Image'            => $detail->productVariant->Image ?? null,
+                        'Price'            => $detail->productVariant->Price ?? null,
+                        'ProductID'        => $detail->productVariant->product->ProductID ?? null,
+                        'ProductVariantID' => $detail->productVariant->ProductVariantID ?? null,
+                        'Sku'              => $detail->productVariant->Sku ?? null,
+                        'Stock'            => $detail->productVariant->Stock ?? null,
+                        'Update_at'        => $detail->productVariant->Update_at,
+                        'Create_at'       => $detail->productVariant->Create_at,
+                    ],
+                    // Thêm thông tin đánh giá
+                    'is_reviewed' => $isReviewed,
+                    'review' => $review ? [
+                        'ReviewID' => $review->ReviewID,
+                        'Star_rating' => $review->Star_rating,
+                        'Comment' => $review->Comment,
+                        'Status' => $review->Status,
+                        'Create_at' => $review->Create_at,
+                    ] : null
+                ];
+            }),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data' => $response
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('Order detail error: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to get order details: ' . $e->getMessage()
+        ], 500);
     }
+}
 }

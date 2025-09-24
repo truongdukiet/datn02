@@ -114,7 +114,7 @@ class ReviewController extends Controller
                 'id' => $review->productVariant->ProductVariantID,
                 'name' => $review->productVariant->Name ?? 'Không xác định',
                 'sku' => $review->productVariant->SKU ?? '',
-                'attribute' => $review->productVariant->attributes,
+                'attribute' => $review->productVariant->Attribute ?? null,
 
             ] : null,
             'rating' => $review->Star_rating,
@@ -135,7 +135,7 @@ class ReviewController extends Controller
     private function calculateReviewStatistics($reviews)
     {
         $totalReviews = $reviews->count();
-        
+
         if ($totalReviews === 0) {
             return $this->getEmptyStatistics();
         }
@@ -256,59 +256,81 @@ class ReviewController extends Controller
      * Create a new review
      */
     public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'ProductVariantID' => 'required|integer|exists:productvariants,ProductVariantID',
-            'Star_rating' => 'required|integer|min:1|max:5',
-            'Comment' => 'required|string|min:10|max:1000',
-            'UserID' => 'sometimes|integer|exists:users,UserID' // Optional, in case you want to allow admin to create reviews on behalf of users
-        ]);
+{
+    $validator = Validator::make($request->all(), [
+        'ProductVariantID' => 'required|integer|exists:productvariants,ProductVariantID',
+        'Star_rating' => 'required|integer|min:1|max:5',
+        'Comment' => 'required|string|min:10|max:1000',
+        'UserID' => 'required|integer|exists:users,UserID',
+        'Status' => 'sometimes|integer|in:0,1,2|default:1',
+        'OrderDetailID' => 'sometimes|integer|exists:orderdetail,OrderDetailID'
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $userID = Auth::id();
-        
-        // Kiểm tra xem user đã đánh giá product variant này chưa
-        $existingReview = Review::where('UserID', $userID)
-            ->where('ProductVariantID', $request->ProductVariantID)
-            ->first();
-
-        if ($existingReview) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Bạn đã đánh giá sản phẩm này rồi.'
-            ], 422);
-        }
-
-        try {
-            $review = Review::create([
-                'UserID' => $userID,
-                'ProductVariantID' => $request->ProductVariantID,
-                'Star_rating' => $request->Star_rating,
-                'Comment' => $request->Comment,
-                'Status' => 0, // Default to pending approval
-                'Create_at' => Carbon::now(),
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Đánh giá đã được gửi thành công. Đánh giá sẽ được hiển thị sau khi được phê duyệt.',
-                'data' => $review
-            ], 201);
-        } catch (\Exception $e) {
-            \Log::error('Review submission error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Lỗi khi gửi đánh giá: ' . $e->getMessage()
-            ], 500);
-        }
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation failed',
+            'errors' => $validator->errors()
+        ], 422);
     }
+
+    $userID = $request->UserID;
+
+    // Kiểm tra xem user đã đánh giá sản phẩm này chưa
+    $existingReview = Review::where('UserID', $userID)
+        ->where('ProductVariantID', $request->ProductVariantID)
+        ->first();
+
+    if ($existingReview) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Bạn đã đánh giá sản phẩm này rồi.'
+        ], 422);
+    }
+
+    try {
+        $reviewData = [
+            'UserID' => $userID,
+            'ProductVariantID' => $request->ProductVariantID,
+            'Star_rating' => $request->Star_rating,
+            'Comment' => $request->Comment,
+            'Status' => $request->Status ?? 0,
+            'OrderDetailID' => $request->OrderDetailID
+        ];
+
+        // Sử dụng đúng tên cột trong database
+        // Kiểm tra xem cột trong database là created_at hay Create_at
+        $reviewData['created_at'] = Carbon::now();
+        $reviewData['updated_at'] = Carbon::now();
+
+        $review = Review::create($reviewData);
+
+        // Log để debug
+        \Log::info('Review created successfully:', ['review_id' => $review->ReviewID]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đánh giá đã được gửi thành công. Đánh giá sẽ được hiển thị sau khi được phê duyệt.',
+            'data' => [
+                'id' => $review->ReviewID,
+                'user_id' => $review->UserID,
+                'product_variant_id' => $review->ProductVariantID,
+                'rating' => $review->Star_rating,
+                'comment' => $review->Comment,
+                'status' => $review->Status,
+                'created_at' => $review->created_at
+            ]
+        ], 201);
+    } catch (\Exception $e) {
+        \Log::error('Review submission error: ' . $e->getMessage());
+        \Log::error('Stack trace: ' . $e->getTraceAsString());
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Lỗi khi gửi đánh giá: ' . $e->getMessage()
+        ], 500);
+    }
+}
 
 
     public function updateStatus(Request $request, $id)

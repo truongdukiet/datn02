@@ -536,7 +536,7 @@ const AdminProducts = () => {
         <div style={{ position: "relative", flex: "1 1 300px" }}>
           <input
             type="text"
-            placeholder="🔍 Tìm kiếm theo mã sản phẩm, tên sản phẩm"
+            placeholder="Tìm kiếm theo mã sản phẩm, tên sản phẩm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ width: "100%", padding: "8px 12px 8px 35px", borderRadius: 4, border: "1px solid #ddd" }}

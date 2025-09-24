@@ -73,7 +73,14 @@ export const getOrderDetail = (orderId) => axiosClient.get(`/orders/${orderId}`)
 
 // ✅ Reviews (đánh giá)
 export const getReviews = () => axiosClient.get("/reviews");
-export const submitReview = (data) => axiosClient.post("/reviews", data);
+// api/axiosClient.js
+export const submitReview = (reviewData) => {
+    return axiosClient.post('/reviews', reviewData, {
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    });
+};
 export const updateReview = (id, data) => axiosClient.put(`/reviews/${id}`, data);
 export const deleteReview = (id) => axiosClient.delete(`/reviews/${id}`);
 

@@ -47,7 +47,26 @@ const MyOrderDetail = () => {
     const [variantAttributes, setVariantAttributes] = useState({});
     const [cancelling, setCancelling] = useState(false);
     const [submittingReview, setSubmittingReview] = useState(false);
-
+    
+    // Hàm lấy userID từ authentication
+    const getCurrentUserID = () => {
+        try {
+            // Lấy từ localStorage
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                const userData = JSON.parse(storedUser);
+                return userData.UserID || userData.id || userData.userId;
+            }
+            
+            // Hoặc lấy từ context/auth state nếu có
+            // return authContext.userID;
+            
+            return null;
+        } catch (error) {
+            console.error('Error getting user ID:', error);
+            return null;
+        }
+    };
     // Hàm lấy chi tiết đơn hàng
     const fetchOrderDetail = async () => {
         try {
@@ -132,46 +151,92 @@ const MyOrderDetail = () => {
     };
 
     // Mở modal đánh giá sản phẩm
-    const handleReviewClick = (product) => {
-        setCurrentProduct(product);
-        setReviewModalVisible(true);
-        // Đặt giá trị mặc định nếu sản phẩm đã được đánh giá
-        if (product.is_reviewed && product.review) {
-            form.setFieldsValue({
-                rating: product.review.Star_rating,
-                comment: product.review.Comment
-            });
-        } else {
-            form.resetFields();
-        }
-    };
+    // Mở modal đánh giá sản phẩm
+// Trong hàm handleReviewClick, thêm kiểm tra kỹ hơn
+const handleReviewClick = (product) => {
+    const userID = getCurrentUserID();
+    if (!userID) {
+        message.error('Vui lòng đăng nhập để đánh giá sản phẩm');
+        return;
+    }
+
+    // Kiểm tra kỹ hơn
+    if (product.is_reviewed) {
+        message.warning('Bạn đã đánh giá sản phẩm này trong đơn hàng này rồi');
+        return;
+    }
+
+    // Kiểm tra thêm trong console để debug
+    console.log('Product review status:', {
+        is_reviewed: product.is_reviewed,
+        review: product.review,
+        OrderDetailID: product.OrderDetailID,
+        ProductVariantID: product.ProductVariantID
+    });
+
+    setCurrentProduct(product);
+    setReviewModalVisible(true);
+    form.resetFields();
+};
 
     // Gửi đánh giá sản phẩm
-    const handleReviewSubmit = async () => {
-        setSubmittingReview(true);
-        try {
-            const values = await form.validateFields();
-            const payload = {
-                ProductVariantID: currentProduct.ProductVariantID || currentProduct.productVariant?.id,
-                Star_rating: values.rating,
-                Comment: values.comment
-            };
-            
-            const response = await submitReview(payload);
-            if(response.data.success){
-                message.success('Đã gửi đánh giá thành công');
-                setReviewModalVisible(false);
-                form.resetFields();
-                fetchOrderDetail(); // Tải lại dữ liệu sau khi gửi đánh giá
-            } else {
-                message.error(response.data.message || 'Gửi đánh giá thất bại');
-            }
-        } catch (err) {
-            message.error(err.response?.data?.message || 'Gửi đánh giá thất bại');
-        } finally {
-            setSubmittingReview(false);
+ const handleReviewSubmit = async () => {
+    const userID = getCurrentUserID();
+    if (!userID) {
+        message.error('Vui lòng đăng nhập để đánh giá sản phẩm');
+        return;
+    }
+
+    setSubmittingReview(true);
+    try {
+        const values = await form.validateFields();
+        const payload = {
+            ProductVariantID: currentProduct.ProductVariantID || currentProduct.productVariant?.id,
+            OrderDetailID: currentProduct.OrderDetailID,
+            Star_rating: values.rating,
+            Comment: values.comment,
+            UserID: parseInt(userID), // Đảm bảo là số
+        };
+
+        console.log('Submitting review with payload:', payload);
+
+        const response = await submitReview(payload);
+        if (response.data.success) {
+            message.success('Đã gửi đánh giá thành công');
+            setReviewModalVisible(false);
+            form.resetFields();
+            fetchOrderDetail();
+        } else {
+            message.error(response.data.message || 'Gửi đánh giá thất bại');
         }
-    };
+    } catch (err) {
+        console.error('Review submission error:', err);
+        
+        // Hiển thị chi tiết lỗi cụ thể
+        if (err.response) {
+            console.log('Response data:', err.response.data);
+            console.log('Response status:', err.response.status);
+            
+            if (err.response.status === 422 && err.response.data.errors) {
+                const errors = err.response.data.errors;
+                Object.keys(errors).forEach(key => {
+                    message.error(`${key}: ${errors[key][0]}`);
+                });
+            } else if (err.response.data.message) {
+                message.error(err.response.data.message);
+            } else {
+                message.error('Lỗi server: ' + err.response.status);
+            }
+        } else if (err.request) {
+            message.error('Không thể kết nối đến server');
+        } else {
+            message.error('Lỗi: ' + err.message);
+        }
+    } finally {
+        setSubmittingReview(false);
+    }
+};
+
 
     // Dịch trạng thái sang tiếng Việt
     const translateStatus = (status) => {
@@ -414,7 +479,9 @@ const MyOrderDetail = () => {
                                 {(orderStatus === 'completed' || orderStatus === 'delivered') && (
                                     <div style={{ marginTop: '10px' }}>
                                         {item.is_reviewed ? (
-                                            <Tag color="green">Đã đánh giá</Tag>
+                                            <Tag color="green" style={{ cursor: 'not-allowed' }}>
+                                                Đã đánh giá
+                                            </Tag>
                                         ) : (
                                             <Button
                                                 type="primary"
