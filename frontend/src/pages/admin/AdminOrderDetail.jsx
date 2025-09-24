@@ -75,7 +75,7 @@ const AdminOrderDetail = () => {
 
                 setOrder(processedOrder);
                 setLastUpdated(new Date());
-                
+
                 // Lấy thuộc tính cho các biến thể sản phẩm
                 if (processedOrder.order_details.length > 0) {
                     fetchAllVariantAttributes(processedOrder.order_details);
@@ -98,7 +98,7 @@ const AdminOrderDetail = () => {
         await Promise.all(orderDetails.map(async (item) => {
             const variantId = item.ProductVariantID || item.productVariant?.id;
             if (!variantId) return;
-            
+
             try {
                 const response = await fetch(`${API_BASE_URL}/variant-attributes?variant_id=${variantId}`);
                 const data = await response.json();
@@ -182,14 +182,14 @@ const AdminOrderDetail = () => {
                 </div>
             );
         }
-        
+
         const imageUrl = imagePath.startsWith('http') ? imagePath : `http://localhost:8000/storage/${imagePath}`;
-        
+
         return (
-            <Image 
-                width={80} 
+            <Image
+                width={80}
                 height={80}
-                src={imageUrl} 
+                src={imageUrl}
                 alt={item?.product_name || 'Sản phẩm'}
                 style={{ objectFit: 'cover', borderRadius: '4px' }}
                 fallback="data:image/svg+xml;base64,..."
@@ -201,7 +201,7 @@ const AdminOrderDetail = () => {
     const renderAttributes = (item) => {
         const variantId = item?.ProductVariantID || item?.productVariant?.id;
         const attributes = variantAttributes[variantId] || [];
-        
+
         if (!attributes.length) return null;
 
         return (
@@ -299,9 +299,9 @@ const AdminOrderDetail = () => {
         return (
             <Steps current={getStepStatus()} status={order.order_info?.cancelled_at ? 'error' : 'process'}>
                 {steps.map((step, index) => (
-                    <Step 
-                        key={index} 
-                        title={step.title} 
+                    <Step
+                        key={index}
+                        title={step.title}
                         description={(
                             <div>
                                 {step.description}
@@ -309,7 +309,7 @@ const AdminOrderDetail = () => {
                                     Thời gian: {formatOrderDate(step.time)}
                                 </div>
                             </div>
-                        )} 
+                        )}
                     />
                 ))}
             </Steps>
@@ -337,16 +337,8 @@ const AdminOrderDetail = () => {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <h2>Chi tiết đơn hàng #{orderInfo.id || orderInfo.OrderID || 'Chưa có thông tin'}</h2>
-                
-                {!['cancelled', 'completed'].includes(currentStatus) && (
-                    <Button 
-                        type="primary" 
-                        icon={<EditOutlined />}
-                        onClick={handleStatusUpdateClick}
-                    >
-                        Cập nhật trạng thái
-                    </Button>
-                )}
+
+
             </div>
 
             <div style={{ textAlign: 'right', marginBottom: '10px', color: '#666', fontSize: '0.9em' }}>
@@ -443,7 +435,7 @@ const AdminOrderDetail = () => {
                             ))}
                         </Select>
                     </Form.Item>
-                    
+
                     <Form.Item style={{ textAlign: 'right', marginBottom: 0 }}>
                         <Button onClick={() => setStatusModalVisible(false)} style={{ marginRight: 8 }}>
                             Hủy
