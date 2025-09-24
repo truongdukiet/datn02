@@ -112,7 +112,7 @@ class ReviewController extends Controller
             'product_variant_id' => $review->ProductVariantID,
             'product_variant_info' => $review->productVariant ? [
                 'id' => $review->productVariant->ProductVariantID,
-                'name' => $review->productVariant->Name ?? 'Không xác định',
+                'name' => $review->productVariant->Product->Name ?? 'Không xác định',
                 'sku' => $review->productVariant->SKU ?? '',
                 'attribute' => $review->productVariant->Attribute ?? null,
 

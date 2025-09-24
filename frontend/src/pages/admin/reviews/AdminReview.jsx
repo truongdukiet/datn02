@@ -110,8 +110,8 @@ const AdminReview = () => {
                     }
 
                     // Xử lý thông tin sản phẩm - CẢI THIỆN PHẦN NÀY
-                    let productName = 'Sản phẩm không xác định';
-                    let productId = null;
+                    let productName = review.product_variant_info?.name || 'Sản phẩm không xác định';
+                    let productId = review.product_variant_info?.id ||  null;
 
                     // Kiểm tra nhiều cấu trúc dữ liệu sản phẩm có thể có - THEO THỨ TỰ ƯU TIÊN
                     if (review.product_variant?.product?.Name) {
