@@ -13,6 +13,7 @@ use App\Models\CartItem;
 use App\Models\User;
 use App\Models\ProductVariant;
 use App\Models\Review;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -47,8 +48,10 @@ class OrderController extends Controller
         }
     }
 
-    public function store(Request $request)
+public function store(Request $request)
     {
+        DB::beginTransaction(); // Bắt đầu transaction
+
         try {
             $validated = $request->validate([
                 'UserID' => 'required|integer|exists:users,UserID',
@@ -65,6 +68,30 @@ class OrderController extends Controller
                 'order_details.*.Unit_price' => 'sometimes|numeric|min:0',
                 'order_details.*.Subtotal' => 'nullable|numeric|min:0',
             ]);
+
+            // KIỂM TRA TỒN KHO TRƯỚC KHI TẠO ĐƠN HÀNG
+            if (isset($validated['order_details'])) {
+                foreach ($validated['order_details'] as $detail) {
+                    $productVariant = ProductVariant::find($detail['ProductVariantID']);
+                    
+                    if (!$productVariant) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Product variant not found'
+                        ], 404);
+                    }
+
+                    // Kiểm tra số lượng tồn kho
+                    if ($productVariant->Stock < $detail['Quantity']) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Insufficient stock for product: ' . 
+                                       ($productVariant->product->Name ?? 'Unknown product') . 
+                                       '. Available: ' . $productVariant->Stock
+                        ], 400);
+                    }
+                }
+            }
 
             // Xử lý voucher
             $voucher = null;
@@ -100,11 +127,21 @@ class OrderController extends Controller
             unset($orderData['order_details']);
             $order = Order::create($orderData);
 
-            // Tạo chi tiết đơn hàng
+            // Tạo chi tiết đơn hàng VÀ TRỪ SỐ LƯỢNG TỒN KHO
             if (isset($validated['order_details'])) {
                 foreach ($validated['order_details'] as $detail) {
                     $detail['OrderID'] = $order->OrderID;
                     OrderDetail::create($detail);
+
+                    // TRỪ SỐ LƯỢNG TRONG PRODUCT VARIANT
+                    $productVariant = ProductVariant::find($detail['ProductVariantID']);
+                    if ($productVariant) {
+                        $productVariant->decrement('Stock', $detail['Quantity']);
+                        
+                        // Ghi log để debug
+                        \Log::info('Stock updated for product variant: ' . $productVariant->ProductVariantID . 
+                                  '. New stock: ' . $productVariant->Stock);
+                    }
                 }
             }
 
@@ -119,30 +156,24 @@ class OrderController extends Controller
             if ($user) {
                 $updateData = [];
                 
-                // Cập nhật tên nếu chưa có
                 if (empty($user->Fullname) && !empty($validated['Receiver_name'])) {
                     $updateData['Fullname'] = $validated['Receiver_name'];
                 }
                 
-                // Cập nhật số điện thoại nếu chưa có
                 if (empty($user->Phone) && !empty($validated['Receiver_phone'])) {
                     $updateData['Phone'] = $validated['Receiver_phone'];
                 }
                 
-                // Cập nhật địa chỉ nếu chưa có
                 if (empty($user->Address) && !empty($validated['Shipping_address'])) {
                     $updateData['Address'] = $validated['Shipping_address'];
                 }
                 
-                // Nếu có dữ liệu để cập nhật
                 if (!empty($updateData)) {
                     $user->update($updateData);
-                    
-                    // Thêm thông tin cập nhật vào response
-                    $responseData['user_updated'] = true;
-                    $responseData['updated_user_data'] = $updateData;
                 }
             }
+
+            DB::commit(); // Commit transaction nếu mọi thứ thành công
 
             // Tạo URL xem đơn hàng
             $orderUrl = "http://localhost:5173/myorder/{$order->OrderID}";
@@ -167,17 +198,20 @@ class OrderController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Order Create successfully',
+                'message' => 'Order created successfully',
                 'data' => $order
             ], 201);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack(); // Rollback nếu có lỗi validation
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
+            DB::rollBack(); // Rollback nếu có lỗi khác
+            \Log::error('Order creation error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create order: ' . $e->getMessage()

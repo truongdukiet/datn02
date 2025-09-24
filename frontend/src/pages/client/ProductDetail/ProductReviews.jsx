@@ -321,16 +321,7 @@ const ProductReviews = () => {
         />
       )}
 
-      {/* Thông báo nếu có review nhưng chưa được duyệt */}
-      {product_info.total_reviews > 0 && product_info.approved_reviews === 0 && (
-        <Alert
-          message="Thông báo"
-          description="Sản phẩm có đánh giá nhưng chưa được duyệt. Chỉ hiển thị đánh giá đã được phê duyệt."
-          type="info"
-          showIcon
-          style={{ marginBottom: 20 }}
-        />
-      )}
+
 
       <Row gutter={24}>
         {/* Sidebar với thống kê */}
