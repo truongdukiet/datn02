@@ -10,14 +10,201 @@ use App\Models\ProductVariant;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Product;
 
 class ReviewController extends Controller
 {
 
+    /**
+     * Get reviews for a specific product
+     */
+           public function getProductReviews($productId)
+    {
+        try {
+            // Kiểm tra product có tồn tại không
+            $product = Product::find($productId);
+            if (!$product) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product not found.'
+                ], 404);
+            }
+
+            // Lấy tất cả product variants của product
+            $productVariants = ProductVariant::where('ProductID', $productId)->get();
+            
+            if ($productVariants->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'reviews' => [],
+                        'statistics' => $this->getEmptyStatistics(),
+                        'product_info' => [
+                            'id' => $product->ProductID,
+                            'name' => $product->Name,
+                            'total_reviews' => 0
+                        ]
+                    ],
+                    'message' => 'No product variants found for this product.'
+                ]);
+            }
+
+            // Lấy tất cả reviews với eager loading user và productVariant
+            $allReviews = Review::with(['user', 'productVariant'])
+                ->whereIn('ProductVariantID', $productVariants->pluck('ProductVariantID'))
+                ->get();
+
+            // Lấy chỉ approved reviews để hiển thị
+            $approvedReviews = $allReviews->where('Status', 1);
+
+            // Chuẩn bị dữ liệu statistics
+            $statistics = $this->calculateReviewStatistics($allReviews);
+
+            // Transform reviews data for frontend
+            $transformedReviews = $approvedReviews->map(function ($review) {
+                return $this->transformReviewData($review);
+            })->values();
+
+            // Product info
+            $productInfo = [
+                'id' => $product->ProductID,
+                'name' => $product->Name,
+                'total_reviews' => $allReviews->count(),
+                'approved_reviews' => $approvedReviews->count(),
+                'average_rating' => $statistics['average_rating'],
+
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'reviews' => $transformedReviews,
+                    'statistics' => $statistics,
+                    'product_info' => $productInfo
+                ],
+                'message' => 'Product reviews retrieved successfully.'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error retrieving product reviews: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error retrieving product reviews: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Transform review data for frontend - FIXED VERSION
+     */
+    private function transformReviewData($review)
+    {
+        // Sử dụng relationship đã được eager loaded
+        $user = $review->user;
+        
+        return [
+            'id' => $review->ReviewID,
+            'user_info' => [
+                'id' => $user->UserID ?? null,
+                'name' => $user->Username ?? ($user->Name ?? 'Khách hàng'),
+                'email' => $user->Email ?? null,
+            ],
+            'product_variant_id' => $review->ProductVariantID,
+            'product_variant_info' => $review->productVariant ? [
+                'id' => $review->productVariant->ProductVariantID,
+                'name' => $review->productVariant->Name ?? 'Không xác định',
+                'sku' => $review->productVariant->SKU ?? '',
+                'attribute' => $review->productVariant->attributes,
+
+            ] : null,
+            'rating' => $review->Star_rating,
+            'comment' => $review->Comment,
+            'created_at' => $review->Create_at ? Carbon::parse($review->Create_at)->toISOString() : null,
+            'updated_at' => $review->Update_at ? Carbon::parse($review->Update_at)->toISOString() : null,
+            'status' => $this->getStatusText($review->Status),
+            'status_code' => $review->Status,
+            'is_approved' => $review->Status == 1,
+            'is_pending' => $review->Status == 0,
+            'is_hidden' => $review->Status == 2
+        ];
+    }
+
+    /**
+     * Calculate review statistics
+     */
+    private function calculateReviewStatistics($reviews)
+    {
+        $totalReviews = $reviews->count();
+        
+        if ($totalReviews === 0) {
+            return $this->getEmptyStatistics();
+        }
+
+        $totalRating = $reviews->sum('Star_rating');
+        $averageRating = round($totalRating / $totalReviews, 1);
+
+        $ratingCounts = [
+            5 => $reviews->where('Star_rating', 5)->count(),
+            4 => $reviews->where('Star_rating', 4)->count(),
+            3 => $reviews->where('Star_rating', 3)->count(),
+            2 => $reviews->where('Star_rating', 2)->count(),
+            1 => $reviews->where('Star_rating', 1)->count()
+        ];
+
+        $ratingPercentages = [];
+        foreach ($ratingCounts as $stars => $count) {
+            $ratingPercentages[$stars] = $totalReviews > 0 ? round(($count / $totalReviews) * 100, 1) : 0;
+        }
+
+        $approvedCount = $reviews->where('Status', 1)->count();
+        $pendingCount = $reviews->where('Status', 0)->count();
+        $hiddenCount = $reviews->where('Status', 2)->count();
+
+        return [
+            'total_reviews' => $totalReviews,
+            'average_rating' => $averageRating,
+            'rating_counts' => $ratingCounts,
+            'rating_percentages' => $ratingPercentages,
+            'status_counts' => [
+                'approved' => $approvedCount,
+                'pending' => $pendingCount,
+                'hidden' => $hiddenCount
+            ]
+        ];
+    }
+
+    /**
+     * Get empty statistics structure
+     */
+    private function getEmptyStatistics()
+    {
+        return [
+            'total_reviews' => 0,
+            'average_rating' => 0,
+            'rating_counts' => [5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0],
+            'rating_percentages' => [5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0],
+            'status_counts' => ['approved' => 0, 'pending' => 0, 'hidden' => 0]
+        ];
+    }
+
+    /**
+     * Get status text
+     */
+    private function getStatusText($statusCode)
+    {
+        switch ($statusCode) {
+            case 1: return 'approved';
+            case 2: return 'hidden';
+            default: return 'pending';
+        }
+    }
+
+    /**
+     * Get all reviews for admin with eager loading
+     */
     public function index(Request $request)
     {
-
-        $query = Review::query();
+        $query = Review::with(['user', 'productVariant.product']);
 
         // Filter by status if provided
         if ($request->has('status')) {
@@ -30,44 +217,10 @@ class ReviewController extends Controller
             }
         }
 
-        // Load relationships
-        $reviews = $query->with(['user', 'productVariant.product'])
-            ->orderBy('Create_at', 'desc')
-            ->get();
+        $reviews = $query->orderBy('Create_at', 'desc')->get();
 
-        // Transform data to match frontend expectations
         $transformedReviews = $reviews->map(function ($review) {
-            $userInfo = [
-                'name' => $review->user->Name ?? 'Khách hàng',
-                'phone' => $review->user->Phone ?? 'Chưa có số điện thoại',
-                'email' => $review->user->Email ?? 'Chưa có email'
-            ];
-
-            $productInfo = [
-                'id' => $review->productVariant->product->ProductID ?? null,
-                'name' => $review->productVariant->product->Name ?? 'Sản phẩm không xác định'
-            ];
-
-            // Determine status based on Status value
-            $status = 'pending';
-            if ($review->Status == 1) {
-                $status = 'approved';
-            } elseif ($review->Status == 2) {
-                $status = 'hidden';
-            }
-
-            return [
-                'id' => $review->ReviewID,
-                'user_info' => $userInfo,
-                'product_info' => $productInfo,
-                'rating' => $review->Star_rating,
-                'comment' => $review->Comment,
-                'created_at' => $review->Create_at,
-                'updated_at' => $review->Update_at,
-                'status' => $status,
-                'is_approved' => $review->Status == 1,
-                'is_hidden' => $review->Status == 2
-            ];
+            return $this->transformReviewData($review);
         });
 
         return response()->json([
@@ -78,67 +231,27 @@ class ReviewController extends Controller
     }
 
     /**
-     * Get reviews for a specific product
+     * Get single review with eager loading
      */
-    public function getProductReviews($productId)
+    public function show($id)
     {
-        try {
-            // Debug: Kiểm tra product variants có tồn tại không
-            $productVariants = ProductVariant::where('ProductID', $productId)->get();
-            if ($productVariants->isEmpty()) {
-                return response()->json([
-                    'success' => true,
-                    'data' => [],
-                    'message' => 'No product variants found for this product.'
-                ]);
-            }
+        $review = Review::with(['user', 'productVariant.product'])->find($id);
 
-            // Debug: Kiểm tra reviews có tồn tại không (không phân biệt status)
-            $allReviews = Review::whereIn('ProductVariantID', $productVariants->pluck('ProductVariantID'))->get();
-            
-            // Get only approved reviews (Status = 1)
-            $reviews = Review::with(['user'])
-                ->whereIn('ProductVariantID', $productVariants->pluck('ProductVariantID'))
-                ->where('Status', 1)
-                ->orderBy('Create_at', 'desc')
-                ->get();
-
-            // Debug: Log số lượng reviews tìm thấy
-            \Log::info("Found {$reviews->count()} reviews for product ID: {$productId}");
-
-            // Transform data for frontend
-            $transformedReviews = $reviews->map(function ($review) {
-                return [
-                    'id' => $review->ReviewID,
-                    'user_info' => [
-                        'name' => $review->user->Name ?? 'Khách hàng',
-                        'avatar' => $review->user->Avatar ?? null
-                    ],
-                    'rating' => $review->Star_rating,
-                    'comment' => $review->Comment,
-                    'created_at' => $review->Create_at,
-                    'status' => 'approved'
-                ];
-            });
-
-            return response()->json([
-                'success' => true,
-                'data' => $transformedReviews,
-                'message' => 'Product reviews retrieved successfully.',
-                'debug' => [
-                    'product_variants_count' => $productVariants->count(),
-                    'all_reviews_count' => $allReviews->count(),
-                    'approved_reviews_count' => $reviews->count()
-                ]
-            ]);
-        } catch (\Exception $e) {
+        if (!$review) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error retrieving product reviews: ' . $e->getMessage()
-            ], 500);
+                'message' => 'Review not found.'
+            ], 404);
         }
-    }
 
+        $transformedReview = $this->transformReviewData($review);
+
+        return response()->json([
+            'success' => true,
+            'data' => $transformedReview,
+            'message' => 'Review retrieved successfully.'
+        ], 200);
+    }
     /**
      * Create a new review
      */
@@ -148,6 +261,7 @@ class ReviewController extends Controller
             'ProductVariantID' => 'required|integer|exists:productvariants,ProductVariantID',
             'Star_rating' => 'required|integer|min:1|max:5',
             'Comment' => 'required|string|min:10|max:1000',
+            'UserID' => 'sometimes|integer|exists:users,UserID' // Optional, in case you want to allow admin to create reviews on behalf of users
         ]);
 
         if ($validator->fails()) {
@@ -314,56 +428,56 @@ class ReviewController extends Controller
     /**
      * Get a specific review
      */
-    public function show($id)
-    {
-        $review = Review::with(['user', 'productVariant.product'])->find($id);
+    // public function show($id)
+    // {
+    //     $review = Review::with(['user', 'productVariant.product'])->find($id);
 
-        if (!$review) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Review not found.'
-            ], 404);
-        }
+    //     if (!$review) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Review not found.'
+    //         ], 404);
+    //     }
 
-        // Transform data for frontend
-        $userInfo = [
-            'name' => $review->user->Name ?? 'Khách hàng',
-            'phone' => $review->user->Phone ?? 'Chưa có số điện thoại',
-            'email' => $review->user->Email ?? 'Chưa có email'
-        ];
+    //     // Transform data for frontend
+    //     $userInfo = [
+    //         'name' => $review->user->Name ?? 'Khách hàng',
+    //         'phone' => $review->user->Phone ?? 'Chưa có số điện thoại',
+    //         'email' => $review->user->Email ?? 'Chưa có email'
+    //     ];
 
-        $productInfo = [
-            'id' => $review->productVariant->product->ProductID ?? null,
-            'name' => $review->productVariant->product->Name ?? 'Sản phẩm không xác định'
-        ];
+    //     $productInfo = [
+    //         'id' => $review->productVariant->product->ProductID ?? null,
+    //         'name' => $review->productVariant->product->Name ?? 'Sản phẩm không xác định'
+    //     ];
 
-        // Determine status based on Status value
-        $status = 'pending';
-        if ($review->Status == 1) {
-            $status = 'approved';
-        } elseif ($review->Status == 2) {
-            $status = 'hidden';
-        }
+    //     // Determine status based on Status value
+    //     $status = 'pending';
+    //     if ($review->Status == 1) {
+    //         $status = 'approved';
+    //     } elseif ($review->Status == 2) {
+    //         $status = 'hidden';
+    //     }
 
-        $transformedReview = [
-            'id' => $review->ReviewID,
-            'user_info' => $userInfo,
-            'product_info' => $productInfo,
-            'rating' => $review->Star_rating,
-            'comment' => $review->Comment,
-            'created_at' => $review->Create_at,
-            'updated_at' => $review->Update_at,
-            'status' => $status,
-            'is_approved' => $review->Status == 1,
-            'is_hidden' => $review->Status == 2
-        ];
+    //     $transformedReview = [
+    //         'id' => $review->ReviewID,
+    //         'user_info' => $userInfo,
+    //         'product_info' => $productInfo,
+    //         'rating' => $review->Star_rating,
+    //         'comment' => $review->Comment,
+    //         'created_at' => $review->Create_at,
+    //         'updated_at' => $review->Update_at,
+    //         'status' => $status,
+    //         'is_approved' => $review->Status == 1,
+    //         'is_hidden' => $review->Status == 2
+    //     ];
 
-        return response()->json([
-            'success' => true,
-            'data' => $transformedReview,
-            'message' => 'Review retrieved successfully.'
-        ], 200);
-    }
+    //     return response()->json([
+    //         'success' => true,
+    //         'data' => $transformedReview,
+    //         'message' => 'Review retrieved successfully.'
+    //     ], 200);
+    // }
 
     /**
      * Update a review
